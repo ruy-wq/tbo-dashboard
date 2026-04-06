@@ -124,24 +124,43 @@ function useProjectClient(projectId: string) {
   });
 }
 
-function useDeliveryToken(projectId: string) {
+interface DeliveryPreview {
+  token: string;
+  title: string;
+  description: string | null;
+  delivery_date: string | null;
+  hero_subtitle: string | null;
+  accent_color: string | null;
+  cover_image_url: string | null;
+  access_password: string | null;
+  access_count: number;
+  deliverables: { title: string; description: string; type: string; url: string }[];
+}
+
+function useDeliveryPreview(projectId: string) {
   return useQuery({
-    queryKey: ["delivery-token", projectId],
+    queryKey: ["delivery-preview", projectId],
     queryFn: async () => {
       const supabase = createClient();
       const { data } = await supabase
-        .from("project_deliveries" as any)
-        .select("token")
+        .from("project_deliveries" as never)
+        .select("token, title, description, delivery_date, hero_subtitle, accent_color, cover_image_url, access_password, access_count, deliverables")
         .eq("project_id", projectId)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      return (data as { token: string } | null)?.token ?? null;
+      return (data as DeliveryPreview | null) ?? null;
     },
     staleTime: 60_000,
     enabled: !!projectId,
   });
+}
+
+// Keep backwards-compatible hook
+function useDeliveryToken(projectId: string) {
+  const { data } = useDeliveryPreview(projectId);
+  return { data: data?.token ?? null };
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -165,6 +184,7 @@ export function ProjectPortal({
   const { data: projectFiles = [], isLoading: filesLoading } = usePortalProjectFiles(projectId);
   const { data: clientInfo } = useProjectClient(projectId);
   const { data: deliveryToken } = useDeliveryToken(projectId);
+  const { data: deliveryPreview } = useDeliveryPreview(projectId);
 
   const clientName = clientInfo?.client ?? null;
   const clientCompany = clientInfo?.client_company ?? null;
@@ -324,27 +344,99 @@ export function ProjectPortal({
                 projectName={projectName ?? "Projeto"}
               />
 
-              {/* Delivery link */}
-              {deliveryUrl && (
-                <a
-                  href={deliveryUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-4 rounded-xl border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-5 transition-all hover:border-orange-300 hover:shadow-md"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
-                    <IconPackage className="h-6 w-6 text-orange-600" />
+              {/* Delivery preview */}
+              {deliveryPreview && deliveryUrl && (
+                <div className="rounded-xl border overflow-hidden">
+                  {/* Header with cover */}
+                  <div className="relative bg-zinc-900 p-5">
+                    {deliveryPreview.cover_image_url && (
+                      <>
+                        <img
+                          src={deliveryPreview.cover_image_url}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover opacity-30"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-zinc-900 via-zinc-900/80 to-transparent" />
+                      </>
+                    )}
+                    <div className="relative z-10 flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <IconPackage className="h-4 w-4 text-orange-400" />
+                          <span className="text-[10px] text-white/40 uppercase tracking-widest">
+                            Entrega ativa
+                          </span>
+                        </div>
+                        <h3 className="text-lg font-bold text-white">{deliveryPreview.title}</h3>
+                        {deliveryPreview.hero_subtitle && (
+                          <p className="text-xs text-white/40 mt-1">{deliveryPreview.hero_subtitle}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `${window.location.origin}${deliveryUrl}`;
+                            navigator.clipboard.writeText(url);
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-white/60 hover:bg-white/20 hover:text-white transition-colors"
+                        >
+                          <IconLink className="h-3.5 w-3.5" />
+                          Copiar link
+                        </button>
+                        <a
+                          href={deliveryUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-600 transition-colors"
+                        >
+                          <IconExternalLink className="h-3.5 w-3.5" />
+                          Abrir
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-semibold text-zinc-900">
-                      Portal de Entrega — {projectName}
-                    </h3>
-                    <p className="mt-0.5 text-sm text-zinc-500">
-                      Acesse todos os entregaveis finais do projeto
-                    </p>
+
+                  {/* Deliverables grid */}
+                  <div className="p-4 bg-zinc-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+                        {deliveryPreview.deliverables.length} entregaveis
+                      </p>
+                      <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+                        {deliveryPreview.access_count > 0 && (
+                          <span>{deliveryPreview.access_count} acesso{deliveryPreview.access_count !== 1 ? "s" : ""}</span>
+                        )}
+                        {deliveryPreview.access_password && (
+                          <span className="font-mono bg-white rounded px-1.5 py-0.5 border">
+                            {deliveryPreview.access_password}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {deliveryPreview.deliverables.map((d, i) => (
+                        <a
+                          key={i}
+                          href={d.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group rounded-lg bg-white border p-3 hover:shadow-sm hover:border-orange-200 transition-all"
+                        >
+                          <p className="text-sm font-medium text-zinc-900 truncate group-hover:text-orange-600 transition-colors">
+                            {d.title}
+                          </p>
+                          <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+                            {d.description}
+                          </p>
+                          <span className="inline-block mt-2 text-[10px] font-medium text-zinc-300 uppercase">
+                            {d.type === "folder" ? "Pasta" : d.type === "link" ? "Link" : d.type.toUpperCase()}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  <IconExternalLink className="h-5 w-5 text-orange-400 transition-transform group-hover:translate-x-0.5" />
-                </a>
+                </div>
               )}
 
               <PortalMainTabs activeTab={activeTab} onTabChange={setActiveTab} />
