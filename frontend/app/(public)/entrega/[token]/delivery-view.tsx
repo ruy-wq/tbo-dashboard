@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -173,8 +173,59 @@ function RevealAnimation({ projectName, onComplete }: { projectName: string | nu
   );
 }
 
+// ── Highlight Card (featured deliverable) ──────────────────
+function HighlightCard({ deliverable, accentColor }: { deliverable: Deliverable; accentColor: string }) {
+  return (
+    <motion.a
+      href={deliverable.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      whileHover={{ scale: 1.005 }}
+      whileTap={{ scale: 0.995 }}
+      transition={{ duration: 0.2 }}
+      className="group md:col-span-12 bg-zinc-900 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 cursor-pointer relative overflow-hidden min-h-[140px]"
+    >
+      {/* Gradient accent glow */}
+      <div
+        className="absolute -top-20 -right-20 w-60 h-60 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: accentColor }}
+      />
+      <div className="relative z-10 flex items-center gap-5 flex-1">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${accentColor}20` }}
+        >
+          <IconExternalLink size={26} style={{ color: accentColor }} />
+        </div>
+        <div>
+          <p className="text-[10px] text-white/30 tracking-widest uppercase mb-1">Destaque desta entrega</p>
+          <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight">{deliverable.title}</h3>
+          {deliverable.description && (
+            <p className="text-sm text-white/40 mt-1 leading-relaxed max-w-xl">{deliverable.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="relative z-10 flex items-center gap-2 text-white/40 group-hover:text-white transition-colors shrink-0">
+        <span className="text-sm font-medium">Acessar</span>
+        <IconArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+      </div>
+    </motion.a>
+  );
+}
+
+// ── Section Label ──────────────────────────────────────────
+function SectionLabel({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="md:col-span-12 flex items-center gap-3 pt-2">
+      <span className="text-[11px] font-semibold text-stone-500 tracking-widest uppercase">{label}</span>
+      <div className="flex-1 h-[1px] bg-stone-200" />
+      <span className="text-[11px] text-stone-300">{count} {count === 1 ? "item" : "itens"}</span>
+    </div>
+  );
+}
+
 // ── Deliverable Card (Bento) ────────────────────────────────
-function DeliverableCard({ deliverable, accentColor }: { deliverable: Deliverable; accentColor: string }) {
+function DeliverableCard({ deliverable, accentColor, span }: { deliverable: Deliverable; accentColor: string; span?: number }) {
   const Icon = TYPE_ICONS[deliverable.type] ?? IconExternalLink;
   const canDownload = isDownloadable(deliverable.type);
   const directUrl = getDirectDownloadUrl(deliverable.url);
@@ -196,6 +247,8 @@ function DeliverableCard({ deliverable, accentColor }: { deliverable: Deliverabl
     [downloadUrl],
   );
 
+  const colClass = span === 6 ? "md:col-span-6" : span === 3 ? "md:col-span-3" : "md:col-span-4";
+
   return (
     <motion.a
       href={downloadUrl ?? deliverable.url}
@@ -205,7 +258,7 @@ function DeliverableCard({ deliverable, accentColor }: { deliverable: Deliverabl
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className="group bg-white rounded-2xl p-6 flex flex-col justify-between min-h-[200px] cursor-pointer transition-shadow duration-300 hover:shadow-xl"
+      className={`${colClass} group bg-white rounded-2xl p-6 flex flex-col justify-between min-h-[200px] cursor-pointer transition-shadow duration-300 hover:shadow-xl`}
     >
       <div>
         <div
@@ -225,7 +278,7 @@ function DeliverableCard({ deliverable, accentColor }: { deliverable: Deliverabl
       </div>
       <div className="flex items-center justify-between mt-5 pt-4 border-t border-stone-100">
         <span className="text-[11px] text-stone-300 font-medium uppercase tracking-wider">
-          {deliverable.type === "folder" ? "Pasta" : deliverable.type.toUpperCase()}
+          {deliverable.type === "folder" ? "Pasta" : deliverable.type === "link" ? "Link" : deliverable.type.toUpperCase()}
           {deliverable.file_size && ` · ${deliverable.file_size}`}
         </span>
         <div className="w-8 h-8 rounded-full bg-stone-100 group-hover:bg-zinc-900 flex items-center justify-center transition-colors duration-300">
@@ -238,6 +291,56 @@ function DeliverableCard({ deliverable, accentColor }: { deliverable: Deliverabl
       </div>
     </motion.a>
   );
+}
+
+// ── Grid helpers ────────────────────────────────────────────
+/** Returns the optimal col-span for items in a row that sums to 12 */
+function getSpansForGroup(count: number): number[] {
+  if (count === 1) return [12];
+  if (count === 2) return [6, 6];
+  if (count === 3) return [4, 4, 4];
+  if (count === 4) return [3, 3, 3, 3];
+  if (count === 5) return [4, 4, 4, 6, 6];
+  if (count === 6) return [4, 4, 4, 4, 4, 4];
+  // For 7+, first row 4-4-4, rest 4-4-4, last row fill
+  const spans: number[] = [];
+  const fullRows = Math.floor(count / 3);
+  const remainder = count % 3;
+  for (let i = 0; i < fullRows * 3; i++) spans.push(4);
+  if (remainder === 1) spans.push(12);
+  else if (remainder === 2) { spans.push(6); spans.push(6); }
+  return spans;
+}
+
+/** Categorize deliverables by prefix pattern (e.g. "Digital 3D — Fachada" → "Digital 3D") */
+function groupDeliverables(items: Deliverable[]): { highlight: Deliverable | null; sections: { label: string; items: Deliverable[] }[] } {
+  let highlight: Deliverable | null = null;
+  const sectionMap = new Map<string, Deliverable[]>();
+
+  for (const d of items) {
+    // First "link" type = highlight
+    if (!highlight && d.type === "link") {
+      highlight = d;
+      continue;
+    }
+
+    // Detect section from title prefix "Section — Detail"
+    const dashIdx = d.title.indexOf("—");
+    const label = dashIdx > 0 ? d.title.slice(0, dashIdx).trim() : inferSection(d);
+
+    if (!sectionMap.has(label)) sectionMap.set(label, []);
+    sectionMap.get(label)!.push(d);
+  }
+
+  return {
+    highlight,
+    sections: Array.from(sectionMap.entries()).map(([label, items]) => ({ label, items })),
+  };
+}
+
+function inferSection(d: Deliverable): string {
+  if (d.type === "video") return "Audiovisual";
+  return "Geral";
 }
 
 // ── Main View ────────────────────────────────────────────────
@@ -383,22 +486,58 @@ export function DeliveryView({
             </motion.div>
           )}
 
-          {/* ── Deliverable Cards ── */}
-          {deliverables.map((d, i) => {
-            // Alternate card sizes: first and last span more
-            const isWide = i === 0 || i === deliverables.length - 1;
+          {/* ── Deliverable Cards (grouped with hierarchy) ── */}
+          {(() => {
+            const { highlight, sections } = groupDeliverables(deliverables);
+            let delayIdx = 0;
             return (
-              <motion.div
-                key={`${d.title}-${i}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                className={isWide && deliverables.length > 2 ? "md:col-span-7" : deliverables.length <= 2 ? "md:col-span-6" : "md:col-span-5"}
-              >
-                <DeliverableCard deliverable={d} accentColor={accentColor} />
-              </motion.div>
+              <>
+                {/* Highlight card (featured deliverable) */}
+                {highlight && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 + delayIdx++ * 0.1 }}
+                    className="md:col-span-12"
+                  >
+                    <HighlightCard deliverable={highlight} accentColor={accentColor} />
+                  </motion.div>
+                )}
+
+                {/* Grouped sections */}
+                {sections.map((section) => {
+                  const spans = getSpansForGroup(section.items.length);
+                  return (
+                    <React.Fragment key={section.label}>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.5 + delayIdx++ * 0.1 }}
+                        className="md:col-span-12"
+                      >
+                        <SectionLabel label={section.label} count={section.items.length} />
+                      </motion.div>
+                      {section.items.map((d, i) => {
+                        const span = spans[i] ?? 4;
+                        const colCls = span === 12 ? "md:col-span-12" : span === 6 ? "md:col-span-6" : span === 3 ? "md:col-span-3" : "md:col-span-4";
+                        return (
+                          <motion.div
+                            key={`${d.title}-${i}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.5 + delayIdx++ * 0.1 }}
+                            className={colCls}
+                          >
+                            <DeliverableCard deliverable={d} accentColor={accentColor} span={span} />
+                          </motion.div>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </>
             );
-          })}
+          })()}
 
           {/* ── CTA / Website Card — spans full width ── */}
           <motion.a
