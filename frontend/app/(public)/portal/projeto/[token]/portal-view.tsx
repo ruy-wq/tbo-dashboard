@@ -13,7 +13,7 @@ import { PortalFilesTab, type PortalFile } from "@/features/projects/components/
 import { PortalReportsTab } from "@/features/projects/components/portal/portal-reports-tab";
 import { PortalLatestDocs } from "@/features/projects/components/portal/portal-latest-docs";
 import { PortalTrackStepper, type TrackPhase } from "@/features/projects/components/portal/portal-track-stepper";
-import { PortalAboutSection } from "@/features/projects/components/portal/portal-about-section";
+import { PortalAboutSection, type ProjectPortalAbout } from "@/features/projects/components/portal/portal-about-section";
 import { Badge } from "@/components/ui/badge";
 import {
   IconCircleCheck,
@@ -58,6 +58,7 @@ interface PortalProject {
   due_date_start: string | null;
   due_date_end: string | null;
   tenant_id: string;
+  portal_about?: Record<string, unknown> | null;
 }
 
 interface Section {
@@ -205,7 +206,11 @@ export function ProjectPortalView({
         />
       }
       main={activeNav === "about" ? (
-          <PortalAboutSection projectName={project.name} clientCompany={project.client_company} />
+          <PortalAboutSection
+            projectName={project.name}
+            clientCompany={project.client_company}
+            data={(project.portal_about ?? {}) as ProjectPortalAbout}
+          />
         ) : (
         <div className="space-y-6">
           {/* Welcome Banner */}

@@ -14,7 +14,7 @@ export default async function ProjectPortalPage({ params }: Props) {
   const supabase = createServiceClient();
 
   // 1. Lookup project by portal_token
-  const { data: project } = await supabase
+  const { data: rawProject } = await supabase
     .from("projects")
     .select(
       "id, name, status, client, client_company, due_date_start, due_date_end, tenant_id"
@@ -22,7 +22,19 @@ export default async function ProjectPortalPage({ params }: Props) {
     .eq("portal_token", token)
     .single();
 
-  if (!project) notFound();
+  if (!rawProject) notFound();
+
+  // Fetch portal_about separately (JSONB column not in generated types yet)
+  const { data: aboutRow } = await supabase
+    .from("projects" as never)
+    .select("portal_about")
+    .eq("id", rawProject.id)
+    .single();
+
+  const project = {
+    ...rawProject,
+    portal_about: (aboutRow as unknown as { portal_about: Record<string, unknown> | null })?.portal_about ?? null,
+  };
 
   // 2. Fetch tasks (non-parent, visible statuses only)
   const { data: tasks } = await supabase

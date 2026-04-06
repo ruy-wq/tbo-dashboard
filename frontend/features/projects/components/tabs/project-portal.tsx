@@ -29,7 +29,8 @@ import { PortalFilesTab, type PortalFile } from "@/features/projects/components/
 import { PortalReportsTab } from "@/features/projects/components/portal/portal-reports-tab";
 import { PortalLatestDocs } from "@/features/projects/components/portal/portal-latest-docs";
 import { PortalTrackStepper, type TrackPhase } from "@/features/projects/components/portal/portal-track-stepper";
-import { PortalAboutSection } from "@/features/projects/components/portal/portal-about-section";
+import { PortalAboutSection, type ProjectPortalAbout } from "@/features/projects/components/portal/portal-about-section";
+import { PortalAboutEditor } from "@/features/projects/components/portal/portal-about-editor";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -114,10 +115,10 @@ function useProjectClient(projectId: string) {
       const supabase = createClient();
       const { data } = await supabase
         .from("projects")
-        .select("client, client_company, status, due_date_end")
+        .select("client, client_company, status, due_date_end, portal_about")
         .eq("id", projectId)
         .single();
-      return data as { client: string | null; client_company: string | null; status: string | null; due_date_end: string | null } | null;
+      return data as { client: string | null; client_company: string | null; status: string | null; due_date_end: string | null; portal_about: Record<string, unknown> | null } | null;
     },
     staleTime: 60_000,
     enabled: !!projectId,
@@ -179,6 +180,7 @@ export function ProjectPortal({
   const [activeNav, setActiveNav] = useState("home");
   const [sidebarItem, setSidebarItem] = useState("home");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [aboutEditorOpen, setAboutEditorOpen] = useState(false);
 
   const { data: tasks = [], isLoading: tasksLoading } = usePortalTasks(projectId);
   const { data: projectFiles = [], isLoading: filesLoading } = usePortalProjectFiles(projectId);
@@ -188,6 +190,7 @@ export function ProjectPortal({
 
   const clientName = clientInfo?.client ?? null;
   const clientCompany = clientInfo?.client_company ?? null;
+  const portalAbout = (clientInfo?.portal_about ?? {}) as ProjectPortalAbout;
 
   // Portal URL
   const portalUrl = portalToken
@@ -336,7 +339,12 @@ export function ProjectPortal({
             />
           }
           main={activeNav === "about" ? (
-              <PortalAboutSection projectName={projectName ?? "AUMA"} clientCompany={clientCompany} />
+              <PortalAboutSection
+                projectName={projectName ?? "Projeto"}
+                clientCompany={clientCompany}
+                data={portalAbout}
+                onEdit={() => setAboutEditorOpen(true)}
+              />
             ) : (
               <div className="space-y-6">
               <PortalWelcomeBanner
@@ -527,6 +535,20 @@ export function ProjectPortal({
           }
         />
       </div>
+
+      {/* About editor */}
+      <PortalAboutEditor
+        open={aboutEditorOpen}
+        onOpenChange={setAboutEditorOpen}
+        data={portalAbout}
+        onSave={(aboutData) => {
+          updateProject.mutate(
+            { id: projectId, updates: { portal_about: aboutData } as never },
+            { onSuccess: () => setAboutEditorOpen(false) },
+          );
+        }}
+        isPending={updateProject.isPending}
+      />
     </div>
   );
 }
