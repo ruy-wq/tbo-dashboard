@@ -36,6 +36,7 @@ const ProjectDashboard = dynamic(() => import("@/features/projects/components/ta
 const ProjectOverdueReport = dynamic(() => import("@/features/projects/components/tabs/project-overdue-report").then((m) => ({ default: m.ProjectOverdueReport })), { loading: () => tabFallback });
 const ProjectPortal = dynamic(() => import("@/features/projects/components/tabs/project-portal").then((m) => ({ default: m.ProjectPortal })), { loading: () => tabFallback });
 const ProjectIntake = dynamic(() => import("@/features/projects/components/tabs/project-intake").then((m) => ({ default: m.ProjectIntake })), { loading: () => tabFallback });
+const ProjectEntregas = dynamic(() => import("@/features/deliveries/components/project-entregas").then((m) => ({ default: m.ProjectEntregas })), { loading: () => tabFallback });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -303,6 +304,9 @@ export default function ProjectDetailPage({
             bus={project.bus}
             portalToken={(project as Record<string, unknown>).portal_token as string | null}
           />
+        )}
+        {activeTab === "entregas" && (
+          <ProjectEntregas projectId={id} projectName={project.name} />
         )}
       </div>
 

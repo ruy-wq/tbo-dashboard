@@ -18,6 +18,7 @@ import {
   IconAlertTriangle,
   IconSettings,
   IconClipboardList,
+  IconPackage,
   IconPlus,
   IconEyeOff,
   IconEye,
@@ -93,6 +94,7 @@ const TABS = [
   { key: "intake", label: "Intake", icon: IconClipboardList, group: "admin" },
   { key: "settings", label: "Configurações", icon: IconSettings, group: "admin" },
   { key: "portal", label: "Portal do Cliente", icon: IconGlobe, group: "admin" },
+  { key: "entregas", label: "Entregas", icon: IconPackage, group: "admin" },
 ] as const;
 
 export type ProjectTabKey = (typeof TABS)[number]["key"];

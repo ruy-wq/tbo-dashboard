@@ -17,7 +17,8 @@ export type ProjectTabKey =
   | "overdue"
   | "intake"
   | "settings"
-  | "portal";
+  | "portal"
+  | "entregas";
 
 export const DEFAULT_TAB_ORDER: ProjectTabKey[] = [
   "overview",
@@ -33,6 +34,7 @@ export const DEFAULT_TAB_ORDER: ProjectTabKey[] = [
   "intake",
   "settings",
   "portal",
+  "entregas",
 ];
 
 /** Tabs hidden by default to reduce cognitive overload (7 visible + overflow) */
@@ -43,6 +45,7 @@ export const DEFAULT_HIDDEN_TABS: ProjectTabKey[] = [
   "dashboard",
   "settings",
   "portal",
+  "entregas",
 ];
 
 interface ProjectTabsState {
