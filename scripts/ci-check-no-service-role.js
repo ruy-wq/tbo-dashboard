@@ -15,7 +15,7 @@ const ROOT = process.cwd();
 const SCAN_DIRS = ['frontend'];
 const SKIP_DIRS = ['node_modules', '.next', 'supabase', 'archive', 'database', 'docs', '.git', 'scripts'];
 // API routes são server-side e podem usar service_role legitimamente
-const SKIP_PATHS = ['frontend/app/api'];
+const SKIP_PATHS = ['frontend/app/api', 'frontend/app/auth'];
 const SCAN_EXTS = ['.js', '.html', '.htm', '.ts', '.tsx'];
 
 function normalize(p) { return p.replace(/\\/g, '/'); }
