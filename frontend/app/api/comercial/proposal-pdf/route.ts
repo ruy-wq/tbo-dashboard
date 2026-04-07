@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getProposalById } from "@/features/comercial/services/proposals";
+import { getProposalByToken } from "@/features/comercial/services/proposal-client-link";
 import { ProposalPDFTemplate } from "@/features/comercial/components/proposal-pdf-template";
 
 export const dynamic = "force-dynamic";
@@ -19,14 +20,30 @@ function buildPDFElement(
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const proposalId = searchParams.get("id");
+  const token = searchParams.get("token");
 
-  if (!proposalId) {
-    return NextResponse.json({ error: "Missing proposal id" }, { status: 400 });
+  if (!proposalId && !token) {
+    return NextResponse.json({ error: "Missing proposal id or token" }, { status: 400 });
   }
 
   try {
     const supabase = createServiceClient();
-    const proposal = await getProposalById(supabase, proposalId);
+    const proposal = token
+      ? await getProposalByToken(supabase, token)
+      : await getProposalById(supabase, proposalId!);
+
+    if (!proposal) {
+      return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
+    }
+
+    // Enforce password check for token-based access
+    const extProposal = proposal as typeof proposal & { access_password?: string | null };
+    if (token && extProposal.access_password) {
+      const password = searchParams.get("password");
+      if (!password || password.toLowerCase() !== extProposal.access_password.toLowerCase()) {
+        return NextResponse.json({ error: "Password required" }, { status: 403 });
+      }
+    }
 
     const element = buildPDFElement({ proposal });
     const buffer = await renderToBuffer(element);

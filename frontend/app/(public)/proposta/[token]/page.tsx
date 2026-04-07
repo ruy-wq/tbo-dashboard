@@ -16,6 +16,7 @@ import {
   IconMail,
   IconPhone,
   IconLock,
+  IconDownload,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -403,16 +404,44 @@ function SectionNotes({ notes }: { notes: string }) {
 
 function ProposalView({
   proposal,
+  token,
+  password,
   onDecide,
   isSubmitting,
 }: {
   proposal: ExtendedProposal;
+  token: string;
+  password?: string;
   onDecide: (decision: "approved" | "rejected", feedback: string) => void;
   isSubmitting: boolean;
 }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    setDownloadingPdf(true);
+    try {
+      const params = new URLSearchParams({ token });
+      if (password) params.set("password", password);
+      const res = await fetch(`/api/comercial/proposal-pdf?${params.toString()}`);
+      if (!res.ok) throw new Error("Falha ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `proposta-${proposal.ref_code ?? "tbo"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently fail — could add toast here
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [token, password, proposal.ref_code]);
 
   const isDecided = isDecidedStatus(proposal.status);
   const showD3D = proposal.show_d3d_flow ?? false;
@@ -472,15 +501,30 @@ function ProposalView({
               </p>
             </div>
           </a>
-          <div className="text-right">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
-              Proposta Comercial
-            </p>
-            {proposal.ref_code && (
-              <p className="text-[#E85102] font-bold font-mono text-sm">
-                {proposal.ref_code}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              title="Baixar PDF"
+            >
+              {downloadingPdf ? (
+                <IconLoader2 size={14} className="animate-spin" />
+              ) : (
+                <IconDownload size={14} />
+              )}
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+            <div className="text-right">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                Proposta Comercial
               </p>
-            )}
+              {proposal.ref_code && (
+                <p className="text-[#E85102] font-bold font-mono text-sm">
+                  {proposal.ref_code}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -869,11 +913,19 @@ export default function ProposalPublicPage() {
   const params = useParams();
   const token = params.token as string;
 
+  const storageKey = `proposal-unlocked-${token}`;
+
   const [decidedStatus, setDecidedStatus] = useState<
     "approved" | "rejected" | null
   >(null);
-  const [unlocked, setUnlocked] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
+  const [unlocked, setUnlocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(storageKey) === "true";
+  });
+  const [passwordInput, setPasswordInput] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return sessionStorage.getItem(`${storageKey}-pw`) ?? "";
+  });
   const [passwordError, setPasswordError] = useState(false);
 
   const {
@@ -915,10 +967,12 @@ export default function ProposalPublicPage() {
     if (passwordInput.trim().toLowerCase() === extProposal.access_password.toLowerCase()) {
       setUnlocked(true);
       setPasswordError(false);
+      sessionStorage.setItem(storageKey, "true");
+      sessionStorage.setItem(`${storageKey}-pw`, passwordInput.trim());
     } else {
       setPasswordError(true);
     }
-  }, [passwordInput, extProposal?.access_password]);
+  }, [passwordInput, extProposal?.access_password, storageKey]);
 
   if (isLoading) return <ProposalSkeleton />;
 
@@ -1007,6 +1061,8 @@ export default function ProposalPublicPage() {
   return (
     <ProposalView
       proposal={extProposal as ExtendedProposal}
+      token={token}
+      password={unlocked ? passwordInput : undefined}
       onDecide={(decision, feedback) =>
         decideMutation.mutate({ decision, feedback })
       }
