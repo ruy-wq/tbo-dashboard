@@ -418,10 +418,11 @@ function ProposalView({
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const handleDownloadPdf = useCallback(() => {
+
+  const pdfUrl = useMemo(() => {
     const params = new URLSearchParams({ token });
     if (password) params.set("password", password);
-    window.open(`/api/comercial/proposal-pdf?${params.toString()}`, "_blank");
+    return `/api/comercial/proposal-pdf?${params.toString()}`;
   }, [token, password]);
 
   const isDecided = isDecidedStatus(proposal.status);
@@ -483,14 +484,15 @@ function ProposalView({
             </div>
           </a>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleDownloadPdf}
+            <a
+              href={pdfUrl}
+              download={`proposta-${proposal.ref_code ?? "tbo"}.pdf`}
               className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors"
               title="Baixar PDF"
             >
               <IconDownload size={14} />
               <span className="hidden sm:inline">PDF</span>
-            </button>
+            </a>
             <div className="text-right">
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
                 Proposta Comercial
