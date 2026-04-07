@@ -9,7 +9,8 @@ export async function proxy(request: NextRequest) {
   if (
     path.startsWith("/briefing") ||
     path.startsWith("/api/briefing") ||
-    path.startsWith("/intake")
+    path.startsWith("/intake") ||
+    path.startsWith("/api/comercial/proposal-pdf")
   ) {
     return NextResponse.next()
   }
