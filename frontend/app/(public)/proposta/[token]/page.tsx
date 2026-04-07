@@ -418,30 +418,11 @@ function ProposalView({
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
-
-  const handleDownloadPdf = useCallback(async () => {
-    setDownloadingPdf(true);
-    try {
-      const params = new URLSearchParams({ token });
-      if (password) params.set("password", password);
-      const res = await fetch(`/api/comercial/proposal-pdf?${params.toString()}`);
-      if (!res.ok) throw new Error("Falha ao gerar PDF");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `proposta-${proposal.ref_code ?? "tbo"}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      // silently fail — could add toast here
-    } finally {
-      setDownloadingPdf(false);
-    }
-  }, [token, password, proposal.ref_code]);
+  const handleDownloadPdf = useCallback(() => {
+    const params = new URLSearchParams({ token });
+    if (password) params.set("password", password);
+    window.open(`/api/comercial/proposal-pdf?${params.toString()}`, "_blank");
+  }, [token, password]);
 
   const isDecided = isDecidedStatus(proposal.status);
   const showD3D = proposal.show_d3d_flow ?? false;
@@ -504,15 +485,10 @@ function ProposalView({
           <div className="flex items-center gap-3">
             <button
               onClick={handleDownloadPdf}
-              disabled={downloadingPdf}
-              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors"
               title="Baixar PDF"
             >
-              {downloadingPdf ? (
-                <IconLoader2 size={14} className="animate-spin" />
-              ) : (
-                <IconDownload size={14} />
-              )}
+              <IconDownload size={14} />
               <span className="hidden sm:inline">PDF</span>
             </button>
             <div className="text-right">
