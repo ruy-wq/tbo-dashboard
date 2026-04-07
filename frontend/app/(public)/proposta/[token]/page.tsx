@@ -16,6 +16,7 @@ import {
   IconMail,
   IconPhone,
   IconLock,
+  IconDownload,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -403,16 +404,40 @@ function SectionNotes({ notes }: { notes: string }) {
 
 function ProposalView({
   proposal,
+  token,
   onDecide,
   isSubmitting,
 }: {
   proposal: ExtendedProposal;
+  token: string;
   onDecide: (decision: "approved" | "rejected", feedback: string) => void;
   isSubmitting: boolean;
 }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = useCallback(async () => {
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch(`/api/comercial/proposal-pdf?token=${encodeURIComponent(token)}`);
+      if (!res.ok) throw new Error("Falha ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `proposta-${proposal.ref_code ?? "tbo"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently fail — could add toast here
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }, [token, proposal.ref_code]);
 
   const isDecided = isDecidedStatus(proposal.status);
   const showD3D = proposal.show_d3d_flow ?? false;
@@ -472,15 +497,30 @@ function ProposalView({
               </p>
             </div>
           </a>
-          <div className="text-right">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
-              Proposta Comercial
-            </p>
-            {proposal.ref_code && (
-              <p className="text-[#E85102] font-bold font-mono text-sm">
-                {proposal.ref_code}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+              title="Baixar PDF"
+            >
+              {downloadingPdf ? (
+                <IconLoader2 size={14} className="animate-spin" />
+              ) : (
+                <IconDownload size={14} />
+              )}
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+            <div className="text-right">
+              <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                Proposta Comercial
               </p>
-            )}
+              {proposal.ref_code && (
+                <p className="text-[#E85102] font-bold font-mono text-sm">
+                  {proposal.ref_code}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1007,6 +1047,7 @@ export default function ProposalPublicPage() {
   return (
     <ProposalView
       proposal={extProposal as ExtendedProposal}
+      token={token}
       onDecide={(decision, feedback) =>
         decideMutation.mutate({ decision, feedback })
       }
