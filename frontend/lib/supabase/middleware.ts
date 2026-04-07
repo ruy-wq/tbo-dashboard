@@ -8,7 +8,8 @@ export async function updateSession(request: NextRequest, options?: { defaultRed
     request.nextUrl.pathname.startsWith("/api/briefing") ||
     request.nextUrl.pathname.startsWith("/intake") ||
     request.nextUrl.pathname.startsWith("/entrega") ||
-    request.nextUrl.pathname.startsWith("/proposta");
+    request.nextUrl.pathname.startsWith("/proposta") ||
+    request.nextUrl.pathname.startsWith("/api/comercial/proposal-pdf");
 
   if (isPublicSkip) {
     return NextResponse.next({ request });
