@@ -913,11 +913,19 @@ export default function ProposalPublicPage() {
   const params = useParams();
   const token = params.token as string;
 
+  const storageKey = `proposal-unlocked-${token}`;
+
   const [decidedStatus, setDecidedStatus] = useState<
     "approved" | "rejected" | null
   >(null);
-  const [unlocked, setUnlocked] = useState(false);
-  const [passwordInput, setPasswordInput] = useState("");
+  const [unlocked, setUnlocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(storageKey) === "true";
+  });
+  const [passwordInput, setPasswordInput] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return sessionStorage.getItem(`${storageKey}-pw`) ?? "";
+  });
   const [passwordError, setPasswordError] = useState(false);
 
   const {
@@ -959,10 +967,12 @@ export default function ProposalPublicPage() {
     if (passwordInput.trim().toLowerCase() === extProposal.access_password.toLowerCase()) {
       setUnlocked(true);
       setPasswordError(false);
+      sessionStorage.setItem(storageKey, "true");
+      sessionStorage.setItem(`${storageKey}-pw`, passwordInput.trim());
     } else {
       setPasswordError(true);
     }
-  }, [passwordInput, extProposal?.access_password]);
+  }, [passwordInput, extProposal?.access_password, storageKey]);
 
   if (isLoading) return <ProposalSkeleton />;
 
