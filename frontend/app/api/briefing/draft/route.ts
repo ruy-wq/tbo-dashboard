@@ -8,25 +8,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(null, { status: 400 });
     }
 
+    const projectSlug = request.nextUrl.searchParams.get("project_slug");
     const supabase = createServiceClient();
 
-    const { data } = await (supabase
+    // Build query — return any active briefing (draft or submitted)
+    let query = supabase
       .from("creative_briefings" as never)
       .select("id, form_data, status" as never)
       .eq("slug" as never, slug as never)
-      .eq("is_active" as never, true as never)
-      .eq("status" as never, "rascunho" as never)
-      .order("created_at" as never, { ascending: false } as never)
-      .limit(1)
-      .maybeSingle() as unknown as Promise<{
-      data: { id: string; form_data: unknown; status: string } | null;
+      .eq("is_active" as never, true as never);
+
+    if (projectSlug) {
+      query = query.eq("project_slug" as never, projectSlug as never);
+    }
+
+    // Order by status priority: rascunho first (so drafts take precedence), then most recent
+    const { data } = await (query
+      .order("created_at" as never, { ascending: false } as never) as unknown as Promise<{
+      data: { id: string; form_data: unknown; status: string }[] | null;
     }>);
 
-    if (!data) {
+    if (!data || data.length === 0) {
       return NextResponse.json(null, { status: 404 });
     }
 
-    return NextResponse.json(data);
+    // Prefer drafts over submitted briefings (so user can continue editing)
+    const draft = data.find((d) => d.status === "rascunho");
+    const result = draft ?? data[0];
+
+    return NextResponse.json(result);
   } catch {
     return NextResponse.json(null, { status: 500 });
   }

@@ -24,20 +24,23 @@ export default function BriefingPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Tentar carregar rascunho existente via API
-    fetch(`/api/briefing/draft?slug=${encodeURIComponent(slug)}`)
+    // Tentar carregar briefing existente (rascunho ou enviado) via API
+    const params = new URLSearchParams({ slug });
+    if (projectSlug) params.set("project_slug", projectSlug);
+
+    fetch(`/api/briefing/draft?${params.toString()}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.form_data) {
-          setExistingData(data.form_data);
+          setExistingData(data.form_data as Record<string, unknown>);
           setBriefingId(data.id);
         }
       })
       .catch(() => {
-        // Sem rascunho, segue sem dados existentes
+        // Sem briefing existente, segue sem dados
       })
       .finally(() => setReady(true));
-  }, [slug]);
+  }, [slug, projectSlug]);
 
   if (!ready) {
     return (
