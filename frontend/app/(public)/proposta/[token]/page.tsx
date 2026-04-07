@@ -405,11 +405,13 @@ function SectionNotes({ notes }: { notes: string }) {
 function ProposalView({
   proposal,
   token,
+  password,
   onDecide,
   isSubmitting,
 }: {
   proposal: ExtendedProposal;
   token: string;
+  password?: string;
   onDecide: (decision: "approved" | "rejected", feedback: string) => void;
   isSubmitting: boolean;
 }) {
@@ -421,7 +423,9 @@ function ProposalView({
   const handleDownloadPdf = useCallback(async () => {
     setDownloadingPdf(true);
     try {
-      const res = await fetch(`/api/comercial/proposal-pdf?token=${encodeURIComponent(token)}`);
+      const params = new URLSearchParams({ token });
+      if (password) params.set("password", password);
+      const res = await fetch(`/api/comercial/proposal-pdf?${params.toString()}`);
       if (!res.ok) throw new Error("Falha ao gerar PDF");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -437,7 +441,7 @@ function ProposalView({
     } finally {
       setDownloadingPdf(false);
     }
-  }, [token, proposal.ref_code]);
+  }, [token, password, proposal.ref_code]);
 
   const isDecided = isDecidedStatus(proposal.status);
   const showD3D = proposal.show_d3d_flow ?? false;
@@ -1048,6 +1052,7 @@ export default function ProposalPublicPage() {
     <ProposalView
       proposal={extProposal as ExtendedProposal}
       token={token}
+      password={unlocked ? passwordInput : undefined}
       onDecide={(decision, feedback) =>
         decideMutation.mutate({ decision, feedback })
       }

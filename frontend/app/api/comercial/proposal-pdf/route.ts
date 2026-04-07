@@ -36,6 +36,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
     }
 
+    // Enforce password check for token-based access
+    const extProposal = proposal as typeof proposal & { access_password?: string | null };
+    if (token && extProposal.access_password) {
+      const password = searchParams.get("password");
+      if (!password || password.toLowerCase() !== extProposal.access_password.toLowerCase()) {
+        return NextResponse.json({ error: "Password required" }, { status: 403 });
+      }
+    }
+
     const element = buildPDFElement({ proposal });
     const buffer = await renderToBuffer(element);
 
