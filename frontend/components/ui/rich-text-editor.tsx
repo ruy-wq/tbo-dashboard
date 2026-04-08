@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useEffect, useRef } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -213,34 +214,52 @@ export function RichTextEditor({
   showToolbar = true,
   mentionProvider,
 }: RichTextEditorProps) {
-  const extensions = [
-    StarterKit,
-    Placeholder.configure({ placeholder }),
-    TaskList,
-    TaskItem.configure({ nested: true }),
-    Link.configure({ openOnClick: false }),
-    ...(mentionProvider
-      ? [
-          Mention.configure({
-            HTMLAttributes: { class: "text-primary font-medium" },
-            suggestion: createMentionSuggestion(mentionProvider),
-          }),
-        ]
-      : []),
-  ];
+  // Memoize extensions to prevent useEditor from re-creating on every render
+  const extensions = useMemo(
+    () => [
+      StarterKit,
+      Placeholder.configure({ placeholder }),
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Link.configure({ openOnClick: false }),
+      ...(mentionProvider
+        ? [
+            Mention.configure({
+              HTMLAttributes: { class: "text-primary font-medium" },
+              suggestion: createMentionSuggestion(mentionProvider),
+            }),
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [placeholder, !!mentionProvider],
+  );
+
+  // Stable refs for callbacks to avoid editor recreation
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onBlurRef = useRef(onBlur);
+  onBlurRef.current = onBlur;
 
   const editor = useEditor({
     extensions,
     content: value || "",
     editable: !readOnly,
-    onUpdate: ({ editor }) => {
-      onChange?.(editor.getHTML());
+    onUpdate: ({ editor: e }) => {
+      onChangeRef.current?.(e.getHTML());
     },
     onBlur: () => {
-      onBlur?.();
+      onBlurRef.current?.();
     },
     immediatelyRender: false,
   });
+
+  // Sync editable state
+  useEffect(() => {
+    if (editor && editor.isEditable !== !readOnly) {
+      editor.setEditable(!readOnly);
+    }
+  }, [editor, readOnly]);
 
   if (!editor) return null;
 

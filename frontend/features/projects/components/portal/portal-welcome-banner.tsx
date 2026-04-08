@@ -2,6 +2,7 @@
 
 interface PortalWelcomeBannerProps {
   clientName: string | null;
+  clientCompany?: string | null;
   projectName: string;
   accentColor?: string;
   onSearch?: (query: string) => void;
@@ -9,9 +10,16 @@ interface PortalWelcomeBannerProps {
 
 export function PortalWelcomeBanner({
   clientName,
+  clientCompany,
   projectName,
   accentColor = "#c45a1a",
 }: PortalWelcomeBannerProps) {
+  // Prefer "Olá, equipe {Company}" over individual name
+  const greeting = clientCompany
+    ? `Ola, equipe ${clientCompany.replace(/\s*(incorporadora|construtora|empreendimentos|engenharia)\s*/gi, "").trim()}`
+    : clientName
+      ? `Ola, ${clientName}`
+      : "Bem-vindo";
   return (
     <div
       className="relative overflow-hidden px-8 py-10"
@@ -34,7 +42,7 @@ export function PortalWelcomeBanner({
           className="mt-3 text-3xl font-light tracking-tight text-white md:text-4xl"
           style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
         >
-          {clientName ? `Ola, ${clientName}` : "Bem-vindo"}
+          {greeting}
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
           Acompanhe o progresso de{" "}

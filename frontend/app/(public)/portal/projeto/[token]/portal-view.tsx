@@ -280,6 +280,7 @@ export function ProjectPortalView({
           {/* Welcome Banner */}
           <PortalWelcomeBanner
             clientName={project.client}
+            clientCompany={project.client_company}
             projectName={project.name}
           />
 
