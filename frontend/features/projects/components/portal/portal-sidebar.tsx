@@ -34,10 +34,10 @@ interface PortalSidebarProps {
 
 const MAIN_ITEMS: SidebarItem[] = [
   { key: "home", label: "Home", icon: IconHome },
+  { key: "about", label: "Sobre", icon: IconInfoCircle },
   { key: "tasks", label: "Tarefas", icon: IconListDetails },
   { key: "analytics", label: "Metricas", icon: IconChartBar },
   { key: "documents", label: "Documentos", icon: IconFolder },
-  { key: "about", label: "Sobre", icon: IconInfoCircle },
 ];
 
 function getDocIcon(type: string) {
