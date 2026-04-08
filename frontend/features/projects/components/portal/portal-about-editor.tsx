@@ -106,6 +106,7 @@ export function PortalAboutEditor({
   const [guideUrl, setGuideUrl] = useState("");
   const [briefingUrl, setBriefingUrl] = useState("");
   const [driveUrl, setDriveUrl] = useState("");
+  const [miroUrl, setMiroUrl] = useState("");
 
   // ── Reset on open ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -132,6 +133,7 @@ export function PortalAboutEditor({
     setGuideUrl(data.guide_url ?? "");
     setBriefingUrl(data.briefing_url ?? "");
     setDriveUrl(data.drive_url ?? "");
+    setMiroUrl(data.miro_url ?? "");
   }, [open, data]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
@@ -156,6 +158,7 @@ export function PortalAboutEditor({
     if (guideUrl) result.guide_url = guideUrl;
     if (briefingUrl) result.briefing_url = briefingUrl;
     if (driveUrl) result.drive_url = driveUrl;
+    if (miroUrl) result.miro_url = miroUrl;
 
     const dev: ProjectPortalAbout["developer"] = {};
     if (devDescription) dev.description = devDescription;
@@ -489,6 +492,14 @@ export function PortalAboutEditor({
                   value={driveUrl}
                   onChange={(e) => setDriveUrl(e.target.value)}
                   placeholder="https://drive.google.com/drive/folders/..."
+                />
+              </div>
+              <div>
+                <Label>Miro</Label>
+                <Input
+                  value={miroUrl}
+                  onChange={(e) => setMiroUrl(e.target.value)}
+                  placeholder="https://miro.com/app/board/..."
                 />
               </div>
             </div>

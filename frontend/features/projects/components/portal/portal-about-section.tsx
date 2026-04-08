@@ -17,6 +17,7 @@ import {
   IconBook,
   IconForms,
   IconBrandGoogleDrive,
+  IconLayoutBoard,
   IconArrowRight,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export interface ProjectPortalAbout {
   guide_url?: string;
   briefing_url?: string;
   drive_url?: string;
+  miro_url?: string;
 }
 
 interface PortalAboutSectionProps {
@@ -360,7 +362,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       )}
 
       {/* Links do Projeto */}
-      {(data.onboarding_url || data.guide_url || data.briefing_url || data.drive_url) && (
+      {(data.onboarding_url || data.guide_url || data.briefing_url || data.drive_url || data.miro_url) && (
         <div>
           <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Links do Projeto" />
           <div className="grid gap-px sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
@@ -441,6 +443,27 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Google Drive</p>
                   <p className="text-[10px]" style={{ color: "#8a8580" }}>Pasta de arquivos</p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            )}
+            {data.miro_url && (
+              <a
+                href={data.miro_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconLayoutBoard className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Miro</p>
+                  <p className="text-[10px]" style={{ color: "#8a8580" }}>Direcao criativa e retornos</p>
                 </div>
                 <IconArrowRight
                   className="h-3 w-3 transition-transform group-hover:translate-x-1"

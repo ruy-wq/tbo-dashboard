@@ -24,6 +24,7 @@ import {
   IconBook,
   IconForms,
   IconBrandGoogleDrive,
+  IconLayoutBoard,
   IconArrowRight,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
@@ -187,29 +188,33 @@ export function ProjectPortalView({
 
   // Project links from portal_about
   const aboutData = (project.portal_about ?? {}) as ProjectPortalAbout;
-  const hasProjectLinks = !!(aboutData.onboarding_url || aboutData.guide_url || aboutData.briefing_url || aboutData.drive_url);
+  const hasProjectLinks = !!(aboutData.onboarding_url || aboutData.guide_url || aboutData.briefing_url || aboutData.drive_url || aboutData.miro_url);
 
   const hasPendingTasks = tasks.some((t) => !t.is_completed);
 
-  // Build stepper phases
+  // Build stepper phases — sequential: completed → first incomplete = in_progress → rest = pending
   const phases = useMemo<TrackPhase[]>(() => {
     if (sections.length === 0) {
       return [
-        { key: "briefing", label: "Briefing", status: "completed" },
-        { key: "creation", label: "Criacao", status: "completed" },
-        { key: "execution", label: "Execucao", status: "completed" },
-        { key: "delivery", label: "Entrega", status: hasPendingTasks ? "in_progress" : "completed" },
+        { key: "briefing", label: "Briefing", status: hasPendingTasks ? "in_progress" : "completed" },
+        { key: "creation", label: "Criacao", status: "pending" },
+        { key: "execution", label: "Execucao", status: "pending" },
+        { key: "delivery", label: "Entrega", status: "pending" },
       ];
     }
+    let foundFirstIncomplete = false;
     return sections.map((s) => {
       const sectionTasks = tasks.filter((t) => t.section_id === s.id);
       const allDone = sectionTasks.length > 0 && sectionTasks.every((t) => t.is_completed);
-      const someActive = sectionTasks.some((t) => !t.is_completed);
-      return {
-        key: s.id,
-        label: s.title,
-        status: allDone ? "completed" : someActive ? "in_progress" : "pending",
-      } satisfies TrackPhase;
+      const label = s.title.replace(/^\d+\s*[-—]\s*/, "");
+      if (allDone) {
+        return { key: s.id, label, status: "completed" as const };
+      }
+      if (!foundFirstIncomplete) {
+        foundFirstIncomplete = true;
+        return { key: s.id, label, status: "in_progress" as const };
+      }
+      return { key: s.id, label, status: "pending" as const };
     });
   }, [sections, tasks, hasPendingTasks]);
 
@@ -367,6 +372,15 @@ export function ProjectPortalView({
                     label="Google Drive"
                     description="Pasta de arquivos do projeto"
                     icon={IconBrandGoogleDrive}
+                  />
+                )}
+                {aboutData.miro_url && (
+                  <LinkCard
+                    href={aboutData.miro_url}
+                    number={String(++linkNum).padStart(2, "0")}
+                    label="Miro"
+                    description="Direcao criativa e retornos visuais"
+                    icon={IconLayoutBoard}
                   />
                 )}
               </div>

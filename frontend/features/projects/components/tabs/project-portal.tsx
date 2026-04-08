@@ -90,6 +90,23 @@ function usePortalTasks(projectId: string) {
   });
 }
 
+function usePortalSections(projectId: string) {
+  return useQuery({
+    queryKey: ["portal-sections", projectId],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("os_sections" as never)
+        .select("id, title, order_index")
+        .eq("project_id", projectId)
+        .order("order_index", { ascending: true });
+      return (data ?? []) as { id: string; title: string; order_index: number }[];
+    },
+    staleTime: 60_000,
+    enabled: !!projectId,
+  });
+}
+
 function usePortalProjectFiles(projectId: string) {
   return useQuery({
     queryKey: ["portal-project-files", projectId],
@@ -184,6 +201,7 @@ export function ProjectPortal({
 
   const { data: tasks = [], isLoading: tasksLoading } = usePortalTasks(projectId);
   const { data: projectFiles = [], isLoading: filesLoading } = usePortalProjectFiles(projectId);
+  const { data: portalSections = [] } = usePortalSections(projectId);
   const { data: clientInfo } = useProjectClient(projectId);
   const { data: deliveryToken } = useDeliveryToken(projectId);
   const { data: deliveryPreview } = useDeliveryPreview(projectId);
@@ -210,14 +228,32 @@ export function ProjectPortal({
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const isDelivered = progressPercent === 100;
 
-  // Stepper phases
+  // Stepper phases — derive from actual sections + task completion
   const hasPendingTasks = tasks.some((t) => !t.is_completed);
-  const phases = useMemo<TrackPhase[]>(() => [
-    { key: "briefing", label: "Briefing", status: "completed" },
-    { key: "creation", label: "Criacao", status: "completed" },
-    { key: "execution", label: "Execucao", status: "completed" },
-    { key: "delivery", label: "Entrega", status: hasPendingTasks ? "in_progress" : "completed" },
-  ], [hasPendingTasks]);
+  const phases = useMemo<TrackPhase[]>(() => {
+    if (portalSections.length === 0) {
+      // Fallback when no sections exist
+      return [
+        { key: "briefing", label: "Briefing", status: hasPendingTasks ? "in_progress" : "completed" },
+        { key: "creation", label: "Criacao", status: "pending" },
+        { key: "execution", label: "Execucao", status: "pending" },
+        { key: "delivery", label: "Entrega", status: "pending" },
+      ];
+    }
+    let foundFirstIncomplete = false;
+    return portalSections.map((s) => {
+      const sectionTasks = tasks.filter((t) => t.section_id === s.id);
+      const allDone = sectionTasks.length > 0 && sectionTasks.every((t) => t.is_completed);
+      if (allDone) {
+        return { key: s.id, label: s.title.replace(/^\d+\s*[-—]\s*/, ""), status: "completed" as const };
+      }
+      if (!foundFirstIncomplete) {
+        foundFirstIncomplete = true;
+        return { key: s.id, label: s.title.replace(/^\d+\s*[-—]\s*/, ""), status: "in_progress" as const };
+      }
+      return { key: s.id, label: s.title.replace(/^\d+\s*[-—]\s*/, ""), status: "pending" as const };
+    });
+  }, [portalSections, tasks, hasPendingTasks]);
 
   const healthLabel = !hasPendingTasks ? "Entregue" : progressPercent >= 90 ? "Em entrega" : progressPercent >= 75 ? "No prazo" : "Em risco";
   const healthColor = !hasPendingTasks ? "#22c55e" : progressPercent >= 90 ? "#3b82f6" : progressPercent >= 75 ? "#22c55e" : "#f59e0b";
@@ -232,22 +268,17 @@ export function ProjectPortal({
     [projectFiles]
   );
 
-  // Sorted tasks
-  const sortedTasks = useMemo(
-    () => [...tasks].sort((a, b) => {
-      // Incomplete first, then by most recently completed (due_date desc as proxy)
-      if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
-      // Both completed: most recently completed first
-      if (a.is_completed && b.is_completed) {
-        const da = a.completed_at ?? a.due_date ?? "";
-        const db = b.completed_at ?? b.due_date ?? "";
-        return db.localeCompare(da);
-      }
-      const priorities = ["urgente", "alta", "media", "baixa"];
-      return priorities.indexOf(a.priority ?? "baixa") - priorities.indexOf(b.priority ?? "baixa");
-    }),
-    [tasks]
-  );
+  // Sorted tasks — respect section order, then task order within section
+  const sortedTasks = useMemo(() => {
+    const sectionOrder = new Map(portalSections.map((s, i) => [s.id, i]));
+    return [...tasks].sort((a, b) => {
+      const sa = sectionOrder.get(a.section_id ?? "") ?? 999;
+      const sb = sectionOrder.get(b.section_id ?? "") ?? 999;
+      if (sa !== sb) return sa - sb;
+      // Within same section, keep original order_index (from query)
+      return 0;
+    });
+  }, [tasks, portalSections]);
 
   // Token management
   function handleGenerateToken() {
@@ -349,6 +380,7 @@ export function ProjectPortal({
               <div className="space-y-6">
               <PortalWelcomeBanner
                 clientName={clientName}
+                clientCompany={clientCompany}
                 projectName={projectName ?? "Projeto"}
               />
 
