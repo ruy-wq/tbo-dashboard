@@ -22,7 +22,7 @@ export function PortalWelcomeBanner({
       : "Bem-vindo";
   return (
     <div
-      className="relative overflow-hidden px-8 py-10"
+      className="relative overflow-hidden rounded-lg px-8 py-10"
       style={{ backgroundColor: "#1a1a1a" }}
     >
       {/* Accent line */}

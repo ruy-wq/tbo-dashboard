@@ -109,7 +109,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
   if (isEmpty) {
     return (
       <div
-        className="p-12 text-center"
+        className="rounded-lg p-12 text-center"
         style={{
           border: "1px dashed #d9d4cd",
           fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
@@ -123,7 +123,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
           Preencha os dados do empreendimento para que o cliente veja as informacoes na aba Sobre do portal.
         </p>
         {onEdit && (
-          <Button onClick={onEdit} style={{ backgroundColor: "#c45a1a", borderRadius: 0 }}>
+          <Button onClick={onEdit} className="rounded-lg" style={{ backgroundColor: "#c45a1a" }}>
             <IconPencil size={16} className="mr-1.5" />
             Preencher informacoes
           </Button>
@@ -147,7 +147,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             variant="outline"
             size="sm"
             onClick={onEdit}
-            style={{ borderRadius: 0, borderColor: "#d9d4cd" }}
+            style={{ borderColor: "#d9d4cd" }}
           >
             <IconPencil size={14} className="mr-1.5" />
             Editar
@@ -156,13 +156,13 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       )}
 
       {/* Project Hero */}
-      <div className="p-8" style={{ backgroundColor: "#1a1a1a" }}>
+      <div className="rounded-lg p-8" style={{ backgroundColor: "#1a1a1a" }}>
         {/* Client logo + category row */}
         <div className="flex items-center justify-between mb-4">
           <div>
             {data.category && (
               <span
-                className="inline-block px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em]"
+                className="inline-block rounded-md px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em]"
                 style={{ backgroundColor: "#c45a1a", color: "#fff" }}
               >
                 {data.category}
@@ -193,7 +193,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       {(data.address || data.nearby_places?.length) && (
         <div>
           <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Localizacao" />
-          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
+          <div className="rounded-lg p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
             {data.address && (
               <div className="flex items-start gap-3">
                 <IconMapPin className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#c45a1a" }} />
@@ -203,7 +203,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             {data.walk_score != null && (
               <div className="flex items-center gap-2 mt-3 ml-7">
                 <span
-                  className="inline-block px-2 py-0.5 text-[10px] font-medium"
+                  className="inline-block rounded-md px-2 py-0.5 text-[10px] font-medium"
                   style={{ backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
                 >
                   Walk Score: {data.walk_score}
@@ -218,7 +218,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
                 {data.nearby_places.map((item) => (
                   <div
                     key={item}
-                    className="px-3 py-2 text-xs"
+                    className="rounded-md px-3 py-2 text-xs"
                     style={{ backgroundColor: "#faf8f5", color: "#6b6560" }}
                   >
                     {item}
@@ -234,7 +234,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       {data.typologies && data.typologies.length > 0 && (
         <div>
           <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Tipologias" />
-          <div className="grid grid-cols-2 gap-px md:grid-cols-3" style={{ backgroundColor: "#d9d4cd" }}>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg md:grid-cols-3" style={{ backgroundColor: "#d9d4cd" }}>
             {data.typologies.map((t, i) => (
               <div key={i} className="p-4 text-center" style={{ backgroundColor: "#fff" }}>
                 <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "#8a8580" }}>
@@ -255,7 +255,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             {data.common_areas.map((area) => (
               <span
                 key={area}
-                className="px-3 py-1.5 text-xs"
+                className="rounded-md px-3 py-1.5 text-xs"
                 style={{ backgroundColor: "#ebe7e1", color: "#4a4540" }}
               >
                 {area}
@@ -273,7 +273,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             {data.differentials.map((diff) => (
               <li key={diff} className="flex items-start gap-3 text-sm" style={{ color: "#4a4540" }}>
                 <div
-                  className="mt-2 h-1.5 w-1.5 flex-shrink-0"
+                  className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full"
                   style={{ backgroundColor: "#c45a1a" }}
                 />
                 {diff}
@@ -290,13 +290,13 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             number={String(++sectionNum).padStart(2, "0")}
             title={clientCompany ? `Sobre a ${clientCompany}` : "Sobre a Incorporadora"}
           />
-          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
+          <div className="rounded-lg p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
             <p className="text-sm leading-relaxed" style={{ color: "#6b6560" }}>
               {data.developer.description}
             </p>
 
             {data.developer.stats && data.developer.stats.length > 0 && (
-              <div className="grid grid-cols-2 gap-px mt-5" style={{ backgroundColor: "#d9d4cd" }}>
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg mt-5" style={{ backgroundColor: "#d9d4cd" }}>
                 {data.developer.stats.map((s, i) => (
                   <div key={i} className="p-4" style={{ backgroundColor: "#faf8f5" }}>
                     <p className="text-xl font-light" style={{ color: "#1a1a1a" }}>{s.value}</p>
@@ -351,7 +351,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
                   {data.developer.other_projects.map((emp) => (
                     <span
                       key={emp}
-                      className="px-3 py-1 text-xs"
+                      className="rounded-md px-3 py-1 text-xs"
                       style={{ border: "1px solid #d9d4cd", color: "#6b6560" }}
                     >
                       {emp}
@@ -368,7 +368,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       {data.delivery_year && (
         <div>
           <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Previsao de Entrega" />
-          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
+          <div className="rounded-lg p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
             <p className="text-2xl font-light" style={{ color: "#1a1a1a" }}>{data.delivery_year}</p>
             {data.delivery_description && (
               <p className="mt-1 text-xs" style={{ color: "#8a8580" }}>{data.delivery_description}</p>
@@ -381,7 +381,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
       {(data.onboarding_url || data.guide_url || data.briefing_url || data.drive_url || data.miro_url) && (
         <div>
           <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Links do Projeto" />
-          <div className="grid gap-px sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
+          <div className="grid gap-px overflow-hidden rounded-lg sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
             {data.onboarding_url && (
               <a
                 href={data.onboarding_url}
@@ -498,7 +498,7 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             number={String(++sectionNum).padStart(2, "0")}
             title={`${clientCompany ?? "Incorporadora"} na Midia`}
           />
-          <div className="space-y-px" style={{ backgroundColor: "#d9d4cd" }}>
+          <div className="space-y-px overflow-hidden rounded-lg" style={{ backgroundColor: "#d9d4cd" }}>
             {data.media_coverage.map((item, i) => (
               <a
                 key={i}

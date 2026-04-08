@@ -122,7 +122,7 @@ function LinkCard({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex items-start gap-4 p-5 transition-all"
+      className="group flex items-start gap-4 rounded-lg p-5 transition-all"
       style={{
         backgroundColor: "#fff",
         border: "1px solid #d9d4cd",
@@ -324,7 +324,7 @@ export function ProjectPortalView({
               href={`/entrega/${deliverySlug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-4 p-5 transition-all"
+              className="group flex items-center gap-4 rounded-lg p-5 transition-all"
               style={{
                 backgroundColor: "#1a1a1a",
                 border: "1px solid #333",
@@ -337,7 +337,7 @@ export function ProjectPortalView({
               }}
             >
               <div
-                className="flex h-10 w-10 items-center justify-center"
+                className="flex h-10 w-10 items-center justify-center rounded-lg"
                 style={{ backgroundColor: "#c45a1a" }}
               >
                 <IconPackage className="h-5 w-5 text-white" />
@@ -366,7 +366,7 @@ export function ProjectPortalView({
                 </span>
                 <div className="flex-1 h-px" style={{ backgroundColor: "#d9d4cd" }} />
               </div>
-              <div className="grid gap-px sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
+              <div className="grid gap-3 sm:grid-cols-2">
                 {aboutData.onboarding_url && (
                   <LinkCard
                     href={aboutData.onboarding_url}
@@ -432,7 +432,7 @@ export function ProjectPortalView({
               />
 
               {/* Tasks */}
-              <div style={{ border: "1px solid #d9d4cd", backgroundColor: "#fff" }}>
+              <div className="overflow-hidden rounded-lg" style={{ border: "1px solid #d9d4cd", backgroundColor: "#fff" }}>
                 <div
                   className="flex items-center justify-between px-5 py-3"
                   style={{ borderBottom: "1px solid #d9d4cd" }}
@@ -496,7 +496,7 @@ export function ProjectPortalView({
                     >
                       {/* Status */}
                       <div
-                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded"
                         style={{
                           border: task.is_completed
                             ? "none"
