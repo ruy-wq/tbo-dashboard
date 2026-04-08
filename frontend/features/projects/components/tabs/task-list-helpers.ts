@@ -112,6 +112,15 @@ export function groupTasks(
   const groups = new Map<string, TaskRow[]>();
   const order: string[] = [];
 
+  // When grouping by section, pre-seed groups in section order so empty sections appear
+  // and the order respects order_index from the database
+  if (groupBy === "section" && sections && sections.length > 0) {
+    for (const sec of sections) {
+      groups.set(sec.id, []);
+      order.push(sec.id);
+    }
+  }
+
   for (const t of tasks) {
     let key: string;
     switch (groupBy) {

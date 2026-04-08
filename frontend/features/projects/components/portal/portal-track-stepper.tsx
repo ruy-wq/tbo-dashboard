@@ -61,29 +61,6 @@ export function PortalTrackStepper({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Progresso</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              style={{
-                borderColor: healthColor,
-                color: healthColor,
-                backgroundColor: healthBg,
-              }}
-            >
-              {healthLabel}
-            </Badge>
-            {countdown && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-xs",
-                  countdown.overdue && "border-red-400 bg-red-50 text-red-600",
-                )}
-              >
-                {countdown.label}
-              </Badge>
-            )}
-          </div>
         </div>
       </CardHeader>
       <CardContent>
