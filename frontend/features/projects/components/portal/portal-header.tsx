@@ -1,14 +1,5 @@
 "use client";
 
-import {
-  IconBell,
-  IconFile,
-  IconNotes,
-  IconInfoCircle,
-  IconReceipt,
-} from "@tabler/icons-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface PortalHeaderProps {
@@ -24,30 +15,14 @@ interface PortalHeaderProps {
 
 const NAV_ITEMS = [
   { key: "home", label: "Home" },
-  { key: "invoices", label: "Faturas" },
-  { key: "meetings", label: "Reunioes" },
-  { key: "about", label: "Sobre" },
 ];
 
 export function PortalHeader({
   projectName,
-  clientName,
   clientCompany,
-  logoUrl,
-  accentColor = "#c45a1a",
-  pendingApprovals = 0,
   onNavChange,
   activeNav = "home",
 }: PortalHeaderProps) {
-  const initials = clientName
-    ? clientName
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "CL";
-
   return (
     <header
       className="sticky top-0 z-40"
@@ -99,26 +74,8 @@ export function PortalHeader({
           ))}
         </nav>
 
-        {/* Right: Notifications + Avatar */}
-        <div className="flex items-center gap-3">
-          <button className="relative p-2 text-zinc-500 transition-colors hover:text-zinc-300">
-            <IconBell className="h-4 w-4" />
-            {pendingApprovals > 0 && (
-              <span
-                className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center text-[9px] font-bold text-white"
-                style={{ backgroundColor: "#c45a1a", borderRadius: 0 }}
-              >
-                {pendingApprovals}
-              </span>
-            )}
-          </button>
-          <div
-            className="flex h-7 w-7 items-center justify-center text-[10px] font-medium text-zinc-400"
-            style={{ border: "1px solid #333" }}
-          >
-            {initials}
-          </div>
-        </div>
+        {/* Right: spacer to keep layout balanced */}
+        <div className="w-20" />
       </div>
     </header>
   );

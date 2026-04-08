@@ -6,6 +6,7 @@ import {
   IconListDetails,
   IconChartBar,
   IconFolder,
+  IconInfoCircle,
   IconChevronLeft,
   IconChevronDown,
   IconChevronRight,
@@ -36,6 +37,7 @@ const MAIN_ITEMS: SidebarItem[] = [
   { key: "tasks", label: "Tarefas", icon: IconListDetails },
   { key: "analytics", label: "Metricas", icon: IconChartBar },
   { key: "documents", label: "Documentos", icon: IconFolder },
+  { key: "about", label: "Sobre", icon: IconInfoCircle },
 ];
 
 function getDocIcon(type: string) {
