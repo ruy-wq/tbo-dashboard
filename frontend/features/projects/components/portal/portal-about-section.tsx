@@ -19,6 +19,7 @@ import {
   IconBrandGoogleDrive,
   IconLayoutBoard,
   IconArrowRight,
+  IconNews,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
@@ -51,6 +52,8 @@ export interface ProjectPortalAbout {
   briefing_url?: string;
   drive_url?: string;
   miro_url?: string;
+  logo_url?: string;
+  media_coverage?: { source: string; title: string; url: string }[];
 }
 
 interface PortalAboutSectionProps {
@@ -154,14 +157,27 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
 
       {/* Project Hero */}
       <div className="p-8" style={{ backgroundColor: "#1a1a1a" }}>
-        {data.category && (
-          <span
-            className="inline-block px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em] mb-4"
-            style={{ backgroundColor: "#c45a1a", color: "#fff" }}
-          >
-            {data.category}
-          </span>
-        )}
+        {/* Client logo + category row */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            {data.category && (
+              <span
+                className="inline-block px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em]"
+                style={{ backgroundColor: "#c45a1a", color: "#fff" }}
+              >
+                {data.category}
+              </span>
+            )}
+          </div>
+          {data.logo_url && (
+            <img
+              src={data.logo_url}
+              alt={clientCompany ?? "Logo"}
+              className="h-10 object-contain"
+              style={{ filter: "brightness(0) invert(1)", opacity: 0.7 }}
+            />
+          )}
+        </div>
         <h2 className="text-3xl font-light tracking-tight text-white">{projectName}</h2>
         {data.tagline && (
           <p className="mt-2 text-base text-zinc-400">{data.tagline}</p>
@@ -471,6 +487,44 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
                 />
               </a>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Media Coverage */}
+      {data.media_coverage && data.media_coverage.length > 0 && (
+        <div>
+          <SectionHeader
+            number={String(++sectionNum).padStart(2, "0")}
+            title={`${clientCompany ?? "Incorporadora"} na Midia`}
+          />
+          <div className="space-y-px" style={{ backgroundColor: "#d9d4cd" }}>
+            {data.media_coverage.map((item, i) => (
+              <a
+                key={i}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-start gap-4 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconNews className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>
+                    {item.title}
+                  </p>
+                  <p className="text-[10px] mt-0.5 uppercase tracking-wider" style={{ color: "#8a8580" }}>
+                    {item.source}
+                  </p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 flex-shrink-0 mt-1 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            ))}
           </div>
         </div>
       )}

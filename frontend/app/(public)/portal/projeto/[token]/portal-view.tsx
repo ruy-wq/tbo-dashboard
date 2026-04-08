@@ -179,8 +179,8 @@ export function ProjectPortalView({
   pendingApprovals,
 }: ProjectPortalViewProps) {
   const [activeTab, setActiveTab] = useState<PortalTabId>("tasks");
-  const [activeNav, setActiveNav] = useState("home");
-  const [sidebarItem, setSidebarItem] = useState("home");
+  const [activeNav, setActiveNav] = useState("about");
+  const [sidebarItem, setSidebarItem] = useState("about");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Sync sidebar → content
@@ -286,6 +286,7 @@ export function ProjectPortalView({
           projectName={project.name}
           clientName={project.client}
           clientCompany={project.client_company}
+          logoUrl={aboutData.logo_url}
           pendingApprovals={pendingApprovals}
           onNavChange={handleNavChange}
           activeNav={activeNav}

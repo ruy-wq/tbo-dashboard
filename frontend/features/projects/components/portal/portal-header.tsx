@@ -13,6 +13,8 @@ interface PortalHeaderProps {
   activeNav?: string;
 }
 
+/* eslint-disable @next/next/no-img-element */
+
 const NAV_ITEMS = [
   { key: "home", label: "Home" },
 ];
@@ -20,6 +22,7 @@ const NAV_ITEMS = [
 export function PortalHeader({
   projectName,
   clientCompany,
+  logoUrl,
   onNavChange,
   activeNav = "home",
 }: PortalHeaderProps) {
@@ -46,9 +49,18 @@ export function PortalHeader({
               Portal
             </span>
           </div>
-          <span className="text-sm font-medium text-white">
-            {clientCompany ?? projectName}
-          </span>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={clientCompany ?? projectName}
+              className="h-6 object-contain"
+              style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }}
+            />
+          ) : (
+            <span className="text-sm font-medium text-white">
+              {clientCompany ?? projectName}
+            </span>
+          )}
         </div>
 
         {/* Center: Nav */}

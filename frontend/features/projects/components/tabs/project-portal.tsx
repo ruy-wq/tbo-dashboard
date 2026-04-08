@@ -194,8 +194,8 @@ export function ProjectPortal({
   const tenantId = useAuthStore((s) => s.tenantId);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<PortalTabId>("tasks");
-  const [activeNav, setActiveNav] = useState("home");
-  const [sidebarItem, setSidebarItem] = useState("home");
+  const [activeNav, setActiveNav] = useState("about");
+  const [sidebarItem, setSidebarItem] = useState("about");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aboutEditorOpen, setAboutEditorOpen] = useState(false);
 
@@ -389,6 +389,7 @@ export function ProjectPortal({
               projectName={projectName ?? "Projeto"}
               clientName={clientName}
               clientCompany={clientCompany}
+              logoUrl={portalAbout.logo_url}
               onNavChange={handleNavChange}
               activeNav={activeNav}
             />
