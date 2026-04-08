@@ -6,6 +6,7 @@ import {
   IconCalendar,
   IconCalendarStats,
   IconLock,
+  IconDownload,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,29 +111,41 @@ export function ReportView({
           </div>
         </div>
 
-        <div className="flex items-center rounded-lg border overflow-hidden">
-          <button
-            onClick={() => setPeriod("30d")}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
-              period === "30d"
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="print:hidden"
+            onClick={() => window.print()}
           >
-            <IconCalendar className="size-4" />
-            30 dias
-          </button>
-          <button
-            onClick={() => setPeriod("6m")}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-l ${
-              period === "6m"
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <IconCalendarStats className="size-4" />
-            Semestral
-          </button>
+            <IconDownload className="size-4 mr-1.5" />
+            Baixar PDF
+          </Button>
+
+          <div className="flex items-center rounded-lg border overflow-hidden print:hidden">
+            <button
+              onClick={() => setPeriod("30d")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                period === "30d"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <IconCalendar className="size-4" />
+              30 dias
+            </button>
+            <button
+              onClick={() => setPeriod("6m")}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors border-l ${
+                period === "6m"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <IconCalendarStats className="size-4" />
+              Semestral
+            </button>
+          </div>
         </div>
       </div>
 
