@@ -5,66 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Onboarding — Felipe Schmidt | TBO + Halsten</title>
 <style>
-  /* ══════════════════════════════════════════════
-     TBO Website Design System — Light Mode
-     Source: wearetbo.com.br/pt/servicos/digital-3d
-     ══════════════════════════════════════════════ */
   :root {
     --bg: #f0ede9;
-    --mid: #e8e4df;
-    --surface: #e2dfd9;
     --white: #0f0f0f;
-    --off: #202020;
     --muted: #4a4a4a;
     --orange: #c45a1a;
     --orange-hover: #aa4d17;
-    --orange-light: #d97a45;
-    --orange-muted: #9e835f;
     --orange-glow: rgba(196, 90, 26, 0.1);
     --border: rgba(15, 15, 15, 0.08);
     --border-strong: rgba(15, 15, 15, 0.15);
-    --text-ghost: rgba(15, 15, 15, 0.1);
-    --pure-white: #ffffff;
     --font: "Helvetica Neue", HelveticaNeue, Helvetica, Arial, sans-serif;
     --ease: cubic-bezier(.16, 1, .3, 1);
-    --space-xs: 8px;
-    --space-sm: 16px;
-    --space-md: 24px;
-    --space-lg: 48px;
-    --space-xl: 96px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html {
-    scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
-    overflow-x: hidden;
-  }
+  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; overflow-x: hidden; }
 
   body {
     background: var(--bg);
     color: var(--white);
     font-family: var(--font);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
     line-height: 1.6;
   }
 
-  ::selection {
-    background: var(--orange);
-    color: var(--bg);
-  }
+  ::selection { background: var(--orange); color: var(--bg); }
 
-  /* ── Slide system ── */
+  /* ── Slides ── */
   .slide {
     min-height: 100vh;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--space-xl) 80px;
+    padding: 80px 80px;
     position: relative;
   }
 
@@ -76,30 +51,16 @@
     transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
   }
 
-  .slide-inner.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .slide-inner.visible { opacity: 1; transform: translateY(0); }
 
-  /* ── Section divider (dark) ── */
-  .slide--dark {
-    background: #1a1a1a;
-    color: var(--mid);
-  }
+  .slide--dark { background: #1a1a1a; color: #e8e4df; }
+  .slide--dark h1, .slide--dark h2 { color: #e8e4df; }
+  .slide--dark p { color: #a0a0a0; }
 
-  .slide--dark h1, .slide--dark h2, .slide--dark h4, .slide--dark strong {
-    color: var(--mid);
-  }
-
-  .slide--dark .section-label span { color: var(--mid); }
-  .slide--dark .section-label::before { background: var(--mid); }
-
-  /* ── Navigation ── */
+  /* ── Nav ── */
   .nav-fixed {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     z-index: 100;
     padding: 20px 40px;
     display: flex;
@@ -109,617 +70,167 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-    transition: transform 0.4s var(--ease);
+    transition: all 0.4s var(--ease);
   }
 
-  .nav-logo {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--white);
-  }
-
+  .nav-logo { font-size: 18px; font-weight: 700; letter-spacing: -0.03em; }
   .nav-logo span { color: var(--orange); }
-
-  .nav-counter {
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
+  .nav-counter { font-size: 12px; letter-spacing: 2px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   .nav-dots {
-    position: fixed;
-    right: 32px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 100;
+    position: fixed; right: 32px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 100;
   }
 
   .nav-dot {
-    width: 6px;
-    height: 6px;
-    border: 1px solid var(--border-strong);
-    background: transparent;
-    cursor: pointer;
+    width: 6px; height: 6px; border: 1px solid var(--border-strong);
+    background: transparent; cursor: pointer; padding: 0;
     transition: all 0.4s var(--ease);
-    padding: 0;
-    display: block;
   }
 
   .nav-dot:hover { border-color: var(--orange); }
+  .nav-dot.active { background: var(--orange); border-color: var(--orange); transform: scale(1.5); }
 
-  .nav-dot.active {
-    background: var(--orange);
-    border-color: var(--orange);
-    transform: scale(1.5);
-  }
-
-  /* ── Section label (01 ── LABEL) ── */
-  .section-label {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
+  /* ── Section label ── */
+  .section-label { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
 
   .section-label .num {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--orange);
+    font-size: 13px; font-weight: 500; color: var(--orange);
     border: 1px solid var(--border-strong);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
 
-  .section-label::before {
-    content: '';
-    width: 32px;
-    height: 1px;
-    background: var(--white);
-    display: none;
-  }
-
-  .section-label span {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--white);
+  .section-label span:not(.num) {
+    font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
   }
 
   /* ── Typography ── */
-  h1 {
-    font-size: 52px;
-    font-weight: 400;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-  }
-
-  h2 {
-    font-size: 38px;
-    font-weight: 400;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    margin-bottom: 32px;
-  }
-
-  h4 {
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-  }
-
-  p, .body-text {
-    font-size: 16px;
-    line-height: 1.7;
-    color: var(--muted);
-    max-width: 560px;
-  }
-
+  h1 { font-size: 52px; font-weight: 400; line-height: 1.1; letter-spacing: -0.03em; }
+  h2 { font-size: 36px; font-weight: 400; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 24px; }
+  h4 { font-size: 16px; font-weight: 500; }
+  p { font-size: 16px; line-height: 1.7; color: var(--muted); max-width: 560px; }
   .accent { color: var(--orange); }
 
-  /* ── Tags / Pills ── */
   .tag {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    border: 1px solid var(--border-strong);
-    padding: 6px 16px;
-    color: var(--muted);
-    transition: all 0.3s var(--ease);
+    display: inline-block; font-size: 12px; font-weight: 500; letter-spacing: 0.5px;
+    border: 1px solid var(--border-strong); padding: 5px 14px; color: var(--muted);
   }
 
-  .tag:hover {
-    border-color: var(--orange);
-    color: var(--orange);
+  /* ── Layouts ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  /* ── Info rows (compact) ── */
+  .info-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 24px;
+    padding: 14px 0; border-bottom: 1px solid var(--border); align-items: start;
   }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { font-size: 13px; font-weight: 600; }
+  .info-value { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: none; }
+  .info-value a { color: var(--orange); text-decoration: none; }
+  .info-value a:hover { border-bottom: 1px solid var(--orange); }
 
-  /* ── Grid layouts ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
-
-  .split {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
-    align-items: start;
-  }
-
-  /* ── Cards ── */
-  .card {
-    border: 1px solid var(--border);
-    padding: 32px;
-    background: transparent;
-    transition: all 0.5s var(--ease);
-  }
-
-  .card:hover {
-    border-color: var(--border-strong);
-    background: rgba(255, 255, 255, 0.3);
-  }
-
-  .card h4 { margin-bottom: 8px; }
-
-  .card p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--muted);
-    max-width: none;
-  }
-
-  /* ── Team cards ── */
-  .team-card {
-    border: 1px solid var(--border);
-    padding: 36px 28px;
-    text-align: center;
-    transition: all 0.5s var(--ease);
-  }
-
-  .team-card:hover {
-    border-color: var(--border-strong);
-  }
-
-  .team-initials {
-    font-size: 20px;
-    font-weight: 500;
-    color: var(--orange);
-    letter-spacing: 1px;
-    margin-bottom: 20px;
-    position: relative;
-  }
-
-  .team-initials::after {
-    content: '';
-    display: block;
-    width: 24px;
-    height: 1px;
-    background: var(--orange);
-    margin: 12px auto 0;
-  }
-
-  .team-card h4 {
-    font-size: 15px;
-    margin-bottom: 4px;
-  }
-
-  .team-card .role {
-    font-size: 12px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--orange);
-    font-weight: 500;
-    margin-bottom: 12px;
-  }
-
-  .team-card .desc {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  /* ── Process steps ── */
-  .process-flow {
-    display: flex;
-    gap: 0;
-    margin-top: var(--space-lg);
-    position: relative;
-  }
+  /* ── Process flow ── */
+  .process-flow { display: flex; gap: 0; margin-top: 40px; position: relative; }
 
   .process-flow::before {
-    content: '';
-    position: absolute;
-    top: 17px;
-    left: 18px;
-    right: 18px;
-    height: 1px;
-    background: var(--border-strong);
+    content: ''; position: absolute; top: 17px; left: 18px; right: 18px;
+    height: 1px; background: var(--border-strong);
   }
 
-  .process-step {
-    flex: 1;
-    text-align: center;
-    position: relative;
-    padding: 0 8px;
-  }
+  .process-step { flex: 1; text-align: center; position: relative; padding: 0 8px; }
 
   .step-num {
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--border-strong);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    font-size: 13px;
-    font-weight: 500;
-    background: var(--bg);
-    position: relative;
-    z-index: 1;
+    width: 36px; height: 36px; border: 1px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; font-size: 13px; font-weight: 500;
+    background: var(--bg); position: relative; z-index: 1;
     transition: all 0.4s var(--ease);
   }
 
-  .process-step.active .step-num {
-    border-color: var(--orange);
-    background: var(--orange);
-    color: var(--bg);
-  }
-
+  .process-step.active .step-num { border-color: var(--orange); background: var(--orange); color: var(--bg); }
   .process-step h4 { font-size: 13px; margin-bottom: 4px; }
   .process-step p { font-size: 12px; color: var(--muted); max-width: none; }
 
   .step-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    background: var(--orange);
-    color: var(--bg);
-    padding: 4px 12px;
-    margin-top: 12px;
+    display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; background: var(--orange); color: var(--bg); padding: 3px 10px; margin-top: 8px;
   }
 
-  /* ── Scope items ── */
+  /* ── Scope grid ── */
   .scope-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: var(--border-strong);
-    border: 1px solid var(--border-strong);
-    margin-top: 40px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: var(--border-strong); border: 1px solid var(--border-strong); margin-top: 32px;
   }
 
-  .scope-item {
-    background: var(--bg);
-    padding: 36px 32px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-  .scope-number {
-    font-size: 42px;
-    font-weight: 300;
-    letter-spacing: -0.03em;
-    color: var(--orange);
-    min-width: 64px;
-  }
-
-  .scope-label {
-    font-size: 15px;
-    font-weight: 500;
-  }
-
-  .scope-label span {
-    display: block;
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 400;
-    margin-top: 2px;
-  }
+  .scope-item { background: var(--bg); padding: 28px 24px; display: flex; align-items: center; gap: 20px; }
+  .scope-number { font-size: 36px; font-weight: 300; letter-spacing: -0.03em; color: var(--orange); min-width: 56px; }
+  .scope-label { font-size: 14px; font-weight: 500; }
+  .scope-label span { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
 
   /* ── Checklist ── */
-  .checklist {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin-top: 32px;
-    border-top: 1px solid var(--border);
-  }
+  .checklist { list-style: none; border-top: 1px solid var(--border); }
 
   .checklist li {
-    display: flex;
-    align-items: flex-start;
-    gap: 20px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 15px;
-    line-height: 1.5;
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 16px 0; border-bottom: 1px solid var(--border); font-size: 14px;
   }
 
   .check-icon {
-    width: 20px;
-    height: 20px;
-    border: 1px solid var(--border-strong);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 10px;
-    color: var(--orange);
+    width: 18px; height: 18px; border: 1px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px; font-size: 9px; color: var(--orange);
   }
 
-  .check-sub {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
+  .check-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
   /* ── Link cards ── */
   .link-card {
-    border: 1px solid var(--border);
-    padding: 32px;
-    text-decoration: none;
-    color: inherit;
-    display: block;
-    transition: all 0.5s var(--ease);
-    cursor: pointer;
-    background: transparent;
+    border: 1px solid var(--border); padding: 28px;
+    text-decoration: none; color: inherit; display: block;
+    transition: all 0.5s var(--ease); background: transparent;
   }
 
-  .link-card:hover {
-    border-color: var(--orange);
-    background: rgba(255, 255, 255, 0.4);
-  }
-
-  .link-card-icon {
-    font-size: 24px;
-    margin-bottom: 16px;
-    display: block;
-  }
-
-  .link-card h4 {
-    font-size: 15px;
-    margin-bottom: 6px;
-  }
-
-  .link-card p {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.5;
-    max-width: none;
-  }
+  .link-card:hover { border-color: var(--orange); background: rgba(255,255,255,0.4); }
+  .link-card h4 { font-size: 14px; margin-bottom: 4px; }
+  .link-card p { font-size: 13px; color: var(--muted); max-width: none; line-height: 1.5; }
 
   .link-card .arrow {
-    display: inline-block;
-    margin-top: 16px;
-    font-size: 12px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--orange);
-    font-weight: 500;
+    display: inline-block; margin-top: 12px; font-size: 11px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--orange); font-weight: 500;
     transition: transform 0.3s var(--ease);
   }
 
   .link-card:hover .arrow { transform: translateX(4px); }
 
-  .link-done {
-    color: #2d8a4e;
-    text-transform: none;
-    letter-spacing: 0;
-    font-size: 13px;
-  }
-
   /* ── CTA ── */
-  .cta-section {
-    border: 1px solid var(--border-strong);
-    padding: var(--space-xl) var(--space-lg);
-    text-align: center;
-    margin-top: var(--space-lg);
-    position: relative;
-  }
-
-  .cta-section::before {
-    content: '';
-    position: absolute;
-    top: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--orange);
-  }
-
-  .cta-section p {
-    max-width: 480px;
-    margin: 0 auto 32px;
-    text-align: center;
-  }
-
   .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--orange);
-    color: var(--bg);
-    padding: 14px 36px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--orange); color: var(--bg);
+    padding: 14px 36px; font-size: 13px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    text-decoration: none; font-family: var(--font);
     transition: all 0.4s var(--ease);
-    font-family: var(--font);
   }
 
-  .btn-primary:hover {
-    background: var(--orange-hover);
-    transform: translateY(-1px);
-  }
+  .btn-primary:hover { background: var(--orange-hover); transform: translateY(-1px); }
 
-  /* ── Timeline ── */
-  .timeline {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 0;
-    margin-top: var(--space-lg);
-    border-top: 1px solid var(--border-strong);
-  }
-
-  .tl-item {
-    padding: 24px 16px 24px 0;
-    border-right: 1px solid var(--border);
-    position: relative;
-  }
-
-  .tl-item:last-child { border-right: none; }
-
-  .tl-item::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: 0;
-    width: 8px;
-    height: 8px;
-    background: var(--border-strong);
-    transition: all 0.3s var(--ease);
-  }
-
-  .tl-item.active::before {
-    background: var(--orange);
-    box-shadow: 0 0 0 4px var(--orange-glow);
-  }
-
-  .tl-item h4 {
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-
-  .tl-item p {
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.5;
-    max-width: none;
-  }
-
-  .tl-item.active h4 { color: var(--orange); }
-
-  /* ── Stats ── */
-  .stats {
-    display: flex;
-    gap: var(--space-xl);
-    margin: 40px 0 24px;
-  }
-
-  .stat-number {
-    font-size: 48px;
-    font-weight: 300;
-    letter-spacing: -0.03em;
-    color: var(--orange);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 8px;
-  }
-
-  /* ── Next steps ── */
-  .next-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin-top: 36px;
-    border-top: 1px solid var(--border-strong);
-  }
-
-  .next-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 24px;
-    padding: 28px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .next-step-num {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--orange);
-    border: 1px solid var(--border-strong);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .next-step h4 { font-size: 15px; margin-bottom: 2px; }
-  .next-step p { font-size: 13px; color: var(--muted); max-width: none; }
-
-  /* ── Closing ── */
-  .closing-links {
-    display: flex;
-    gap: 32px;
-    margin-top: 40px;
-    font-size: 14px;
-  }
-
-  .closing-links a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.3s var(--ease);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 2px;
-  }
-
+  /* ── Closing links ── */
+  .closing-links { display: flex; gap: 32px; font-size: 14px; }
+  .closing-links a { color: #a0a0a0; text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 2px; }
   .closing-links a:hover { color: var(--orange); border-color: var(--orange); }
-
-  .separator {
-    width: 100%;
-    height: 1px;
-    background: var(--border);
-    margin: 32px 0;
-  }
-
-  /* ── Slide specific: inverted hero ── */
-  .slide--inverted {
-    background: #1a1a1a;
-    color: #e8e4df;
-  }
-  .slide--inverted h1, .slide--inverted h2 { color: #e8e4df; }
-  .slide--inverted p { color: #a0a0a0; }
-  .slide--inverted .nav-dot.active { background: var(--orange); }
 
   /* ── Responsive ── */
   @media (max-width: 900px) {
     .slide { padding: 60px 24px; }
     h1 { font-size: 34px; }
     h2 { font-size: 28px; }
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-    .split { grid-template-columns: 1fr; gap: 40px; }
-    .scope-grid { grid-template-columns: 1fr; }
-    .process-flow { flex-direction: column; gap: 20px; }
+    .split, .grid-2, .scope-grid { grid-template-columns: 1fr; }
+    .process-flow { flex-direction: column; gap: 16px; }
     .process-flow::before { display: none; }
-    .timeline { grid-template-columns: 1fr; }
-    .tl-item { border-right: none; border-bottom: 1px solid var(--border); padding: 20px 0; }
-    .tl-item::before { display: none; }
-    .stats { flex-direction: column; gap: 32px; }
+    .info-row { grid-template-columns: 1fr; gap: 4px; }
     .nav-dots { display: none; }
     .closing-links { flex-direction: column; gap: 12px; }
     .nav-fixed { padding: 16px 24px; }
@@ -728,71 +239,68 @@
 </head>
 <body>
 
-<!-- Navigation bar -->
+<!-- Nav -->
 <header class="nav-fixed">
   <div class="nav-logo">tbo<span>.</span></div>
-  <div class="nav-counter"><span id="currentSlide">01</span> — 11</div>
+  <div class="nav-counter"><span id="currentSlide">01</span> — 06</div>
 </header>
-
 <nav class="nav-dots" id="navDots"></nav>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 01 — ABERTURA -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide slide--inverted" id="slide-1">
+<!-- ═══════ 01 — ABERTURA ═══════ -->
+<section class="slide slide--dark" id="slide-1">
   <div class="slide-inner" style="text-align: center;">
-    <div style="margin-bottom: 40px;">
-      <span class="tag" style="border-color: rgba(255,255,255,0.15); color: #a0a0a0;">Onboarding de Projeto</span>
-    </div>
-    <h1 style="margin-bottom: 20px; color: #e8e4df;">
-      Felipe Schmidt
-    </h1>
-    <p style="font-size: 20px; color: #a0a0a0; margin: 0 auto 48px; text-align: center; max-width: 500px; font-weight: 300;">
-      TBO + Halsten Incorporadora
-    </p>
-    <div style="display: flex; justify-content: center; gap: 12px;">
-      <span class="tag" style="border-color: rgba(255,255,255,0.12); color: #a0a0a0;">Digital 3D</span>
-      <span class="tag" style="border-color: rgba(255,255,255,0.12); color: #a0a0a0;">Abril 2026</span>
-    </div>
+    <span class="tag" style="border-color: rgba(255,255,255,0.15); color: #a0a0a0; margin-bottom: 40px;">Digital 3D — Abril 2026</span>
+    <h1 style="margin: 24px 0 16px; color: #e8e4df;">Felipe Schmidt</h1>
+    <p style="font-size: 20px; color: #a0a0a0; margin: 0 auto; text-align: center; font-weight: 300;">TBO + Halsten Incorporadora</p>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 02 — QUEM SOMOS -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ═══════ 02 — O PROJETO ═══════ -->
 <section class="slide" id="slide-2">
   <div class="slide-inner">
     <div class="split">
       <div>
         <div class="section-label">
           <span class="num">01</span>
-          <span>A TBO</span>
+          <span>O Projeto</span>
         </div>
-        <h2>Ecossistema criativo para lançamentos<br> imobiliários</h2>
-        <p>
-          Integramos estratégia, design e storytelling
-          para criar experiências que vendem antes da primeira pedra.
-        </p>
-        <div style="display: flex; gap: 8px; margin-top: 24px; flex-wrap: wrap;">
-          <span class="tag">Digital 3D</span>
-          <span class="tag">Branding</span>
-          <span class="tag">Marketing</span>
-          <span class="tag">Audiovisual</span>
+
+        <div class="scope-grid" style="margin-top: 0;">
+          <div class="scope-item">
+            <div class="scope-number">01</div>
+            <div class="scope-label">Modelagem 3D<span>Base completa</span></div>
+          </div>
+          <div class="scope-item">
+            <div class="scope-number">22</div>
+            <div class="scope-label">Imagens Estáticas<span>Renders de alta qualidade</span></div>
+          </div>
+          <div class="scope-item">
+            <div class="scope-number">08</div>
+            <div class="scope-label">Plantas Humanizadas<span>Tipologias com acabamentos</span></div>
+          </div>
+          <div class="scope-item">
+            <div class="scope-number">10</div>
+            <div class="scope-label">Implantações<span>Visão geral do empreendimento</span></div>
+          </div>
         </div>
       </div>
+
       <div>
-        <div class="stats" style="flex-direction: column; gap: 36px; margin-top: 0;">
-          <div>
-            <div class="stat-number">170+</div>
-            <div class="stat-label">Projetos realizados</div>
-          </div>
-          <div>
-            <div class="stat-number">18+</div>
-            <div class="stat-label">Construtoras parceiras</div>
-          </div>
-          <div>
-            <div class="stat-number">4</div>
-            <div class="stat-label">Disciplinas integradas</div>
+        <h4 style="margin-bottom: 16px;">Cronograma</h4>
+        <div class="info-row"><div class="info-label">Abril</div><div class="info-value">Onboarding e Briefing</div></div>
+        <div class="info-row"><div class="info-label">Maio</div><div class="info-value">Direção Criativa e Moodboard</div></div>
+        <div class="info-row"><div class="info-label">Jun — Jul</div><div class="info-value">Produção 3D e Renderização</div></div>
+        <div class="info-row"><div class="info-label">Agosto</div><div class="info-value">Revisões e Aprovações</div></div>
+        <div class="info-row"><div class="info-label">Setembro</div><div class="info-value">Entrega final</div></div>
+        <div class="info-row" style="border-bottom: none;"><div class="info-label" style="color: var(--orange); font-weight: 700;">Outubro</div><div class="info-value" style="color: var(--white); font-weight: 600;">Lançamento</div></div>
+
+        <div style="margin-top: 24px;">
+          <h4 style="margin-bottom: 12px;">Contatos</h4>
+          <div class="info-value" style="font-size: 13px;">
+            <a href="mailto:carol@agenciatbo.com.br">Carol</a> — Atendimento &nbsp;·&nbsp;
+            <a href="mailto:nathalia@agenciatbo.com.br">Nathalia</a> — PO 3D &nbsp;·&nbsp;
+            <a href="mailto:marco@agenciatbo.com.br">Marco</a> — Dir. Criativo &nbsp;·&nbsp;
+            <a href="mailto:ruy@agenciatbo.com.br">Ruy</a> — Comercial
           </div>
         </div>
       </div>
@@ -800,63 +308,21 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 03 — EQUIPE -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ═══════ 03 — PROCESSO ═══════ -->
 <section class="slide" id="slide-3">
   <div class="slide-inner">
     <div class="section-label">
       <span class="num">02</span>
-      <span>Sua Equipe</span>
-    </div>
-    <h2>Quem vai cuidar do <span class="accent">Felipe Schmidt</span></h2>
-
-    <div class="grid-4">
-      <div class="team-card">
-        <div class="team-initials">CA</div>
-        <h4>Carol</h4>
-        <div class="role">Atendimento</div>
-        <div class="desc">Coordenadora de Operações. Seu ponto focal para comunicação e gestão do dia a dia.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-initials">NR</div>
-        <h4>Nathália Runge</h4>
-        <div class="role">Digital 3D</div>
-        <div class="desc">Responsável pela produção dos renders. Líder técnica do projeto.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-initials">MA</div>
-        <h4>Marco Andolfato</h4>
-        <div class="role">Direção de Projetos</div>
-        <div class="desc">Diretor Criativo. Qualidade e direção estratégica de cada entrega.</div>
-      </div>
-      <div class="team-card">
-        <div class="team-initials">RL</div>
-        <h4>Ruy Lima</h4>
-        <div class="role">Comercial</div>
-        <div class="desc">Diretor Comercial. Suporte em questões contratuais e escopo.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- 04 — PROCESSO -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-4">
-  <div class="slide-inner">
-    <div class="section-label">
-      <span class="num">03</span>
       <span>Processo</span>
     </div>
-    <h2>5 etapas com gates de aprovação</h2>
+    <h2>Etapas com gates de aprovação</h2>
     <p>Cada fase tem pontos de validação com vocês antes de avançar. Sem surpresas.</p>
 
     <div class="process-flow">
       <div class="process-step active">
         <div class="step-num">01</div>
-        <h4>Diagnóstico</h4>
-        <p>Briefing e alinhamento</p>
+        <h4>Briefing</h4>
+        <p>Alinhamento e materiais</p>
         <span class="step-badge">Estamos aqui</span>
       </div>
       <div class="process-step">
@@ -871,202 +337,103 @@
       </div>
       <div class="process-step">
         <div class="step-num">04</div>
-        <h4>Entrega</h4>
-        <p>Revisões e aprovação</p>
+        <h4>Revisões</h4>
+        <p>Ajustes e aprovações</p>
       </div>
       <div class="process-step">
         <div class="step-num">05</div>
-        <h4>Suporte</h4>
-        <p>Acompanhamento</p>
+        <h4>Entrega</h4>
+        <p>Pacote final</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 05 — ESCOPO -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ═══════ 04 — MATERIAIS ═══════ -->
+<section class="slide" id="slide-4">
+  <div class="slide-inner">
+    <div class="section-label">
+      <span class="num">03</span>
+      <span>Materiais</span>
+    </div>
+    <h2>O que precisamos de vocês</h2>
+
+    <div class="split" style="gap: 48px; margin-top: 24px;">
+      <ul class="checklist">
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Projeto arquitetônico completo</strong><div class="check-sub">DWG, RVT ou SKP — plantas, cortes e fachadas</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Plantas baixas das tipologias</strong><div class="check-sub">Com cotas e especificações de ambiente</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Implantação geral</strong><div class="check-sub">Paisagismo, acessos e áreas comuns</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Manual de marca / ID Visual</strong><div class="check-sub">Logo, paleta e tipografia do empreendimento</div></div>
+        </li>
+      </ul>
+      <ul class="checklist">
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Referências de acabamentos</strong><div class="check-sub">Pisos, revestimentos, metais, marcenaria</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Especificação de paisagismo</strong><div class="check-sub">Espécies, volumetria e layout externo</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Memorial descritivo</strong><div class="check-sub">Especificações técnicas gerais</div></div>
+        </li>
+        <li>
+          <span class="check-icon">&#10003;</span>
+          <div><strong>Fotos do terreno e entorno</strong><div class="check-sub">Contextualização do render</div></div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ 05 — ACESSOS + CTA ═══════ -->
 <section class="slide" id="slide-5">
   <div class="slide-inner">
     <div class="section-label">
       <span class="num">04</span>
-      <span>Escopo</span>
-    </div>
-    <h2>O que vamos produzir</h2>
-
-    <div class="scope-grid">
-      <div class="scope-item">
-        <div class="scope-number">01</div>
-        <div class="scope-label">
-          Modelagem 3D
-          <span>Base completa do empreendimento</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <div class="scope-number">22</div>
-        <div class="scope-label">
-          Imagens Estáticas
-          <span>Renders de alta qualidade</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <div class="scope-number">08</div>
-        <div class="scope-label">
-          Plantas Humanizadas
-          <span>Tipologias com acabamentos</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <div class="scope-number">10</div>
-        <div class="scope-label">
-          Implantações Humanizadas
-          <span>Visão geral do empreendimento</span>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top: 32px; display: flex; gap: 12px; align-items: center;">
-      <span class="tag">Digital 3D</span>
-      <span style="font-size: 13px; color: var(--muted);">Lançamento previsto — Outubro 2026</span>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- 06 — ARQUIVOS -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-6">
-  <div class="slide-inner">
-    <div class="section-label">
-      <span class="num">05</span>
-      <span>Materiais</span>
-    </div>
-    <h2>O que precisamos de vocês</h2>
-    <p>Para iniciar a produção, precisamos dos seguintes arquivos:</p>
-
-    <div class="split" style="gap: 48px; margin-top: 32px;">
-      <ul class="checklist" style="margin-top: 0;">
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Projeto arquitetônico completo</strong>
-            <div class="check-sub">DWG, RVT ou SKP — plantas, cortes e fachadas</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Plantas baixas das tipologias</strong>
-            <div class="check-sub">Com cotas e especificações de ambiente</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Implantação geral</strong>
-            <div class="check-sub">Paisagismo, acessos e áreas comuns</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Manual de marca / ID Visual</strong>
-            <div class="check-sub">Logo, paleta, tipografia do empreendimento</div>
-          </div>
-        </li>
-      </ul>
-      <ul class="checklist" style="margin-top: 0;">
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Referências de acabamentos</strong>
-            <div class="check-sub">Pisos, revestimentos, metais, marcenaria</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Especificação de paisagismo</strong>
-            <div class="check-sub">Espécies, volumetria e layout externo</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Memorial descritivo</strong>
-            <div class="check-sub">Especificações técnicas gerais</div>
-          </div>
-        </li>
-        <li>
-          <span class="check-icon">&#10003;</span>
-          <div>
-            <strong>Fotos do terreno e entorno</strong>
-            <div class="check-sub">Contextualização do render</div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- 07 — LINKS -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-7">
-  <div class="slide-inner">
-    <div class="section-label">
-      <span class="num">06</span>
       <span>Acessos</span>
     </div>
     <h2>Links do projeto</h2>
 
-    <div class="grid-2" style="margin-top: 36px;">
-      <a class="link-card" href="https://drive.google.com/drive/folders/1Fm1m7DJY3XWU4w4hKAcTMgf8e4FxpZzN" target="_blank">
-        <span class="link-card-icon">&#9744;</span>
-        <h4>Pasta do Projeto</h4>
-        <p>Google Drive compartilhado. Envie os arquivos aqui e acompanhe as entregas.</p>
-        <span class="arrow">Abrir no Drive &rarr;</span>
+    <div class="grid-2" style="margin-top: 24px;">
+      <a class="link-card" href="https://os.wearetbo.com.br/portal/projeto/a26b08dd-7a9e-4c65-92c9-b345029077ce" target="_blank">
+        <h4>Portal do Cliente</h4>
+        <p>Progresso, aprovações e arquivos.</p>
+        <span class="arrow">Acessar &rarr;</span>
       </a>
       <a class="link-card" href="https://os.wearetbo.com.br/briefing/halsten?nome=Halsten+Incorporadora&projeto=felipe-schmidt&projeto_nome=Felipe+Schmidt" target="_blank">
-        <span class="link-card-icon">&#9998;</span>
-        <h4>Briefing Digital 3D</h4>
-        <p>Formulário com todas as informações do empreendimento.</p>
-        <span class="arrow">Preencher briefing &rarr;</span>
+        <h4>Briefing</h4>
+        <p>Informações do empreendimento.</p>
+        <span class="arrow">Preencher &rarr;</span>
       </a>
-      <a class="link-card" href="https://os.wearetbo.com.br/portal/projeto/a26b08dd-7a9e-4c65-92c9-b345029077ce" target="_blank">
-        <span class="link-card-icon">&#9673;</span>
-        <h4>Portal do Cliente</h4>
-        <p>Acompanhe o progresso, aprove imagens e gerencie revisões.</p>
-        <span class="arrow">Acessar portal &rarr;</span>
+      <a class="link-card" href="https://miro.com/app/board/uXjVGl8NmRc=/?share_link_id=536569886290" target="_blank">
+        <h4>Miro</h4>
+        <p>Direção criativa e retornos visuais.</p>
+        <span class="arrow">Abrir &rarr;</span>
       </a>
-      <div class="link-card" style="cursor: default;">
-        <span class="link-card-icon">&#9993;</span>
-        <h4>Grupo WhatsApp</h4>
-        <p>Canal direto para comunicação rápida entre as equipes.</p>
-        <span class="arrow link-done">&#10003; Já criado</span>
-      </div>
+      <a class="link-card" href="https://drive.google.com/drive/folders/1Fm1m7DJY3XWU4w4hKAcTMgf8e4FxpZzN" target="_blank">
+        <h4>Google Drive</h4>
+        <p>Pasta de arquivos do projeto.</p>
+        <span class="arrow">Abrir &rarr;</span>
+      </a>
     </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 08 — BRIEFING CTA -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-8">
-  <div class="slide-inner">
-    <div class="cta-section">
-      <div class="section-label" style="justify-content: center;">
-        <span class="num">07</span>
-        <span>Documento Essencial</span>
-      </div>
-      <h2 style="text-align: center;">Briefing Interdisciplinar</h2>
-      <p>
-        O briefing é o documento mais importante do projeto.
-        Conecta todas as disciplinas e garante alinhamento
-        em cada decisão criativa.
-      </p>
-      <p style="font-size: 13px; color: var(--muted); margin-bottom: 36px; text-align: center;">
-        Reserve ~30 minutos para preencher com atenção. Quanto mais completo, melhor o resultado.
+    <div style="text-align: center; margin-top: 48px; padding-top: 40px; border-top: 1px solid var(--border-strong);">
+      <p style="margin: 0 auto 24px; text-align: center; font-size: 14px;">
+        O briefing é o próximo passo. Reserve ~30 min para preencher com atenção.
       </p>
       <a class="btn-primary" href="https://os.wearetbo.com.br/briefing/halsten?nome=Halsten+Incorporadora&projeto=felipe-schmidt&projeto_nome=Felipe+Schmidt" target="_blank">
         Preencher o Briefing &rarr;
@@ -1075,122 +442,21 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- 09 — CRONOGRAMA -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-9">
-  <div class="slide-inner">
-    <div class="section-label">
-      <span class="num">08</span>
-      <span>Cronograma</span>
-    </div>
-    <h2>Visão macro do projeto</h2>
-
-    <div class="timeline">
-      <div class="tl-item active">
-        <h4>Abril</h4>
-        <p>Onboarding<br>Briefing<br>Recebimento de materiais</p>
-      </div>
-      <div class="tl-item">
-        <h4>Maio</h4>
-        <p>Direção Criativa<br>Moodboard<br>Validação</p>
-      </div>
-      <div class="tl-item">
-        <h4>Jun — Jul</h4>
-        <p>Produção 3D<br>Modelagem<br>Renderização</p>
-      </div>
-      <div class="tl-item">
-        <h4>Agosto</h4>
-        <p>Revisões<br>Ajustes finais<br>Aprovações</p>
-      </div>
-      <div class="tl-item">
-        <h4>Setembro</h4>
-        <p>Entrega final<br>Pacote completo</p>
-      </div>
-      <div class="tl-item">
-        <h4>Outubro</h4>
-        <p>Lançamento do<br>empreendimento</p>
-      </div>
-    </div>
-
-    <p style="font-size: 12px; color: var(--muted); margin-top: 24px;">
-      * Sujeito a ajustes conforme recebimento de materiais e rodadas de aprovação.
-    </p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- 10 — PRÓXIMOS PASSOS -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide" id="slide-10">
-  <div class="slide-inner">
-    <div class="section-label">
-      <span class="num">09</span>
-      <span>Agora</span>
-    </div>
-    <h2>Próximos passos</h2>
-
-    <div class="next-steps">
-      <div class="next-step">
-        <div class="next-step-num">01</div>
-        <div>
-          <h4>Enviar os arquivos do projeto</h4>
-          <p>Upload na pasta do Google Drive compartilhada</p>
-        </div>
-      </div>
-      <div class="next-step">
-        <div class="next-step-num">02</div>
-        <div>
-          <h4>Preencher o briefing interdisciplinar</h4>
-          <p>Link será enviado pela Carol no grupo do WhatsApp</p>
-        </div>
-      </div>
-      <div class="next-step">
-        <div class="next-step-num">03</div>
-        <div>
-          <h4>Reunião de Direção Criativa</h4>
-          <p>Em até 7 dias úteis após recebimento dos materiais</p>
-        </div>
-      </div>
-      <div class="next-step">
-        <div class="next-step-num">04</div>
-        <div>
-          <h4>Validação do Moodboard</h4>
-          <p>Referências visuais aprovadas em conjunto</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="separator"></div>
-    <p style="font-size: 13px;">Dúvidas? Fale com a <strong>Carol</strong> pelo grupo do WhatsApp ou e-mail.</p>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════ -->
-<!-- 11 — ENCERRAMENTO -->
-<!-- ═══════════════════════════════════════════ -->
-<section class="slide slide--inverted" id="slide-11">
+<!-- ═══════ 06 — ENCERRAMENTO ═══════ -->
+<section class="slide slide--dark" id="slide-6">
   <div class="slide-inner" style="text-align: center;">
     <h1 style="margin-bottom: 20px; color: #e8e4df; font-weight: 300;">
-      Vamos construir algo<br>
-      <span style="color: var(--orange);">incrível juntos.</span>
+      Vamos construir algo<br><span style="color: var(--orange);">incrível juntos.</span>
     </h1>
-    <p style="margin: 0 auto 48px; text-align: center; font-size: 16px;">
-      Estamos animados com essa parceria.
-    </p>
-
+    <p style="margin: 0 auto 40px; text-align: center;">Estamos animados com essa parceria.</p>
     <div class="closing-links" style="justify-content: center;">
-      <a href="mailto:contato@agenciatbo.com.br" style="color: #a0a0a0; border-color: rgba(255,255,255,0.12);">contato@agenciatbo.com.br</a>
-      <a href="tel:+5541996696918" style="color: #a0a0a0; border-color: rgba(255,255,255,0.12);">+55 41 99669-6918</a>
-      <a href="https://wearetbo.com.br" target="_blank" style="color: #a0a0a0; border-color: rgba(255,255,255,0.12);">wearetbo.com.br</a>
-      <a href="https://instagram.com/wearetbo" target="_blank" style="color: #a0a0a0; border-color: rgba(255,255,255,0.12);">@wearetbo</a>
+      <a href="mailto:contato@agenciatbo.com.br">contato@agenciatbo.com.br</a>
+      <a href="https://wearetbo.com.br" target="_blank">wearetbo.com.br</a>
+      <a href="https://instagram.com/wearetbo" target="_blank">@wearetbo</a>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- SCRIPTS -->
-<!-- ═══════════════════════════════════════════ -->
 <script>
   const slides = document.querySelectorAll('.slide');
   const counter = document.getElementById('currentSlide');
@@ -1213,26 +479,18 @@
         dots.forEach((d, i) => d.classList.toggle('active', i === idx));
         entry.target.querySelector('.slide-inner').classList.add('visible');
 
-        // Toggle nav bar style for dark slides
         const nav = document.querySelector('.nav-fixed');
-        if (entry.target.classList.contains('slide--inverted')) {
-          nav.style.background = 'rgba(26, 26, 26, 0.9)';
-          nav.style.borderColor = 'rgba(255,255,255,0.06)';
-          nav.querySelector('.nav-logo').style.color = '#e8e4df';
-          nav.querySelector('.nav-counter').style.color = '#a0a0a0';
-        } else {
-          nav.style.background = 'rgba(240, 237, 233, 0.9)';
-          nav.style.borderColor = 'rgba(15,15,15,0.08)';
-          nav.querySelector('.nav-logo').style.color = '#0f0f0f';
-          nav.querySelector('.nav-counter').style.color = '#4a4a4a';
-        }
+        const isDark = entry.target.classList.contains('slide--dark');
+        nav.style.background = isDark ? 'rgba(26,26,26,0.9)' : 'rgba(240,237,233,0.9)';
+        nav.style.borderColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,15,15,0.08)';
+        nav.querySelector('.nav-logo').style.color = isDark ? '#e8e4df' : '#0f0f0f';
+        nav.querySelector('.nav-counter').style.color = isDark ? '#a0a0a0' : '#4a4a4a';
       }
     });
   }, { threshold: 0.4 });
 
   slides.forEach(s => observer.observe(s));
 
-  // Keyboard nav
   document.addEventListener('keydown', e => {
     const current = Math.max(0, ...Array.from(dots).map((d, i) => d.classList.contains('active') ? i : -1));
     if ((e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') && current < slides.length - 1) {
