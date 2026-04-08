@@ -232,20 +232,15 @@ export function ProjectPortalView({
     [projectFiles]
   );
 
-  // Sorted tasks
-  const sortedTasks = useMemo(
-    () => [...tasks].sort((a, b) => {
-      if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
-      if (a.is_completed && b.is_completed) {
-        const da = a.completed_at ?? a.due_date ?? "";
-        const db = b.completed_at ?? b.due_date ?? "";
-        return db.localeCompare(da);
-      }
-      const priorities = ["urgente", "alta", "media", "baixa"];
-      return priorities.indexOf(a.priority ?? "baixa") - priorities.indexOf(b.priority ?? "baixa");
-    }),
-    [tasks]
-  );
+  // Sorted tasks — respect section order (project journey), then task order within section
+  const sortedTasks = useMemo(() => {
+    const sectionOrder = new Map(sections.map((s, i) => [s.id, i]));
+    return [...tasks].sort((a, b) => {
+      const sa = sectionOrder.get(a.section_id ?? "") ?? 999;
+      const sb = sectionOrder.get(b.section_id ?? "") ?? 999;
+      return sa - sb; // keep original order_index within same section (already sorted by query)
+    });
+  }, [tasks, sections]);
 
   // Count link cards for numbering
   let linkNum = 0;
@@ -453,7 +448,7 @@ export function ProjectPortalView({
                     </div>
                   )}
 
-                  {sortedTasks.slice(0, 20).map((task) => (
+                  {sortedTasks.map((task) => (
                     <div
                       key={task.id}
                       className="flex items-center gap-4 px-5 py-3 transition-colors"
@@ -515,14 +510,7 @@ export function ProjectPortalView({
                     </div>
                   ))}
 
-                  {sortedTasks.length > 20 && (
-                    <div
-                      className="px-5 py-3 text-center text-xs"
-                      style={{ color: "#8a8580", borderTop: "1px solid #ebe7e1" }}
-                    >
-                      +{sortedTasks.length - 20} tarefas adicionais
-                    </div>
-                  )}
+                  {/* All tasks shown */}
                 </div>
               </div>
             </div>

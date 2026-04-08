@@ -96,7 +96,7 @@ export default async function ProjectPortalPage({ params }: Props) {
   let sections: unknown[] = [];
   try {
     const { data } = await supabase
-      .from("project_sections" as any)
+      .from("os_sections" as any)
       .select("id, title, color, order_index")
       .eq("project_id", project.id)
       .order("order_index", { ascending: true });
