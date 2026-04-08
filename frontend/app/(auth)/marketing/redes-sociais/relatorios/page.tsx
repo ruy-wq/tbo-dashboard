@@ -3,12 +3,15 @@
 // Feature #50 — Exportar relatório de performance (CSV + PDF placeholder)
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   IconFileText,
   IconPlus,
   IconDownload,
   IconCheck,
   IconAlertCircle,
+  IconBrandInstagram,
+  IconArrowRight,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -255,6 +258,31 @@ function RelatoriosContent() {
           ))}
         </div>
       )}
+
+      {/* Client Reports */}
+      <div>
+        <p className="text-sm font-medium mb-3 text-muted-foreground">Relatorios de clientes</p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/marketing/redes-sociais/relatorios/thal" className="group">
+            <Card className="h-full transition-all group-hover:shadow-md group-hover:border-pink-400/40">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 p-3 shrink-0">
+                  <IconBrandInstagram className="size-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">Thal Engenharia</p>
+                  <p className="text-xs text-muted-foreground">Instagram · Abril 2026</p>
+                  <div className="flex gap-2 mt-1">
+                    <Badge variant="secondary" className="text-[9px] px-1 py-0">5.172 seg.</Badge>
+                    <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-emerald-500/10 text-emerald-600">+867% interacoes</Badge>
+                  </div>
+                </div>
+                <IconArrowRight className="size-4 text-muted-foreground group-hover:text-pink-500 transition-colors shrink-0" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
 
       {/* Report templates */}
       <div>
