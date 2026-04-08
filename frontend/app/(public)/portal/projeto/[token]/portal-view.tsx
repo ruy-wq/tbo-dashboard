@@ -14,7 +14,6 @@ import { PortalReportsTab } from "@/features/projects/components/portal/portal-r
 import { PortalLatestDocs } from "@/features/projects/components/portal/portal-latest-docs";
 import { PortalTrackStepper, type TrackPhase } from "@/features/projects/components/portal/portal-track-stepper";
 import { PortalAboutSection, type ProjectPortalAbout } from "@/features/projects/components/portal/portal-about-section";
-import { Badge } from "@/components/ui/badge";
 import {
   IconCircleCheck,
   IconClock,
@@ -25,6 +24,7 @@ import {
   IconBook,
   IconForms,
   IconBrandGoogleDrive,
+  IconArrowRight,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -92,13 +92,6 @@ interface ProjectPortalViewProps {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const PRIORITY_COLORS: Record<string, string> = {
-  urgente: "bg-red-100 text-red-700",
-  alta: "bg-amber-100 text-amber-700",
-  media: "bg-blue-100 text-blue-700",
-  baixa: "bg-zinc-100 text-zinc-600",
-};
-
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "\u2014";
   return new Date(dateStr).toLocaleDateString("pt-BR", {
@@ -106,6 +99,65 @@ function formatDate(dateStr: string | null): string {
     month: "2-digit",
     year: "numeric",
   });
+}
+
+// ─── Link Card (TBO design) ────────────────────────────────────────────────
+
+function LinkCard({
+  href,
+  number,
+  label,
+  description,
+  icon: Icon,
+}: {
+  href: string;
+  number: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-start gap-4 p-5 transition-all"
+      style={{
+        backgroundColor: "#fff",
+        border: "1px solid #d9d4cd",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#c45a1a";
+        e.currentTarget.style.backgroundColor = "#faf8f5";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "#d9d4cd";
+        e.currentTarget.style.backgroundColor = "#fff";
+      }}
+    >
+      <span
+        className="text-xs font-medium"
+        style={{ color: "#c45a1a", minWidth: "24px" }}
+      >
+        {number}
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 flex-shrink-0 text-[#c45a1a]" />
+          <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>
+            {label}
+          </p>
+        </div>
+        <p className="mt-1 text-xs" style={{ color: "#8a8580" }}>
+          {description}
+        </p>
+      </div>
+      <IconArrowRight
+        className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-1"
+        style={{ color: "#c45a1a", opacity: 0.5 }}
+      />
+    </a>
+  );
 }
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -130,7 +182,7 @@ export function ProjectPortalView({
   const [sidebarItem, setSidebarItem] = useState("home");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Delivery link (unique per project from project_deliveries)
+  // Delivery link
   const deliverySlug = deliveryToken;
 
   // Project links from portal_about
@@ -160,11 +212,12 @@ export function ProjectPortalView({
       } satisfies TrackPhase;
     });
   }, [sections, tasks, hasPendingTasks]);
+
   const healthLabel = !hasPendingTasks ? "Entregue" : progressPercent >= 90 ? "Em entrega" : progressPercent >= 75 ? "No prazo" : "Em risco";
   const healthColor = !hasPendingTasks ? "#22c55e" : progressPercent >= 90 ? "#3b82f6" : progressPercent >= 75 ? "#22c55e" : "#f59e0b";
   const healthBg = !hasPendingTasks ? "#f0fdf4" : progressPercent >= 90 ? "#eff6ff" : progressPercent >= 75 ? "#f0fdf4" : "#fefce8";
 
-  // Sidebar documents from project files (non-image)
+  // Sidebar docs
   const sidebarDocs = useMemo(
     () =>
       projectFiles
@@ -174,7 +227,7 @@ export function ProjectPortalView({
     [projectFiles]
   );
 
-  // Tasks sorted: incomplete first, then by priority
+  // Sorted tasks
   const sortedTasks = useMemo(
     () => [...tasks].sort((a, b) => {
       if (a.is_completed !== b.is_completed) return a.is_completed ? 1 : -1;
@@ -188,6 +241,9 @@ export function ProjectPortalView({
     }),
     [tasks]
   );
+
+  // Count link cards for numbering
+  let linkNum = 0;
 
   return (
     <PortalLayout
@@ -217,108 +273,102 @@ export function ProjectPortalView({
           <PortalAboutSection
             projectName={project.name}
             clientCompany={project.client_company}
-            data={(project.portal_about ?? {}) as ProjectPortalAbout}
+            data={aboutData}
           />
         ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Welcome Banner */}
           <PortalWelcomeBanner
             clientName={project.client}
             projectName={project.name}
           />
 
-          {/* Delivery Link Card */}
-          {deliverySlug && <a
-            href={`/entrega/${deliverySlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-4 rounded-xl border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-5 transition-all hover:border-orange-300 hover:shadow-md"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
-              <IconPackage className="h-6 w-6 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-zinc-900">
-                Portal de Entrega — {project.name}
-              </h3>
-              <p className="mt-0.5 text-sm text-zinc-500">
-                Acesse todos os entregaveis finais do projeto
-              </p>
-            </div>
-            <IconExternalLink className="h-5 w-5 text-orange-400 transition-transform group-hover:translate-x-0.5" />
-          </a>}
+          {/* Delivery Link */}
+          {deliverySlug && (
+            <a
+              href={`/entrega/${deliverySlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-4 p-5 transition-all"
+              style={{
+                backgroundColor: "#1a1a1a",
+                border: "1px solid #333",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#c45a1a";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#333";
+              }}
+            >
+              <div
+                className="flex h-10 w-10 items-center justify-center"
+                style={{ backgroundColor: "#c45a1a" }}
+              >
+                <IconPackage className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-white">
+                  Portal de Entrega — {project.name}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Acesse todos os entregaveis finais do projeto
+                </p>
+              </div>
+              <IconArrowRight className="h-4 w-4 text-zinc-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+            </a>
+          )}
 
-          {/* Project Quick Links */}
+          {/* Project Quick Links — TBO numbered style */}
           {hasProjectLinks && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {aboutData.onboarding_url && (
-                <a
-                  href={aboutData.onboarding_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <span
+                  className="text-xs font-medium uppercase tracking-[0.2em]"
+                  style={{ color: "#c45a1a" }}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
-                    <IconPresentation className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Apresentacao</p>
-                    <p className="text-xs text-zinc-500">Onboarding do projeto</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-orange-400" />
-                </a>
-              )}
-              {aboutData.guide_url && (
-                <a
-                  href={aboutData.guide_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                    <IconBook className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Guia de Boas-Vindas</p>
-                    <p className="text-xs text-zinc-500">Politicas e acessos</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-blue-400" />
-                </a>
-              )}
-              {aboutData.briefing_url && (
-                <a
-                  href={aboutData.briefing_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
-                    <IconForms className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Briefing</p>
-                    <p className="text-xs text-zinc-500">Preencher briefing criativo</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-emerald-400" />
-                </a>
-              )}
-              {aboutData.drive_url && (
-                <a
-                  href={aboutData.drive_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600">
-                    <IconBrandGoogleDrive className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Google Drive</p>
-                    <p className="text-xs text-zinc-500">Pasta de arquivos</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-yellow-500" />
-                </a>
-              )}
+                  Acessos Rapidos
+                </span>
+                <div className="flex-1 h-px" style={{ backgroundColor: "#d9d4cd" }} />
+              </div>
+              <div className="grid gap-px sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
+                {aboutData.onboarding_url && (
+                  <LinkCard
+                    href={aboutData.onboarding_url}
+                    number={String(++linkNum).padStart(2, "0")}
+                    label="Apresentacao"
+                    description="Onboarding e equipe do projeto"
+                    icon={IconPresentation}
+                  />
+                )}
+                {aboutData.guide_url && (
+                  <LinkCard
+                    href={aboutData.guide_url}
+                    number={String(++linkNum).padStart(2, "0")}
+                    label="Guia de Boas-Vindas"
+                    description="Politicas, acessos e fluxo de trabalho"
+                    icon={IconBook}
+                  />
+                )}
+                {aboutData.briefing_url && (
+                  <LinkCard
+                    href={aboutData.briefing_url}
+                    number={String(++linkNum).padStart(2, "0")}
+                    label="Briefing Criativo"
+                    description="Preencher briefing interdisciplinar"
+                    icon={IconForms}
+                  />
+                )}
+                {aboutData.drive_url && (
+                  <LinkCard
+                    href={aboutData.drive_url}
+                    number={String(++linkNum).padStart(2, "0")}
+                    label="Google Drive"
+                    description="Pasta de arquivos do projeto"
+                    icon={IconBrandGoogleDrive}
+                  />
+                )}
+              </div>
             </div>
           )}
 
@@ -328,7 +378,7 @@ export function ProjectPortalView({
           {/* Tab Content */}
           {activeTab === "tasks" && (
             <div className="space-y-6">
-              {/* Project Progress Stepper */}
+              {/* Stepper */}
               <PortalTrackStepper
                 phases={phases}
                 healthLabel={healthLabel}
@@ -337,39 +387,52 @@ export function ProjectPortalView({
                 dueDate={project.due_date_end}
               />
 
-              {/* Client Tasks */}
-              <div className="rounded-xl border bg-white">
-                <div className="flex items-center justify-between border-b px-5 py-3">
-                  <h3 className="text-sm font-semibold text-zinc-900">
+              {/* Tasks */}
+              <div style={{ border: "1px solid #d9d4cd", backgroundColor: "#fff" }}>
+                <div
+                  className="flex items-center justify-between px-5 py-3"
+                  style={{ borderBottom: "1px solid #d9d4cd" }}
+                >
+                  <h3
+                    className="text-xs font-medium uppercase tracking-wider"
+                    style={{ color: "#1a1a1a" }}
+                  >
                     Tarefas do Projeto
                   </h3>
-                  <Badge variant="secondary" className="text-xs">
+                  <span className="text-xs" style={{ color: "#8a8580" }}>
                     {completedCount}/{totalCount} concluidas
-                  </Badge>
+                  </span>
                 </div>
 
-                <div className="divide-y">
+                <div>
                   {sortedTasks.length === 0 && (
                     <div className="px-5 py-8 text-center">
-                      <IconCircleCheck className="mx-auto h-8 w-8 text-green-400" />
-                      <p className="mt-2 text-sm text-zinc-500">
+                      <IconCircleCheck className="mx-auto h-8 w-8" style={{ color: "#c45a1a", opacity: 0.3 }} />
+                      <p className="mt-2 text-sm" style={{ color: "#8a8580" }}>
                         Nenhuma tarefa cadastrada ainda.
                       </p>
                     </div>
                   )}
 
                   {!hasPendingTasks && sortedTasks.length > 0 && (
-                    <div className="flex items-center gap-3 bg-green-50/50 px-5 py-3">
-                      <IconCircleCheck className="h-5 w-5 text-green-500" />
-                      <p className="text-sm font-medium text-green-700">
-                        Todas as {totalCount} tarefas foram concluidas com sucesso!
+                    <div
+                      className="flex items-center gap-3 px-5 py-3"
+                      style={{ backgroundColor: "#f0fdf4" }}
+                    >
+                      <IconCircleCheck className="h-4 w-4 text-green-600" />
+                      <p className="text-xs font-medium text-green-700">
+                        Todas as {totalCount} tarefas concluidas
                       </p>
                     </div>
                   )}
+
                   {hasPendingTasks && (
-                    <div className="flex items-center gap-3 bg-blue-50/50 px-5 py-3">
-                      <IconClock className="h-5 w-5 text-blue-500" />
-                      <p className="text-sm font-medium text-blue-700">
+                    <div
+                      className="flex items-center gap-3 px-5 py-3"
+                      style={{ backgroundColor: "#faf8f5" }}
+                    >
+                      <IconClock className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                      <p className="text-xs font-medium" style={{ color: "#6b6560" }}>
                         {completedCount} de {totalCount} concluidas — {totalCount - completedCount} pendente{totalCount - completedCount !== 1 ? "s" : ""}
                       </p>
                     </div>
@@ -378,33 +441,39 @@ export function ProjectPortalView({
                   {sortedTasks.slice(0, 20).map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-zinc-50"
+                      className="flex items-center gap-4 px-5 py-3 transition-colors"
+                      style={{ borderTop: "1px solid #ebe7e1" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "#faf8f5";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
-                      {/* Status circle */}
+                      {/* Status */}
                       <div
-                        className={cn(
-                          "flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2",
-                          task.is_completed
-                            ? "border-green-500 bg-green-500"
+                        className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+                        style={{
+                          border: task.is_completed
+                            ? "none"
                             : task.status === "em_andamento"
-                              ? "border-blue-400"
-                              : "border-zinc-300"
-                        )}
+                              ? "1.5px solid #c45a1a"
+                              : "1.5px solid #d9d4cd",
+                          backgroundColor: task.is_completed ? "#c45a1a" : "transparent",
+                        }}
                       >
                         {task.is_completed && (
-                          <IconCheck className="h-3 w-3 text-white" />
+                          <IconCheck className="h-2.5 w-2.5 text-white" />
                         )}
                       </div>
 
                       {/* Title */}
                       <div className="min-w-0 flex-1">
                         <p
-                          className={cn(
-                            "text-sm",
-                            task.is_completed
-                              ? "text-zinc-400 line-through"
-                              : "text-zinc-800"
-                          )}
+                          className={cn("text-sm", task.is_completed && "line-through")}
+                          style={{
+                            color: task.is_completed ? "#b5b0aa" : "#1a1a1a",
+                          }}
                         >
                           {task.title}
                         </p>
@@ -412,24 +481,19 @@ export function ProjectPortalView({
 
                       {/* Priority */}
                       {task.priority && task.priority !== "media" && !task.is_completed && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-[10px]",
-                            PRIORITY_COLORS[task.priority] ?? ""
-                          )}
+                        <span
+                          className="text-[10px] font-medium uppercase tracking-wider"
+                          style={{
+                            color: task.priority === "urgente" ? "#dc2626" : task.priority === "alta" ? "#c45a1a" : "#8a8580",
+                          }}
                         >
-                          {task.priority === "urgente"
-                            ? "Urgente"
-                            : task.priority === "alta"
-                              ? "Alta"
-                              : task.priority}
-                        </Badge>
+                          {task.priority}
+                        </span>
                       )}
 
-                      {/* Due date */}
+                      {/* Date */}
                       {task.due_date && (
-                        <span className="flex-shrink-0 text-xs text-zinc-400">
+                        <span className="flex-shrink-0 text-xs" style={{ color: "#b5b0aa" }}>
                           {formatDate(task.due_date)}
                         </span>
                       )}
@@ -437,7 +501,10 @@ export function ProjectPortalView({
                   ))}
 
                   {sortedTasks.length > 20 && (
-                    <div className="px-5 py-3 text-center text-xs text-zinc-400">
+                    <div
+                      className="px-5 py-3 text-center text-xs"
+                      style={{ color: "#8a8580", borderTop: "1px solid #ebe7e1" }}
+                    >
                       +{sortedTasks.length - 20} tarefas adicionais
                     </div>
                   )}
@@ -465,9 +532,8 @@ export function ProjectPortalView({
               latestUpdate={latestUpdate}
             />
           )}
-          </div>
-        )
-      }
+        </div>
+      )}
       rightPanel={
         <div className="p-4">
           <PortalLatestDocs files={projectFiles} maxItems={6} />

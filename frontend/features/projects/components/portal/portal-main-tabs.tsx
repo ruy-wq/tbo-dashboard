@@ -5,7 +5,6 @@ import {
   IconChecklist,
   IconChartBar,
 } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
 
 export type PortalTabId = "files" | "tasks" | "reports";
 
@@ -15,14 +14,20 @@ interface PortalMainTabsProps {
 }
 
 const TABS: { key: PortalTabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "tasks", label: "Tarefas", icon: IconChecklist },
   { key: "files", label: "Arquivos", icon: IconFolder },
-  { key: "tasks", label: "Tarefas & Progresso", icon: IconChecklist },
   { key: "reports", label: "Relatorios", icon: IconChartBar },
 ];
 
 export function PortalMainTabs({ activeTab, onTabChange }: PortalMainTabsProps) {
   return (
-    <div className="flex gap-3">
+    <div
+      className="flex"
+      style={{
+        borderBottom: "1px solid #d9d4cd",
+        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+      }}
+    >
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.key;
@@ -30,21 +35,19 @@ export function PortalMainTabs({ activeTab, onTabChange }: PortalMainTabsProps) 
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-2 rounded-xl border-2 px-6 py-5 text-sm font-medium transition-all",
-              isActive
-                ? "border-orange-200 bg-orange-50/60 text-orange-700 shadow-sm"
-                : "border-zinc-100 bg-white text-zinc-500 hover:border-zinc-200 hover:bg-zinc-50"
-            )}
+            className="flex items-center gap-2 px-5 py-3 text-xs font-medium uppercase tracking-wider transition-colors"
+            style={{
+              color: isActive ? "#1a1a1a" : "#8a8580",
+              borderBottom: isActive ? "2px solid #c45a1a" : "2px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive) e.currentTarget.style.color = "#4a4540";
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) e.currentTarget.style.color = "#8a8580";
+            }}
           >
-            <div
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-lg",
-                isActive ? "bg-orange-100" : "bg-zinc-100"
-              )}
-            >
-              <Icon className={cn("h-5 w-5", isActive ? "text-orange-600" : "text-zinc-400")} />
-            </div>
+            <Icon className="h-4 w-4" />
             <span>{tab.label}</span>
           </button>
         );

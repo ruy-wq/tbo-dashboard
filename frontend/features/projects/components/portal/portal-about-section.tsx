@@ -17,9 +17,8 @@ import {
   IconBook,
   IconForms,
   IconBrandGoogleDrive,
+  IconArrowRight,
 } from "@tabler/icons-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -74,6 +73,28 @@ function hasAnyData(data: ProjectPortalAbout): boolean {
   );
 }
 
+// ─── Section Header (numbered TBO style) ─────────────────────────────────────
+
+function SectionHeader({ number, title }: { number: string; title: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-5">
+      <span
+        className="text-xs font-medium"
+        style={{ color: "#c45a1a", minWidth: "24px" }}
+      >
+        {number}
+      </span>
+      <span
+        className="text-xs font-medium uppercase tracking-[0.15em]"
+        style={{ color: "#1a1a1a" }}
+      >
+        {title}
+      </span>
+      <div className="flex-1 h-px" style={{ backgroundColor: "#d9d4cd" }} />
+    </div>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function PortalAboutSection({ projectName, clientCompany, data, onEdit }: PortalAboutSectionProps) {
@@ -82,14 +103,22 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
   // ── Empty State ────────────────────────────────────────────────────────────
   if (isEmpty) {
     return (
-      <div className="rounded-xl border border-dashed p-12 text-center">
-        <IconInfoCircle size={40} className="mx-auto text-muted-foreground/30 mb-4" />
-        <h3 className="text-base font-semibold mb-1">Informacoes do empreendimento</h3>
-        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+      <div
+        className="p-12 text-center"
+        style={{
+          border: "1px dashed #d9d4cd",
+          fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        }}
+      >
+        <IconInfoCircle size={40} className="mx-auto mb-4" style={{ color: "#d9d4cd" }} />
+        <h3 className="text-sm font-medium mb-1" style={{ color: "#1a1a1a" }}>
+          Informacoes do empreendimento
+        </h3>
+        <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: "#8a8580" }}>
           Preencha os dados do empreendimento para que o cliente veja as informacoes na aba Sobre do portal.
         </p>
         {onEdit && (
-          <Button onClick={onEdit}>
+          <Button onClick={onEdit} style={{ backgroundColor: "#c45a1a", borderRadius: 0 }}>
             <IconPencil size={16} className="mr-1.5" />
             Preencher informacoes
           </Button>
@@ -98,32 +127,45 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
     );
   }
 
+  let sectionNum = 0;
+
   // ── Filled State ───────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-8"
+      style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}
+    >
       {/* Edit button */}
       {onEdit && (
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={onEdit}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            style={{ borderRadius: 0, borderColor: "#d9d4cd" }}
+          >
             <IconPencil size={14} className="mr-1.5" />
-            Editar informacoes
+            Editar
           </Button>
         </div>
       )}
 
       {/* Project Hero */}
-      <div className="rounded-2xl bg-gradient-to-br from-stone-900 to-stone-800 p-8 text-white">
+      <div className="p-8" style={{ backgroundColor: "#1a1a1a" }}>
         {data.category && (
-          <Badge className="mb-4 bg-orange-500/20 text-orange-300 hover:bg-orange-500/30">
+          <span
+            className="inline-block px-3 py-1 text-[10px] font-medium uppercase tracking-[0.15em] mb-4"
+            style={{ backgroundColor: "#c45a1a", color: "#fff" }}
+          >
             {data.category}
-          </Badge>
+          </span>
         )}
-        <h2 className="text-3xl font-bold tracking-tight">{projectName}</h2>
+        <h2 className="text-3xl font-light tracking-tight text-white">{projectName}</h2>
         {data.tagline && (
-          <p className="mt-2 text-lg text-stone-300">{data.tagline}</p>
+          <p className="mt-2 text-base text-zinc-400">{data.tagline}</p>
         )}
         {data.description && (
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-stone-400">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-500">
             {data.description}
           </p>
         )}
@@ -131,138 +173,137 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
 
       {/* Location */}
       {(data.address || data.nearby_places?.length) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconMapPin className="h-4 w-4 text-orange-500" />
-              Localizacao
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Localizacao" />
+          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
             {data.address && (
-              <p className="text-sm font-medium text-zinc-900">{data.address}</p>
+              <div className="flex items-start gap-3">
+                <IconMapPin className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#c45a1a" }} />
+                <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>{data.address}</p>
+              </div>
             )}
             {data.walk_score != null && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+              <div className="flex items-center gap-2 mt-3 ml-7">
+                <span
+                  className="inline-block px-2 py-0.5 text-[10px] font-medium"
+                  style={{ backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                >
                   Walk Score: {data.walk_score}
-                </Badge>
+                </span>
                 {data.walk_score_label && (
-                  <span className="text-xs text-zinc-500">{data.walk_score_label}</span>
+                  <span className="text-xs" style={{ color: "#8a8580" }}>{data.walk_score_label}</span>
                 )}
               </div>
             )}
             {data.nearby_places && data.nearby_places.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="grid grid-cols-2 gap-2 pt-4 mt-4" style={{ borderTop: "1px solid #ebe7e1" }}>
                 {data.nearby_places.map((item) => (
-                  <div key={item} className="rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                  <div
+                    key={item}
+                    className="px-3 py-2 text-xs"
+                    style={{ backgroundColor: "#faf8f5", color: "#6b6560" }}
+                  >
                     {item}
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Tipologias */}
       {data.typologies && data.typologies.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconRuler className="h-4 w-4 text-orange-500" />
-              Tipologias
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {data.typologies.map((t, i) => (
-                <div key={i} className="rounded-xl border bg-zinc-50/50 p-4 text-center">
-                  <p className="text-xs font-medium text-zinc-500">{t.tipo}</p>
-                  <p className="mt-1 text-lg font-semibold text-zinc-900">{t.area}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Tipologias" />
+          <div className="grid grid-cols-2 gap-px md:grid-cols-3" style={{ backgroundColor: "#d9d4cd" }}>
+            {data.typologies.map((t, i) => (
+              <div key={i} className="p-4 text-center" style={{ backgroundColor: "#fff" }}>
+                <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "#8a8580" }}>
+                  {t.tipo}
+                </p>
+                <p className="mt-1 text-lg font-light" style={{ color: "#1a1a1a" }}>{t.area}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Areas Comuns */}
       {data.common_areas && data.common_areas.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconPool className="h-4 w-4 text-orange-500" />
-              Areas Comuns — +{data.common_areas.length} espacos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {data.common_areas.map((area) => (
-                <Badge key={area} variant="secondary" className="text-xs">
-                  {area}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title={`Areas Comuns — +${data.common_areas.length} espacos`} />
+          <div className="flex flex-wrap gap-2">
+            {data.common_areas.map((area) => (
+              <span
+                key={area}
+                className="px-3 py-1.5 text-xs"
+                style={{ backgroundColor: "#ebe7e1", color: "#4a4540" }}
+              >
+                {area}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Diferenciais */}
       {data.differentials && data.differentials.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconBuildingSkyscraper className="h-4 w-4 text-orange-500" />
-              Diferenciais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-zinc-700">
-              {data.differentials.map((diff) => (
-                <li key={diff} className="flex items-start gap-2">
-                  <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-orange-500" />
-                  {diff}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Diferenciais" />
+          <ul className="space-y-2">
+            {data.differentials.map((diff) => (
+              <li key={diff} className="flex items-start gap-3 text-sm" style={{ color: "#4a4540" }}>
+                <div
+                  className="mt-2 h-1.5 w-1.5 flex-shrink-0"
+                  style={{ backgroundColor: "#c45a1a" }}
+                />
+                {diff}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
-      {/* Sobre a Incorporadora */}
+      {/* Incorporadora */}
       {data.developer?.description && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconBuilding className="h-4 w-4 text-orange-500" />
-              Sobre {clientCompany ? `a ${clientCompany}` : "a Incorporadora"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm leading-relaxed text-zinc-600">
+        <div>
+          <SectionHeader
+            number={String(++sectionNum).padStart(2, "0")}
+            title={clientCompany ? `Sobre a ${clientCompany}` : "Sobre a Incorporadora"}
+          />
+          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "#6b6560" }}>
               {data.developer.description}
             </p>
 
             {data.developer.stats && data.developer.stats.length > 0 && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-px mt-5" style={{ backgroundColor: "#d9d4cd" }}>
                 {data.developer.stats.map((s, i) => (
-                  <div key={i} className="rounded-lg bg-zinc-50 p-3">
-                    <p className="text-2xl font-bold text-zinc-900">{s.value}</p>
-                    <p className="text-xs text-zinc-500">{s.label}</p>
+                  <div key={i} className="p-4" style={{ backgroundColor: "#faf8f5" }}>
+                    <p className="text-xl font-light" style={{ color: "#1a1a1a" }}>{s.value}</p>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: "#8a8580" }}>
+                      {s.label}
+                    </p>
                   </div>
                 ))}
               </div>
             )}
 
             {(data.developer.website || data.developer.phone || data.developer.email) && (
-              <div className="flex items-center gap-4 pt-2 text-xs text-zinc-500">
+              <div
+                className="flex items-center gap-5 pt-4 mt-4 text-xs"
+                style={{ borderTop: "1px solid #ebe7e1", color: "#8a8580" }}
+              >
                 {data.developer.website && (
                   <a
                     href={data.developer.website.startsWith("http") ? data.developer.website : `https://${data.developer.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 transition-colors hover:text-orange-600"
+                    className="flex items-center gap-1 transition-colors"
+                    style={{ color: "#8a8580" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "#c45a1a"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "#8a8580"; }}
                   >
                     <IconExternalLink className="h-3 w-3" />
                     {data.developer.website.replace(/^https?:\/\//, "")}
@@ -284,119 +325,131 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             )}
 
             {data.developer.other_projects && data.developer.other_projects.length > 0 && (
-              <div className="border-t pt-3">
-                <p className="text-xs font-medium text-zinc-500 mb-2">Outros empreendimentos</p>
+              <div className="pt-4 mt-4" style={{ borderTop: "1px solid #ebe7e1" }}>
+                <p className="text-[10px] font-medium uppercase tracking-wider mb-2" style={{ color: "#8a8580" }}>
+                  Outros empreendimentos
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {data.developer.other_projects.map((emp) => (
-                    <Badge key={emp} variant="outline" className="text-xs">{emp}</Badge>
+                    <span
+                      key={emp}
+                      className="px-3 py-1 text-xs"
+                      style={{ border: "1px solid #d9d4cd", color: "#6b6560" }}
+                    >
+                      {emp}
+                    </span>
                   ))}
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Previsao de Entrega */}
       {data.delivery_year && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconCalendar className="h-4 w-4 text-orange-500" />
-              Previsao de Entrega
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-zinc-900">{data.delivery_year}</p>
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Previsao de Entrega" />
+          <div className="p-6" style={{ backgroundColor: "#fff", border: "1px solid #d9d4cd" }}>
+            <p className="text-2xl font-light" style={{ color: "#1a1a1a" }}>{data.delivery_year}</p>
             {data.delivery_description && (
-              <p className="mt-1 text-sm text-zinc-500">{data.delivery_description}</p>
+              <p className="mt-1 text-xs" style={{ color: "#8a8580" }}>{data.delivery_description}</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Links do Projeto */}
       {(data.onboarding_url || data.guide_url || data.briefing_url || data.drive_url) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <IconLink className="h-4 w-4 text-orange-500" />
-              Links do Projeto
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {data.onboarding_url && (
-                <a
-                  href={data.onboarding_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 transition-colors group-hover:bg-orange-200">
-                    <IconPresentation className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Apresentacao</p>
-                    <p className="text-xs text-zinc-500">Onboarding do projeto</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
-                </a>
-              )}
-              {data.guide_url && (
-                <a
-                  href={data.guide_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200">
-                    <IconBook className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Guia de Boas-Vindas</p>
-                    <p className="text-xs text-zinc-500">Politicas e acessos</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
-                </a>
-              )}
-              {data.briefing_url && (
-                <a
-                  href={data.briefing_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200">
-                    <IconForms className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Briefing</p>
-                    <p className="text-xs text-zinc-500">Preencher briefing criativo</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
-                </a>
-              )}
-              {data.drive_url && (
-                <a
-                  href={data.drive_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 transition-colors group-hover:bg-yellow-200">
-                    <IconBrandGoogleDrive className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-900">Google Drive</p>
-                    <p className="text-xs text-zinc-500">Pasta de arquivos do projeto</p>
-                  </div>
-                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
-                </a>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div>
+          <SectionHeader number={String(++sectionNum).padStart(2, "0")} title="Links do Projeto" />
+          <div className="grid gap-px sm:grid-cols-2" style={{ backgroundColor: "#d9d4cd" }}>
+            {data.onboarding_url && (
+              <a
+                href={data.onboarding_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconPresentation className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Apresentacao</p>
+                  <p className="text-[10px]" style={{ color: "#8a8580" }}>Onboarding do projeto</p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            )}
+            {data.guide_url && (
+              <a
+                href={data.guide_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconBook className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Guia de Boas-Vindas</p>
+                  <p className="text-[10px]" style={{ color: "#8a8580" }}>Politicas e acessos</p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            )}
+            {data.briefing_url && (
+              <a
+                href={data.briefing_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconForms className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Briefing</p>
+                  <p className="text-[10px]" style={{ color: "#8a8580" }}>Preencher briefing criativo</p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            )}
+            {data.drive_url && (
+              <a
+                href={data.drive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 p-4 transition-all"
+                style={{ backgroundColor: "#fff" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#faf8f5"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#fff"; }}
+              >
+                <IconBrandGoogleDrive className="h-4 w-4" style={{ color: "#c45a1a" }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "#1a1a1a" }}>Google Drive</p>
+                  <p className="text-[10px]" style={{ color: "#8a8580" }}>Pasta de arquivos</p>
+                </div>
+                <IconArrowRight
+                  className="h-3 w-3 transition-transform group-hover:translate-x-1"
+                  style={{ color: "#c45a1a", opacity: 0.5 }}
+                />
+              </a>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

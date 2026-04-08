@@ -18,7 +18,13 @@ export function PortalLayout({
   sidebarCollapsed = false,
 }: PortalLayoutProps) {
   return (
-    <div className="flex h-screen flex-col bg-zinc-50/50">
+    <div
+      className="flex h-screen flex-col"
+      style={{
+        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+        backgroundColor: "#f0ede9",
+      }}
+    >
       {/* Header */}
       {header}
 
@@ -31,14 +37,17 @@ export function PortalLayout({
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-4xl px-6 py-6 lg:px-8">
+          <div className="mx-auto max-w-4xl px-6 py-8 lg:px-10">
             {main}
           </div>
         </main>
 
         {/* Right panel (optional) */}
         {rightPanel && (
-          <div className="hidden w-80 flex-shrink-0 border-l bg-white xl:flex xl:flex-col">
+          <div
+            className="hidden w-80 flex-shrink-0 border-l xl:flex xl:flex-col"
+            style={{ borderColor: "#d9d4cd", backgroundColor: "#f7f5f2" }}
+          >
             {rightPanel}
           </div>
         )}
