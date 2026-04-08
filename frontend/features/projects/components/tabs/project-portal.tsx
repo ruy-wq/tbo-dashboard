@@ -199,6 +199,41 @@ export function ProjectPortal({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [aboutEditorOpen, setAboutEditorOpen] = useState(false);
 
+  // Sync sidebar → content
+  function handleSidebarChange(key: string) {
+    setSidebarItem(key);
+    if (key === "home") {
+      setActiveNav("home");
+      setActiveTab("tasks");
+    } else if (key === "tasks") {
+      setActiveNav("home");
+      setActiveTab("tasks");
+    } else if (key === "analytics") {
+      setActiveNav("home");
+      setActiveTab("reports");
+    } else if (key === "documents") {
+      setActiveNav("home");
+      setActiveTab("files");
+    } else if (key === "about") {
+      setActiveNav("about");
+    }
+  }
+
+  // Sync header nav → sidebar
+  function handleNavChange(nav: string) {
+    setActiveNav(nav);
+    if (nav === "home") setSidebarItem("home");
+    else if (nav === "about") setSidebarItem("about");
+  }
+
+  // Sync main tabs → sidebar
+  function handleTabChange(tab: PortalTabId) {
+    setActiveTab(tab);
+    if (tab === "tasks") setSidebarItem("home");
+    else if (tab === "files") setSidebarItem("documents");
+    else if (tab === "reports") setSidebarItem("analytics");
+  }
+
   const { data: tasks = [], isLoading: tasksLoading } = usePortalTasks(projectId);
   const { data: projectFiles = [], isLoading: filesLoading } = usePortalProjectFiles(projectId);
   const { data: portalSections = [] } = usePortalSections(projectId);
@@ -354,7 +389,7 @@ export function ProjectPortal({
               projectName={projectName ?? "Projeto"}
               clientName={clientName}
               clientCompany={clientCompany}
-              onNavChange={setActiveNav}
+              onNavChange={handleNavChange}
               activeNav={activeNav}
             />
           }
@@ -363,7 +398,7 @@ export function ProjectPortal({
               projectName={projectName ?? "Projeto"}
               clientCompany={clientCompany}
               activeItem={sidebarItem}
-              onItemChange={setSidebarItem}
+              onItemChange={handleSidebarChange}
               collapsed={sidebarCollapsed}
               onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
               documents={sidebarDocs}
@@ -479,7 +514,7 @@ export function ProjectPortal({
                 </div>
               )}
 
-              <PortalMainTabs activeTab={activeTab} onTabChange={setActiveTab} />
+              <PortalMainTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
               {activeTab === "tasks" && (
                 <div className="space-y-6">

@@ -183,6 +183,39 @@ export function ProjectPortalView({
   const [sidebarItem, setSidebarItem] = useState("home");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Sync sidebar → content
+  function handleSidebarChange(key: string) {
+    setSidebarItem(key);
+    if (key === "home") {
+      setActiveNav("home");
+      setActiveTab("tasks");
+    } else if (key === "tasks") {
+      setActiveNav("home");
+      setActiveTab("tasks");
+    } else if (key === "analytics") {
+      setActiveNav("home");
+      setActiveTab("reports");
+    } else if (key === "documents") {
+      setActiveNav("home");
+      setActiveTab("files");
+    } else if (key === "about") {
+      setActiveNav("about");
+    }
+  }
+
+  function handleNavChange(nav: string) {
+    setActiveNav(nav);
+    if (nav === "home") setSidebarItem("home");
+    else if (nav === "about") setSidebarItem("about");
+  }
+
+  function handleTabChange(tab: PortalTabId) {
+    setActiveTab(tab);
+    if (tab === "tasks") setSidebarItem("home");
+    else if (tab === "files") setSidebarItem("documents");
+    else if (tab === "reports") setSidebarItem("analytics");
+  }
+
   // Delivery link
   const deliverySlug = deliveryToken;
 
@@ -254,7 +287,7 @@ export function ProjectPortalView({
           clientName={project.client}
           clientCompany={project.client_company}
           pendingApprovals={pendingApprovals}
-          onNavChange={setActiveNav}
+          onNavChange={handleNavChange}
           activeNav={activeNav}
         />
       }
@@ -263,7 +296,7 @@ export function ProjectPortalView({
           projectName={project.name}
           clientCompany={project.client_company}
           activeItem={sidebarItem}
-          onItemChange={setSidebarItem}
+          onItemChange={handleSidebarChange}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           documents={sidebarDocs}
@@ -383,7 +416,7 @@ export function ProjectPortalView({
           )}
 
           {/* Main Tabs */}
-          <PortalMainTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <PortalMainTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
           {/* Tab Content */}
           {activeTab === "tasks" && (
