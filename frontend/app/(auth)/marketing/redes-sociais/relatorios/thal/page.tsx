@@ -131,8 +131,8 @@ function ThalDashboardContent() {
       {/* Period subtitle */}
       <p className="text-xs text-muted-foreground">
         {period === "30d"
-          ? "Periodo: 08/03/2026 a 06/04/2026 · Comparativo: 06/02/2026 a 07/03/2026"
-          : "Periodo: 06/10/2025 a 06/04/2026 · Comparativo: 06/04/2025 a 05/10/2025"}
+          ? "Período: 08/03/2026 a 06/04/2026 · Comparativo: 06/02/2026 a 07/03/2026"
+          : "Período: 06/10/2025 a 06/04/2026 · Comparativo: 06/04/2025 a 05/10/2025"}
       </p>
 
       {/* Views */}
@@ -141,7 +141,7 @@ function ThalDashboardContent() {
       {/* Footer */}
       <div className="border-t pt-4 text-center">
         <p className="text-xs text-muted-foreground">
-          Relatorio produzido por TBO — think, build, own
+          Relatório produzido por TBO — think, build, own
         </p>
       </div>
     </div>

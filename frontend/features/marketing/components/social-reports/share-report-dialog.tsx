@@ -58,7 +58,7 @@ export function ShareReportDialog({
 
   async function handleCreate() {
     if (!tenantId) {
-      toast.error("Sessao invalida. Faca login novamente.");
+      toast.error("Sessão inválida. Faça login novamente.");
       return;
     }
 
@@ -97,7 +97,7 @@ export function ShareReportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <IconLink className="size-5" />
-            Compartilhar Relatorio
+            Compartilhar Relatório
           </DialogTitle>
         </DialogHeader>
 
@@ -121,7 +121,7 @@ export function ShareReportDialog({
                 onChange={(e) => setPassword(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                Se definida, o cliente precisara digitar a senha para ver o relatorio.
+                Se definida, o cliente precisará digitar a senha para ver o relatório.
               </p>
             </div>
 

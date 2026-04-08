@@ -41,7 +41,7 @@ export const MONTHLY_FEED = {
     saves: { value: 6, previous: 11, delta: -45.45 },
   },
   posts: [
-    { title: "Essencia de alma a cada metro quadrado — AUMA", type: "Imagem", views: 1640, reach: 846, interactions: 36, engRate: 4.26, likes: 29, shares: 3 },
+    { title: "Essência de alma a cada metro quadrado — AUMA", type: "Imagem", views: 1640, reach: 846, interactions: 36, engRate: 4.26, likes: 29, shares: 3 },
     { title: "Muito grata por cada mulher que faz parte...", type: "Imagem", views: 1300, reach: 778, interactions: 22, engRate: 2.83, likes: 15, shares: 4 },
     { title: "A cobertura duplex do AUMA e para quem busca...", type: "Carrossel", views: 1207, reach: 605, interactions: 22, engRate: 3.64, likes: 15, shares: 5 },
     { title: "Algo especial esta chegando ao Tingui...", type: "Reels", views: 901, reach: 529, interactions: 13, engRate: 2.46, likes: 10, shares: 2 },
@@ -79,12 +79,12 @@ export const MONTHLY_STORIES = {
 
 export const AUDIENCE = {
   geo: [
-    { city: "Curitiba, Parana", followers: 2434 },
-    { city: "Pinhais, Parana", followers: 287 },
-    { city: "Colombo, Parana", followers: 218 },
-    { city: "Sao Paulo, SP", followers: 208 },
-    { city: "Sao Jose dos Pinhais, Parana", followers: 170 },
-    { city: "Piraquara, Parana", followers: 99 },
+    { city: "Curitiba, Paraná", followers: 2434 },
+    { city: "Pinhais, Paraná", followers: 287 },
+    { city: "Colombo, Paraná", followers: 218 },
+    { city: "São Paulo, SP", followers: 208 },
+    { city: "São José dos Pinhais, Paraná", followers: 170 },
+    { city: "Piraquara, Paraná", followers: 99 },
   ],
   gender: { female: 57.79, male: 42.21 },
   topAgeRanges: ["25-34", "35-44"],
@@ -113,11 +113,11 @@ export const SEMESTER_FEED = {
     saves: { value: 47, previous: 8, delta: 487.5 },
   },
   topPosts: [
-    { title: "Elegancia, conforto e tecnologia — AUMA", type: "Reels", views: 5354, reach: 2896, interactions: 256, engRate: 8.84, likes: 195, shares: 41 },
-    { title: "Pre-Lancamento AUMA — empreendimento concebido para...", type: "Reels", views: 3954, reach: 2730, interactions: 91, engRate: 3.33, likes: 56, shares: 21 },
-    { title: "Expansao com proposito, solidez com visao — Thal", type: "Reels", views: 5222, reach: 2444, interactions: 255, engRate: 10.43, likes: 227, shares: 12 },
-    { title: "Nada e mais valioso do que a seguranca de quem...", type: "Reels", views: 3721, reach: 2204, interactions: 141, engRate: 6.40, likes: 119, shares: 10 },
-    { title: "Duas decadas construindo mais do que empreendimentos", type: "Reels", views: 3539, reach: 2127, interactions: 198, engRate: 9.31, likes: 167, shares: 10 },
+    { title: "Elegância, conforto e tecnologia — AUMA", type: "Reels", views: 5354, reach: 2896, interactions: 256, engRate: 8.84, likes: 195, shares: 41 },
+    { title: "Pré-Lançamento AUMA — empreendimento concebido para...", type: "Reels", views: 3954, reach: 2730, interactions: 91, engRate: 3.33, likes: 56, shares: 21 },
+    { title: "Expansão com propósito, solidez com visão — Thal", type: "Reels", views: 5222, reach: 2444, interactions: 255, engRate: 10.43, likes: 227, shares: 12 },
+    { title: "Nada é mais valioso do que a segurança de quem...", type: "Reels", views: 3721, reach: 2204, interactions: 141, engRate: 6.40, likes: 119, shares: 10 },
+    { title: "Duas décadas construindo mais do que empreendimentos", type: "Reels", views: 3539, reach: 2127, interactions: 198, engRate: 9.31, likes: 167, shares: 10 },
   ],
 };
 
@@ -151,16 +151,16 @@ export const SEMESTER_STORIES = {
 };
 
 export const SEMESTER_COMPARISON = [
-  { metric: "Visualizacoes totais", previous: 421692, current: 3528365, delta: 736.72 },
-  { metric: "Interacoes totais", previous: 777, current: 7516, delta: 867.31 },
+  { metric: "Visualizações totais", previous: 421692, current: 3528365, delta: 736.72 },
+  { metric: "Interações totais", previous: 777, current: 7516, delta: 867.31 },
   { metric: "Visitas ao perfil", previous: 5488, current: 11770, delta: 114.47 },
   { metric: "Alcance total (30d)", previous: 47683, current: 69329, delta: 45.4 },
   { metric: "Alcance pago (30d)", previous: 43785, current: 67167, delta: 53.4 },
-  { metric: "Publicacoes feed", previous: 62, current: 47, delta: -24.19 },
+  { metric: "Publicações feed", previous: 62, current: 47, delta: -24.19 },
   { metric: "Reels publicados", previous: 32, current: 23, delta: -28.13 },
-  { metric: "Interacoes em Reels", previous: 454, current: 3798, delta: 736.56 },
+  { metric: "Interações em Reels", previous: 454, current: 3798, delta: 736.56 },
   { metric: "Curtidas em Reels", previous: 289, current: 2837, delta: 881.66 },
   { metric: "Compartilhamentos Reels", previous: 62, current: 348, delta: 461.29 },
-  { metric: "Stories publicados", previous: 0, current: 21, deltaLabel: "Inauguracao" },
-  { metric: "Visualizacoes Stories", previous: 0, current: 17066, deltaLabel: "Inauguracao" },
+  { metric: "Stories publicados", previous: 0, current: 21, deltaLabel: "Inauguração" },
+  { metric: "Visualizações Stories", previous: 0, current: 17066, deltaLabel: "Inauguração" },
 ] as const;

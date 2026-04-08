@@ -49,9 +49,9 @@ export function ReportView({
             <IconLock className="size-7 text-muted-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold">Relatorio protegido</h1>
+            <h1 className="text-lg font-bold">Relatório protegido</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Digite a senha para acessar o relatorio de {clientName}.
+              Digite a senha para acessar o relatório de {clientName}.
             </p>
           </div>
           <div className="space-y-2">
@@ -76,7 +76,7 @@ export function ReportView({
                 else setError(true);
               }}
             >
-              Acessar relatorio
+              Acessar relatório
             </Button>
           </div>
         </div>
@@ -139,7 +139,7 @@ export function ReportView({
       {/* Period info */}
       {(periodStart || periodEnd) && (
         <p className="text-xs text-muted-foreground">
-          Periodo: {periodStart} a {periodEnd}
+          Período: {periodStart} a {periodEnd}
         </p>
       )}
 
@@ -165,7 +165,7 @@ export function ReportView({
       {/* Footer */}
       <div className="border-t pt-6 text-center space-y-1">
         <p className="text-xs text-muted-foreground">
-          Relatorio produzido por TBO — think, build, own
+          Relatório produzido por TBO — think, build, own
         </p>
         <p className="text-[10px] text-muted-foreground/60">
           wearetbo.com.br

@@ -178,14 +178,14 @@ export function ReachBar({ paid, organic }: { paid: number; organic: number }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Alcance · ultimos 30 dias</CardTitle>
+        <CardTitle className="text-sm font-medium">Alcance · últimos 30 dias</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-4 gap-3">
           <MiniKpi label="Total" value={total.toLocaleString("pt-BR")} />
           <MiniKpi label="Pago" value={paid.toLocaleString("pt-BR")} className="text-orange-500" />
-          <MiniKpi label="Organico" value={organic.toLocaleString("pt-BR")} className="text-blue-500" />
-          <MiniKpi label="% Organico" value={`${orgPct}%`} />
+          <MiniKpi label="Orgânico" value={organic.toLocaleString("pt-BR")} className="text-blue-500" />
+          <MiniKpi label="% Orgânico" value={`${orgPct}%`} />
         </div>
         <div className="flex h-10 overflow-hidden rounded-lg">
           <div
