@@ -10,7 +10,8 @@ export async function proxy(request: NextRequest) {
     path.startsWith("/briefing") ||
     path.startsWith("/api/briefing") ||
     path.startsWith("/intake") ||
-    path.startsWith("/api/comercial/proposal-pdf")
+    path.startsWith("/api/comercial/proposal-pdf") ||
+    path.startsWith("/relatorio-social")
   ) {
     return NextResponse.next()
   }

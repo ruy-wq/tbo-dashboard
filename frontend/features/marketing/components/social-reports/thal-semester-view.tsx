@@ -22,16 +22,35 @@ import {
   MetricTable,
 } from "./report-primitives";
 import {
-  SEMESTER_SUMMARY,
-  SEMESTER_FEED,
-  SEMESTER_REELS,
-  SEMESTER_STORIES,
-  SEMESTER_COMPARISON,
+  SEMESTER_SUMMARY as DEFAULT_SUMMARY,
+  SEMESTER_FEED as DEFAULT_FEED,
+  SEMESTER_REELS as DEFAULT_REELS,
+  SEMESTER_STORIES as DEFAULT_STORIES,
+  SEMESTER_COMPARISON as DEFAULT_COMPARISON,
 } from "../../data/thal-instagram-report";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 
-export function ThalSemesterView() {
+interface ThalSemesterProps {
+  semesterSummary?: typeof DEFAULT_SUMMARY;
+  semesterFeed?: typeof DEFAULT_FEED;
+  semesterReels?: typeof DEFAULT_REELS;
+  semesterStories?: typeof DEFAULT_STORIES;
+  semesterComparison?: typeof DEFAULT_COMPARISON;
+}
+
+export function ThalSemesterView({
+  semesterSummary,
+  semesterFeed,
+  semesterReels,
+  semesterStories,
+  semesterComparison,
+}: ThalSemesterProps = {}) {
+  const SEMESTER_SUMMARY = semesterSummary ?? DEFAULT_SUMMARY;
+  const SEMESTER_FEED = semesterFeed ?? DEFAULT_FEED;
+  const SEMESTER_REELS = semesterReels ?? DEFAULT_REELS;
+  const SEMESTER_STORIES = semesterStories ?? DEFAULT_STORIES;
+  const SEMESTER_COMPARISON = semesterComparison ?? DEFAULT_COMPARISON;
   return (
     <div className="space-y-8">
       {/* ── 07 Sumário Executivo ── */}

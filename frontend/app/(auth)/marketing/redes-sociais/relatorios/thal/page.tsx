@@ -7,11 +7,27 @@ import {
   IconArrowLeft,
   IconCalendar,
   IconCalendarStats,
+  IconShare,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RequireRole } from "@/features/auth/components/require-role";
 import { ThalMonthlyView } from "@/features/marketing/components/social-reports/thal-monthly-view";
 import { ThalSemesterView } from "@/features/marketing/components/social-reports/thal-semester-view";
+import { ShareReportDialog } from "@/features/marketing/components/social-reports/share-report-dialog";
+import {
+  THAL_REPORT,
+  MONTHLY_SUMMARY,
+  MONTHLY_FEED,
+  MONTHLY_REELS,
+  MONTHLY_STORIES,
+  AUDIENCE,
+  SEMESTER_SUMMARY,
+  SEMESTER_FEED,
+  SEMESTER_REELS,
+  SEMESTER_STORIES,
+  SEMESTER_COMPARISON,
+} from "@/features/marketing/data/thal-instagram-report";
 
 type Period = "30d" | "6m";
 
@@ -52,8 +68,40 @@ function ThalDashboardContent() {
           </div>
         </div>
 
-        {/* Period Tabs */}
-        <div className="flex items-center rounded-lg border overflow-hidden">
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <ShareReportDialog
+            clientName={THAL_REPORT.client}
+            handle={THAL_REPORT.handle}
+            platform={THAL_REPORT.platform}
+            periodLabel="Abril 2026"
+            periodStart="2026-03-08"
+            periodEnd="2026-04-06"
+            reportData={{
+              monthly: {
+                summary: MONTHLY_SUMMARY,
+                feed: MONTHLY_FEED,
+                reels: MONTHLY_REELS,
+                stories: MONTHLY_STORIES,
+              },
+              semester: {
+                summary: SEMESTER_SUMMARY,
+                feed: SEMESTER_FEED,
+                reels: SEMESTER_REELS,
+                stories: SEMESTER_STORIES,
+                comparison: SEMESTER_COMPARISON,
+              },
+              audience: AUDIENCE,
+            }}
+          >
+            <Button variant="outline" size="sm">
+              <IconShare className="size-4 mr-1.5" />
+              Compartilhar
+            </Button>
+          </ShareReportDialog>
+
+          {/* Period Tabs */}
+          <div className="flex items-center rounded-lg border overflow-hidden">
           <button
             onClick={() => setPeriod("30d")}
             className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
@@ -76,6 +124,7 @@ function ThalDashboardContent() {
             <IconCalendarStats className="size-4" />
             Semestral
           </button>
+          </div>
         </div>
       </div>
 

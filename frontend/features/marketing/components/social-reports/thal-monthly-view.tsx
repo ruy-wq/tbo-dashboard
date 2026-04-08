@@ -22,16 +22,35 @@ import {
   ReachBar,
 } from "./report-primitives";
 import {
-  MONTHLY_SUMMARY,
-  MONTHLY_FEED,
-  MONTHLY_REELS,
-  MONTHLY_STORIES,
-  AUDIENCE,
+  MONTHLY_SUMMARY as DEFAULT_SUMMARY,
+  MONTHLY_FEED as DEFAULT_FEED,
+  MONTHLY_REELS as DEFAULT_REELS,
+  MONTHLY_STORIES as DEFAULT_STORIES,
+  AUDIENCE as DEFAULT_AUDIENCE,
 } from "../../data/thal-instagram-report";
 
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 
-export function ThalMonthlyView() {
+interface ThalMonthlyProps {
+  monthlySummary?: typeof DEFAULT_SUMMARY;
+  monthlyFeed?: typeof DEFAULT_FEED;
+  monthlyReels?: typeof DEFAULT_REELS;
+  monthlyStories?: typeof DEFAULT_STORIES;
+  audience?: typeof DEFAULT_AUDIENCE;
+}
+
+export function ThalMonthlyView({
+  monthlySummary,
+  monthlyFeed,
+  monthlyReels,
+  monthlyStories,
+  audience,
+}: ThalMonthlyProps = {}) {
+  const MONTHLY_SUMMARY = monthlySummary ?? DEFAULT_SUMMARY;
+  const MONTHLY_FEED = monthlyFeed ?? DEFAULT_FEED;
+  const MONTHLY_REELS = monthlyReels ?? DEFAULT_REELS;
+  const MONTHLY_STORIES = monthlyStories ?? DEFAULT_STORIES;
+  const AUDIENCE = audience ?? DEFAULT_AUDIENCE;
   return (
     <div className="space-y-8">
       {/* ── 01 Sumário Executivo ── */}
