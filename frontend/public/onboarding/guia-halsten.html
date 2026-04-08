@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Boas-Vindas — Felipe Schmidt | TBO + Halsten</title>
+<style>
+  :root {
+    --bg: #f0ede9;
+    --mid: #e8e4df;
+    --surface: #e2dfd9;
+    --white: #0f0f0f;
+    --off: #202020;
+    --muted: #4a4a4a;
+    --orange: #c45a1a;
+    --orange-hover: #aa4d17;
+    --orange-glow: rgba(196, 90, 26, 0.1);
+    --border: rgba(15, 15, 15, 0.08);
+    --border-strong: rgba(15, 15, 15, 0.15);
+    --font: "Helvetica Neue", HelveticaNeue, Helvetica, Arial, sans-serif;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  ::selection { background: var(--orange); color: var(--bg); }
+
+  /* ── Layout ── */
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* ── Header ── */
+  .hero {
+    background: #1a1a1a;
+    color: #e8e4df;
+    padding: 96px 0 80px;
+  }
+
+  .hero h1 {
+    font-size: 44px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .hero p {
+    font-size: 17px;
+    color: #a0a0a0;
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  .hero .tag {
+    border-color: rgba(255,255,255,0.12);
+    color: #a0a0a0;
+  }
+
+  /* ── Section ── */
+  .section {
+    padding: 64px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section:last-child { border-bottom: none; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .section-num {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--orange);
+    border: 1px solid var(--border-strong);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  p { color: var(--muted); max-width: 640px; }
+
+  .accent { color: var(--orange); }
+
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border-strong);
+    padding: 6px 16px;
+    color: var(--muted);
+  }
+
+  /* ── Info rows (two-column) ── */
+  .info-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 32px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+
+  .info-row:last-child { border-bottom: none; }
+
+  .info-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  .info-value {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .info-value a {
+    color: var(--orange);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s var(--ease);
+  }
+
+  .info-value a:hover { border-color: var(--orange); }
+
+  .info-value ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .info-value li {
+    padding: 3px 0;
+  }
+
+  .info-value li::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: var(--orange);
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+
+  /* ── Policy cards ── */
+  .policy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-strong);
+    border: 1px solid var(--border-strong);
+    margin-top: 32px;
+  }
+
+  .policy-card {
+    background: var(--bg);
+    padding: 32px;
+  }
+
+  .policy-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .policy-card p {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: none;
+  }
+
+  .policy-card .highlight {
+    font-weight: 600;
+    color: var(--white);
+  }
+
+  /* ── Links grid ── */
+  .links-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border-strong);
+    border: 1px solid var(--border-strong);
+    margin-top: 32px;
+  }
+
+  .link-item {
+    background: var(--bg);
+    padding: 28px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: background 0.4s var(--ease);
+  }
+
+  .link-item:hover { background: rgba(255,255,255,0.3); }
+
+  .link-item h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .link-item p {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: none;
+    line-height: 1.5;
+  }
+
+  .link-item .arrow {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--orange);
+    font-weight: 500;
+    transition: transform 0.3s var(--ease);
+  }
+
+  .link-item:hover .arrow { transform: translateX(4px); }
+
+  /* ── CTA ── */
+  .cta-bar {
+    background: #1a1a1a;
+    color: #e8e4df;
+    padding: 64px 0;
+    text-align: center;
+  }
+
+  .cta-bar h2 { color: #e8e4df; margin-bottom: 12px; }
+  .cta-bar p { color: #a0a0a0; margin: 0 auto 32px; text-align: center; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--orange);
+    color: var(--bg);
+    padding: 14px 36px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.4s var(--ease);
+    font-family: var(--font);
+  }
+
+  .btn:hover { background: var(--orange-hover); transform: translateY(-1px); }
+
+  /* ── Footer ── */
+  .footer {
+    padding: 48px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .footer a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+    transition: color 0.3s;
+  }
+
+  .footer a:hover { color: var(--orange); border-color: var(--orange); }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .container { padding: 0 20px; }
+    .hero { padding: 64px 0 56px; }
+    .hero h1 { font-size: 32px; }
+    h2 { font-size: 26px; }
+    .info-row { grid-template-columns: 1fr; gap: 8px; }
+    .policy-grid, .links-grid { grid-template-columns: 1fr; }
+    .section { padding: 48px 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════ HERO ═══════ -->
+<header class="hero">
+  <div class="container">
+    <div style="margin-bottom: 32px; display: flex; gap: 8px;">
+      <span class="tag">Guia de Boas-Vindas</span>
+      <span class="tag">Digital 3D</span>
+    </div>
+    <h1>Seja bem-vinda,<br><span style="color: var(--orange);">Halsten.</span></h1>
+    <p>
+      Criamos este guia para que vocês se familiarizem com nosso processo,
+      entendam como trabalhamos e saibam exatamente o que esperar ao longo da parceria.
+    </p>
+  </div>
+</header>
+
+<!-- ═══════ 01 — SOBRE A TBO ═══════ -->
+<main class="container">
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-num">01</span>
+        <span class="section-label">Sobre a TBO</span>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-label">Sobre /</div>
+      <div class="info-value">
+        A TBO é um ecossistema criativo especializado em transformar arquitetura em produto.
+        Atuamos com branding, marketing, digital 3D e audiovisual, criando lançamentos completos
+        que combinam estratégia, direção de arte e fidelidade técnica.
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Horários /</div>
+      <div class="info-value">
+        Segunda a Sexta / 09h00 — 18h00<br>
+        <span style="font-size: 13px;">(respostas dentro do horário comercial)</span>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Contatos /</div>
+      <div class="info-value">
+        <a href="mailto:carol@agenciatbo.com.br">carol@agenciatbo.com.br</a> — Atendimento / Operações<br>
+        <a href="mailto:nathalia@agenciatbo.com.br">nathalia@agenciatbo.com.br</a> — PO Digital 3D<br>
+        <a href="mailto:marco@agenciatbo.com.br">marco@agenciatbo.com.br</a> — Diretor Criativo<br>
+        <a href="mailto:ruy@agenciatbo.com.br">ruy@agenciatbo.com.br</a> — Diretor Comercial
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ 02 — NOSSO PROJETO ═══════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-num">02</span>
+        <span class="section-label">Nosso Projeto</span>
+      </div>
+    </div>
+
+    <h2>Felipe Schmidt</h2>
+    <p>Este espaço concentra todas as informações essenciais do projeto: escopo, entregáveis, cronograma e documentos. Acompanhe cada etapa com clareza total.</p>
+
+    <div class="info-row" style="margin-top: 32px;">
+      <div class="info-label">Entregáveis /</div>
+      <div class="info-value">
+        <ul>
+          <li>Modelagem 3D</li>
+          <li>22 imagens estáticas</li>
+          <li>8 plantas humanizadas</li>
+          <li>10 implantações humanizadas</li>
+        </ul>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Cronograma /</div>
+      <div class="info-value">
+        Abril — Onboarding e Briefing<br>
+        Maio — Direção Criativa e Moodboard<br>
+        Junho/Julho — Produção 3D<br>
+        Agosto — Revisões<br>
+        Setembro — Entrega final<br>
+        <strong>Outubro — Lançamento</strong>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Comunicação /</div>
+      <div class="info-value">
+        WhatsApp (grupo do projeto) + E-mail
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Materiais /</div>
+      <div class="info-value">
+        <a href="https://drive.google.com/drive/folders/1Fm1m7DJY3XWU4w4hKAcTMgf8e4FxpZzN" target="_blank">Abrir pasta no Google Drive &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ 03 — ACESSOS ═══════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-num">03</span>
+        <span class="section-label">Acessos Rápidos</span>
+      </div>
+    </div>
+
+    <div class="links-grid">
+      <a class="link-item" href="https://os.wearetbo.com.br/portal/projeto/a26b08dd-7a9e-4c65-92c9-b345029077ce" target="_blank">
+        <h4>Portal do Cliente</h4>
+        <p>Acompanhe entregas, aprove imagens e veja o progresso.</p>
+        <span class="arrow">Acessar &rarr;</span>
+      </a>
+      <a class="link-item" href="https://os.wearetbo.com.br/briefing/halsten?nome=Halsten+Incorporadora&projeto=felipe-schmidt&projeto_nome=Felipe+Schmidt" target="_blank">
+        <h4>Briefing Digital 3D</h4>
+        <p>Preencha as informações do empreendimento.</p>
+        <span class="arrow">Preencher &rarr;</span>
+      </a>
+      <a class="link-item" href="https://drive.google.com/drive/folders/1Fm1m7DJY3XWU4w4hKAcTMgf8e4FxpZzN" target="_blank">
+        <h4>Google Drive</h4>
+        <p>Envie arquivos e acompanhe entregas.</p>
+        <span class="arrow">Abrir &rarr;</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════ 04 — POLÍTICAS ═══════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="section-num">04</span>
+        <span class="section-label">Políticas</span>
+      </div>
+    </div>
+
+    <h2>Como trabalhamos</h2>
+    <p>Conheça nossas políticas para garantir fluidez, organização e excelência ao longo do projeto.</p>
+
+    <div class="policy-grid">
+      <div class="policy-card">
+        <h3>Comunicação</h3>
+        <p>
+          Atendemos em horário comercial. Respondemos mensagens e e-mails em
+          <span class="highlight">24 a 72 horas úteis</span>.
+          Canais oficiais: e-mail e WhatsApp do grupo. Demandas urgentes fora do fluxo
+          podem gerar custo adicional.
+        </p>
+      </div>
+      <div class="policy-card">
+        <h3>Ferramentas</h3>
+        <p>
+          <span class="highlight">Google Drive</span> — arquivos e entregáveis finais.<br>
+          <span class="highlight">Portal TBO</span> — gestão e acompanhamento.<br>
+          <span class="highlight">Miro</span> — direção criativa e moodboards.<br>
+          <span class="highlight">Google Meet</span> — reuniões e apresentações.
+        </p>
+      </div>
+      <div class="policy-card">
+        <h3>Feedback e Retornos</h3>
+        <p>
+          Pedimos que feedbacks sejam enviados em até <span class="highlight">5 dias úteis</span>
+          após a entrega. Atrasos podem impactar os prazos. Se ficarmos
+          <span class="highlight">30 dias</span> sem resposta, o projeto será pausado.
+        </p>
+      </div>
+      <div class="policy-card">
+        <h3>Escopo e Revisões</h3>
+        <p>
+          Cada fase inclui a emissão inicial + <span class="highlight">3 rodadas de revisão</span>.
+          Novas solicitações ou mudanças de escopo são orçadas à parte.
+          Revisões extras são cobradas por hora conforme contrato.
+        </p>
+      </div>
+      <div class="policy-card">
+        <h3>Pagamentos</h3>
+        <p>
+          Trabalhamos com <span class="highlight">entrada + saldo conforme cronograma</span>
+          em contrato. Faturas possuem prazo de <span class="highlight">5 dias</span>.
+          Pagamentos são não reembolsáveis após início, pois equipe já está alocada.
+        </p>
+      </div>
+      <div class="policy-card">
+        <h3>Propriedade Intelectual</h3>
+        <p>
+          Após pagamento total, vocês recebem todos os <span class="highlight">arquivos finais aprovados</span>.
+          Arquivos de trabalho (PSD, AI, cenas 3D, drafts) permanecem como propriedade da TBO.
+          Entregas via Google Drive.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════ CTA ═══════ -->
+<div class="cta-bar">
+  <div class="container">
+    <h2>Primeiro passo</h2>
+    <p>Preencha o briefing interdisciplinar para darmos início à produção.</p>
+    <a class="btn" href="https://os.wearetbo.com.br/briefing/halsten?nome=Halsten+Incorporadora&projeto=felipe-schmidt&projeto_nome=Felipe+Schmidt" target="_blank">
+      Preencher o Briefing &rarr;
+    </a>
+  </div>
+</div>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer class="footer">
+  <div class="container">
+    <p style="margin-bottom: 16px;">
+      <a href="https://wearetbo.com.br" target="_blank">wearetbo.com.br</a>
+      &nbsp;&nbsp;|&nbsp;&nbsp;
+      <a href="mailto:contato@agenciatbo.com.br">contato@agenciatbo.com.br</a>
+      &nbsp;&nbsp;|&nbsp;&nbsp;
+      <a href="tel:+5541996696918">+55 41 99669-6918</a>
+    </p>
+    <p style="font-size: 12px; color: var(--muted);">TBO &mdash; Think. Build. Own. &mdash; Curitiba, PR</p>
+  </div>
+</footer>
+
+</body>
+</html>

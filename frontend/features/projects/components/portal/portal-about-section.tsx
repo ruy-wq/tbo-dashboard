@@ -12,6 +12,11 @@ import {
   IconMail,
   IconPencil,
   IconInfoCircle,
+  IconLink,
+  IconPresentation,
+  IconBook,
+  IconForms,
+  IconBrandGoogleDrive,
 } from "@tabler/icons-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +45,11 @@ export interface ProjectPortalAbout {
   };
   delivery_year?: string;
   delivery_description?: string;
+  /** Links de onboarding e documentos do projeto */
+  onboarding_url?: string;
+  guide_url?: string;
+  briefing_url?: string;
+  drive_url?: string;
 }
 
 interface PortalAboutSectionProps {
@@ -301,6 +311,90 @@ export function PortalAboutSection({ projectName, clientCompany, data, onEdit }:
             {data.delivery_description && (
               <p className="mt-1 text-sm text-zinc-500">{data.delivery_description}</p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Links do Projeto */}
+      {(data.onboarding_url || data.guide_url || data.briefing_url || data.drive_url) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <IconLink className="h-4 w-4 text-orange-500" />
+              Links do Projeto
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {data.onboarding_url && (
+                <a
+                  href={data.onboarding_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 transition-colors group-hover:bg-orange-200">
+                    <IconPresentation className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Apresentacao</p>
+                    <p className="text-xs text-zinc-500">Onboarding do projeto</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
+                </a>
+              )}
+              {data.guide_url && (
+                <a
+                  href={data.guide_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 transition-colors group-hover:bg-blue-200">
+                    <IconBook className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Guia de Boas-Vindas</p>
+                    <p className="text-xs text-zinc-500">Politicas e acessos</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
+                </a>
+              )}
+              {data.briefing_url && (
+                <a
+                  href={data.briefing_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200">
+                    <IconForms className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Briefing</p>
+                    <p className="text-xs text-zinc-500">Preencher briefing criativo</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
+                </a>
+              )}
+              {data.drive_url && (
+                <a
+                  href={data.drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-zinc-50/50 p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 transition-colors group-hover:bg-yellow-200">
+                    <IconBrandGoogleDrive className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Google Drive</p>
+                    <p className="text-xs text-zinc-500">Pasta de arquivos do projeto</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 transition-colors group-hover:text-orange-400" />
+                </a>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

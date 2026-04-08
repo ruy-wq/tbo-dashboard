@@ -21,6 +21,10 @@ import {
   IconCheck,
   IconExternalLink,
   IconPackage,
+  IconPresentation,
+  IconBook,
+  IconForms,
+  IconBrandGoogleDrive,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
@@ -129,6 +133,12 @@ export function ProjectPortalView({
   // Delivery link (unique per project from project_deliveries)
   const deliverySlug = deliveryToken;
 
+  // Project links from portal_about
+  const aboutData = (project.portal_about ?? {}) as ProjectPortalAbout;
+  const hasProjectLinks = !!(aboutData.onboarding_url || aboutData.guide_url || aboutData.briefing_url || aboutData.drive_url);
+
+  const hasPendingTasks = tasks.some((t) => !t.is_completed);
+
   // Build stepper phases
   const phases = useMemo<TrackPhase[]>(() => {
     if (sections.length === 0) {
@@ -149,9 +159,7 @@ export function ProjectPortalView({
         status: allDone ? "completed" : someActive ? "in_progress" : "pending",
       } satisfies TrackPhase;
     });
-  }, [sections, tasks, progressPercent]);
-
-  const hasPendingTasks = tasks.some((t) => !t.is_completed);
+  }, [sections, tasks, hasPendingTasks]);
   const healthLabel = !hasPendingTasks ? "Entregue" : progressPercent >= 90 ? "Em entrega" : progressPercent >= 75 ? "No prazo" : "Em risco";
   const healthColor = !hasPendingTasks ? "#22c55e" : progressPercent >= 90 ? "#3b82f6" : progressPercent >= 75 ? "#22c55e" : "#f59e0b";
   const healthBg = !hasPendingTasks ? "#f0fdf4" : progressPercent >= 90 ? "#eff6ff" : progressPercent >= 75 ? "#f0fdf4" : "#fefce8";
@@ -239,6 +247,80 @@ export function ProjectPortalView({
             </div>
             <IconExternalLink className="h-5 w-5 text-orange-400 transition-transform group-hover:translate-x-0.5" />
           </a>}
+
+          {/* Project Quick Links */}
+          {hasProjectLinks && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {aboutData.onboarding_url && (
+                <a
+                  href={aboutData.onboarding_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-orange-200 hover:bg-orange-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+                    <IconPresentation className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Apresentacao</p>
+                    <p className="text-xs text-zinc-500">Onboarding do projeto</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-orange-400" />
+                </a>
+              )}
+              {aboutData.guide_url && (
+                <a
+                  href={aboutData.guide_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                    <IconBook className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Guia de Boas-Vindas</p>
+                    <p className="text-xs text-zinc-500">Politicas e acessos</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-blue-400" />
+                </a>
+              )}
+              {aboutData.briefing_url && (
+                <a
+                  href={aboutData.briefing_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                    <IconForms className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Briefing</p>
+                    <p className="text-xs text-zinc-500">Preencher briefing criativo</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-emerald-400" />
+                </a>
+              )}
+              {aboutData.drive_url && (
+                <a
+                  href={aboutData.drive_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-3 rounded-xl border bg-white p-4 transition-all hover:border-yellow-200 hover:bg-yellow-50/50 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600">
+                    <IconBrandGoogleDrive className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-900">Google Drive</p>
+                    <p className="text-xs text-zinc-500">Pasta de arquivos</p>
+                  </div>
+                  <IconExternalLink className="h-4 w-4 flex-shrink-0 text-zinc-300 group-hover:text-yellow-500" />
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Main Tabs */}
           <PortalMainTabs activeTab={activeTab} onTabChange={setActiveTab} />

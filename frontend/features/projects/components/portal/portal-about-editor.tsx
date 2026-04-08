@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { IconDeviceFloppy, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconPlus, IconTrash, IconLink } from "@tabler/icons-react";
 import type { ProjectPortalAbout } from "./portal-about-section";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -102,6 +102,10 @@ export function PortalAboutEditor({
   const [devOtherProjects, setDevOtherProjects] = useState<string[]>([]);
   const [deliveryYear, setDeliveryYear] = useState("");
   const [deliveryDescription, setDeliveryDescription] = useState("");
+  const [onboardingUrl, setOnboardingUrl] = useState("");
+  const [guideUrl, setGuideUrl] = useState("");
+  const [briefingUrl, setBriefingUrl] = useState("");
+  const [driveUrl, setDriveUrl] = useState("");
 
   // ── Reset on open ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -124,6 +128,10 @@ export function PortalAboutEditor({
     setDevOtherProjects(data.developer?.other_projects ?? []);
     setDeliveryYear(data.delivery_year ?? "");
     setDeliveryDescription(data.delivery_description ?? "");
+    setOnboardingUrl(data.onboarding_url ?? "");
+    setGuideUrl(data.guide_url ?? "");
+    setBriefingUrl(data.briefing_url ?? "");
+    setDriveUrl(data.drive_url ?? "");
   }, [open, data]);
 
   // ── Submit ─────────────────────────────────────────────────────────────────
@@ -144,6 +152,10 @@ export function PortalAboutEditor({
     if (differentials.length > 0) result.differentials = differentials.filter(Boolean);
     if (deliveryYear) result.delivery_year = deliveryYear;
     if (deliveryDescription) result.delivery_description = deliveryDescription;
+    if (onboardingUrl) result.onboarding_url = onboardingUrl;
+    if (guideUrl) result.guide_url = guideUrl;
+    if (briefingUrl) result.briefing_url = briefingUrl;
+    if (driveUrl) result.drive_url = driveUrl;
 
     const dev: ProjectPortalAbout["developer"] = {};
     if (devDescription) dev.description = devDescription;
@@ -433,6 +445,50 @@ export function PortalAboutEditor({
                   value={deliveryDescription}
                   onChange={(e) => setDeliveryDescription(e.target.value)}
                   placeholder="Previsao de entrega do empreendimento"
+                />
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          {/* ── Links do Projeto ── */}
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <IconLink size={14} />
+              Links do Projeto
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Apresentacao (Onboarding)</Label>
+                <Input
+                  value={onboardingUrl}
+                  onChange={(e) => setOnboardingUrl(e.target.value)}
+                  placeholder="https://os.wearetbo.com.br/onboarding/..."
+                />
+              </div>
+              <div>
+                <Label>Guia de Boas-Vindas</Label>
+                <Input
+                  value={guideUrl}
+                  onChange={(e) => setGuideUrl(e.target.value)}
+                  placeholder="https://os.wearetbo.com.br/onboarding/guia-..."
+                />
+              </div>
+              <div>
+                <Label>Briefing</Label>
+                <Input
+                  value={briefingUrl}
+                  onChange={(e) => setBriefingUrl(e.target.value)}
+                  placeholder="https://os.wearetbo.com.br/briefing/..."
+                />
+              </div>
+              <div>
+                <Label>Google Drive</Label>
+                <Input
+                  value={driveUrl}
+                  onChange={(e) => setDriveUrl(e.target.value)}
+                  placeholder="https://drive.google.com/drive/folders/..."
                 />
               </div>
             </div>
