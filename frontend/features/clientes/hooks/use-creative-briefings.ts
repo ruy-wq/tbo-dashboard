@@ -6,7 +6,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import {
   getCreativeBriefings,
   updateBriefingStatus,
+  createCreativeBriefing,
+  getAllCampaignBriefings,
   type CreativeBriefingRow,
+  type CampaignBriefingWithCampaign,
+  type CreateBriefingInput,
 } from "@/features/clientes/services/creative-briefings";
 
 export function useCreativeBriefings(filters?: {
@@ -21,6 +25,34 @@ export function useCreativeBriefings(filters?: {
     queryFn: () => getCreativeBriefings(supabase, filters),
     staleTime: 1000 * 60 * 2,
     enabled: !!tenantId,
+  });
+}
+
+export function useAllCampaignBriefings(filters?: {
+  status?: string;
+  search?: string;
+}) {
+  const supabase = createClient();
+  const tenantId = useAuthStore((s) => s.tenantId);
+
+  return useQuery({
+    queryKey: ["campaign-briefings-all", tenantId, filters],
+    queryFn: () => getAllCampaignBriefings(supabase, filters),
+    staleTime: 1000 * 60 * 2,
+    enabled: !!tenantId,
+  });
+}
+
+export function useCreateCreativeBriefing() {
+  const supabase = createClient();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateBriefingInput) =>
+      createCreativeBriefing(supabase, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["creative-briefings"] });
+    },
   });
 }
 
