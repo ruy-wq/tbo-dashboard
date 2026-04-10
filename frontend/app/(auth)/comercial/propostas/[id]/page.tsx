@@ -21,6 +21,7 @@ import {
   IconPhone,
   IconLoader2,
   IconEye,
+  IconArrowBackUp,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,17 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuthStore } from "@/stores/auth-store";
 import { useProposal, useUpdateProposal } from "@/features/comercial/hooks/use-proposals";
 import { ProposalEditorDialog } from "@/features/comercial/components/proposal-editor-dialog";
 import { createClient } from "@/lib/supabase/client";
@@ -92,11 +104,15 @@ export default function ProposalDetailPage() {
   const proposalId = params.id as string;
   const queryClient = useQueryClient();
 
+  const role = useAuthStore((s) => s.role);
+  const canRevertStatus = role === "founder" || role === "diretoria" || role === "admin";
+
   const { data: rawProposal, isLoading, error } = useProposal(proposalId);
   const proposal = rawProposal as ProposalExt | undefined;
   const updateMutation = useUpdateProposal();
   const [editorOpen, setEditorOpen] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [revertDialogOpen, setRevertDialogOpen] = useState(false);
 
   const generateLinkMutation = useMutation({
     mutationFn: async () => {
@@ -136,6 +152,31 @@ export default function ProposalDetailPage() {
       { id: proposalId, updates: { status: "sent" } },
       { onSuccess: () => toast.success("Proposta marcada como enviada") },
     );
+  }
+
+  function handleRevertStatus() {
+    const supabase = createClient();
+    supabase
+      .from("proposals" as never)
+      .update({
+        status: "rascunho",
+        client_decided_at: null,
+        client_feedback: null,
+        approved_at: null,
+        client_viewed_at: null,
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq("id", proposalId)
+      .then(({ error: err }) => {
+        if (err) {
+          toast.error("Erro ao reverter status");
+          return;
+        }
+        toast.success("Status revertido para Rascunho");
+        queryClient.invalidateQueries({ queryKey: ["proposal", proposalId] });
+        queryClient.invalidateQueries({ queryKey: ["proposals"] });
+      });
+    setRevertDialogOpen(false);
   }
 
   // Nav items for the sticky proposal nav
@@ -319,6 +360,22 @@ export default function ProposalDetailPage() {
                   <TooltipContent>
                     {proposal.client_viewed_at ? "Cliente visualizou" : "Nao visualizada"}
                   </TooltipContent>
+                </Tooltip>
+              )}
+
+              {canRevertStatus && ["aprovada", "approved", "recusada", "rejected", "enviada", "sent"].includes(proposal.status) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-amber-600"
+                      onClick={() => setRevertDialogOpen(true)}
+                    >
+                      <IconArrowBackUp className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Reverter para Rascunho</TooltipContent>
                 </Tooltip>
               )}
             </div>
@@ -631,6 +688,25 @@ export default function ProposalDetailPage() {
         onOpenChange={setEditorOpen}
         proposal={proposal}
       />
+
+      {/* Revert status confirmation */}
+      <AlertDialog open={revertDialogOpen} onOpenChange={setRevertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reverter status da proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A proposta <strong>"{proposal.name}"</strong> voltará para <strong>Rascunho</strong>.
+              Os dados de visualização e decisão do cliente serão limpos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRevertStatus}>
+              Reverter para Rascunho
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
