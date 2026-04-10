@@ -72,15 +72,17 @@ function formatDate(dateStr: string) {
   });
 }
 
-const STATUS_CONFIG: Record<ProposalStatus, { label: string; color: string; bg: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: "Rascunho", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
   sent: { label: "Enviada", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
   approved: { label: "Aprovada", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
   rejected: { label: "Recusada", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
   expired: { label: "Expirada", color: "#9ca3af", bg: "rgba(156,163,175,0.12)" },
+  rascunho: { label: "Rascunho", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
   enviada: { label: "Enviada", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
   aprovada: { label: "Aprovada", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
   recusada: { label: "Recusada", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+  expirada: { label: "Expirada", color: "#9ca3af", bg: "rgba(156,163,175,0.12)" },
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -183,7 +185,8 @@ export default function ProposalDetailPage() {
     );
   }
 
-  const status = STATUS_CONFIG[proposal.status];
+  const FALLBACK_STATUS = { label: "Desconhecido", color: "#9ca3af", bg: "rgba(156,163,175,0.12)" };
+  const status = STATUS_CONFIG[proposal.status] ?? FALLBACK_STATUS;
   const showD3D = proposal.show_d3d_flow ?? false;
   const paymentOptions: PaymentConditionOption[] = Array.isArray(proposal.payment_conditions)
     ? proposal.payment_conditions
