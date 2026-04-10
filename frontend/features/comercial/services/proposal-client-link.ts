@@ -22,17 +22,30 @@ export interface ClientLinkProposal extends ProposalWithItems {
 // ─── Service functions ────────────────────────────────────────────────────────
 
 /**
- * Generates a secure random token for sharing the proposal with the client.
+ * Generates a short, readable token for sharing the proposal with the client.
+ * Format: slugified-project-name-XXXX (e.g., "essenza-tambau-a3f7")
  * Updates proposals.client_token.
  */
 export async function generateClientToken(
   supabase: SupabaseClient<Database>,
   proposalId: string,
 ): Promise<string> {
-  // Generate a cryptographically random token
-  const array = new Uint8Array(32);
+  // Fetch proposal name for slug
+  const { data: proposal } = await supabase
+    .from("proposals" as never)
+    .select("name, ref_code")
+    .eq("id", proposalId)
+    .single();
+
+  const name = (proposal as Record<string, string> | null)?.name ?? proposalId;
+  const slug = slugify(name);
+
+  // Generate 4-char random suffix for uniqueness
+  const array = new Uint8Array(2);
   crypto.getRandomValues(array);
-  const token = Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+  const suffix = Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+
+  const token = `${slug}-${suffix}`;
 
   const { error } = await supabase
     .from("proposals" as never)
@@ -44,6 +57,27 @@ export async function generateClientToken(
   if (error) throw error;
 
   return token;
+}
+
+/**
+ * Converts a project name into a URL-friendly slug.
+ * "Essenza Tambaú Apart Hotel — Visualização Arquitetônica" → "essenza-tambau"
+ */
+function slugify(text: string): string {
+  // Remove everything after — or - (subtitle/description)
+  const main = text.split(/\s*[—–]\s*/)[0].trim();
+
+  return main
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // strip accents
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // remove special chars
+    .replace(/\s+/g, "-") // spaces to hyphens
+    .replace(/-+/g, "-") // collapse multiple hyphens
+    .replace(/^-|-$/g, "") // trim hyphens
+    .split("-")
+    .slice(0, 3) // keep max 3 words
+    .join("-");
 }
 
 /**
