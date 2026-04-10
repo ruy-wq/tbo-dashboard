@@ -44,6 +44,7 @@ const STATUS_LABELS: Record<ProposalStatus, string> = {
   enviada: "Enviada",
   aprovada: "Aprovada",
   recusada: "Recusada",
+  rascunho: "Rascunho",
 };
 
 const STATUS_VARIANTS: Record<ProposalStatus, "default" | "secondary" | "outline" | "destructive"> = {
@@ -55,6 +56,7 @@ const STATUS_VARIANTS: Record<ProposalStatus, "default" | "secondary" | "outline
   enviada: "outline",
   aprovada: "default",
   recusada: "destructive",
+  rascunho: "secondary",
 };
 
 function formatCurrency(value: number) {
