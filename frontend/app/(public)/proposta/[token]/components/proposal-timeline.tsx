@@ -5,27 +5,39 @@ import { motion } from "framer-motion";
 const TIMELINE_STAGES = [
   {
     week: "Sem. 1–2",
-    label: "Kickoff",
-    description: "Briefing, análise do projeto, definição de câmeras",
+    label: "Kickoff & Briefing",
+    description: "Alinhamento com o cliente, análise do projeto arquitetônico, definição de câmeras e referências visuais",
     color: "#E85102",
   },
   {
     week: "Sem. 3–5",
-    label: "Modelagem",
-    description: "Construção 3D, texturas, iluminação base, clay render",
+    label: "Modelagem 3D",
+    description: "Construção da maquete digital, volumetria, fachada, áreas comuns, paisagismo e entorno",
     color: "#3F3F46",
   },
   {
-    week: "Sem. 6–7",
-    label: "Revisão",
-    description: "2 rodadas de ajustes, pós-produção, color grading",
+    week: "Sem. 5–7",
+    label: "Iluminação & Render",
+    description: "Setup de câmeras, iluminação fotorrealista, materiais, clay render para aprovação de composição",
     color: "#52525B",
   },
   {
-    week: "Sem. 8",
-    label: "Entrega",
-    description: "Renderização final, organização de assets, backup",
+    week: "Sem. 7–8",
+    label: "Revisão — Rodada 1",
+    description: "Primeira rodada de ajustes com base no feedback do cliente — correções de materialidade, enquadramento e paisagismo",
+    color: "#71717A",
+  },
+  {
+    week: "Sem. 8–9",
+    label: "Revisão — Rodada 2",
+    description: "Ajustes finais, pós-produção, color grading e tratamento de imagem",
     color: "#18181B",
+  },
+  {
+    week: "Sem. 9–10",
+    label: "Entrega Final",
+    description: "Renderização em alta resolução (4K+), organização de assets, entrega JPEG + PNG via Drive",
+    color: "#E85102",
   },
 ];
 
@@ -58,7 +70,7 @@ export function ProposalTimeline() {
                 className="origin-left"
                 style={{
                   backgroundColor: stage.color,
-                  flex: idx === 1 ? 3 : idx === 2 ? 2 : 1,
+                  flex: [2, 3, 3, 1, 1, 2][idx] ?? 1,
                 }}
               />
             ))}
@@ -68,7 +80,7 @@ export function ProposalTimeline() {
               <div
                 key={idx}
                 className="text-center"
-                style={{ flex: idx === 1 ? 3 : idx === 2 ? 2 : 1 }}
+                style={{ flex: [2, 3, 3, 1, 1, 2][idx] ?? 1 }}
               >
                 {stage.week}
               </div>
