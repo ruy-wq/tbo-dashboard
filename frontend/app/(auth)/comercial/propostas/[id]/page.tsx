@@ -81,6 +81,7 @@ const STATUS_CONFIG: Record<ProposalStatus, { label: string; color: string; bg: 
   enviada: { label: "Enviada", color: "#3b82f6", bg: "rgba(59,130,246,0.12)" },
   aprovada: { label: "Aprovada", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
   recusada: { label: "Recusada", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
+  rascunho: { label: "Rascunho", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -183,7 +184,7 @@ export default function ProposalDetailPage() {
     );
   }
 
-  const status = STATUS_CONFIG[proposal.status];
+  const status = STATUS_CONFIG[proposal.status] ?? { label: proposal.status, color: "#6b7280", bg: "rgba(107,114,128,0.12)" };
   const showD3D = proposal.show_d3d_flow ?? false;
   const paymentOptions: PaymentConditionOption[] = Array.isArray(proposal.payment_conditions)
     ? proposal.payment_conditions
