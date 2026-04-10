@@ -1,116 +1,102 @@
 -- ============================================================================
 -- Migration: Seed proposta Essenza Tambaú Apart Hotel (Eleven Incorporadora)
 -- Date: 2026-04-10
--- Padrão: Veredas Campeche (proposta D3D com imagens 3D)
+-- Padrão: Veredas Campeche (proposta D3D com imagens 3D agrupadas por bloco)
+-- Já executada em produção — migration apenas para versionamento.
 -- ============================================================================
 
 DO $$
 DECLARE
   v_tenant_id UUID := '89080d1a-bc79-4c3f-8fce-20aabc561c0d';
   v_proposal_id UUID;
-  v_ref_code TEXT;
-  v_count INT;
-  v_unit_price NUMERIC(12,2) := 0;
-  v_service_id UUID := NULL;
-  v_subtotal NUMERIC(12,2);
-  v_total_images INT := 13;
+  v_exists BOOLEAN;
 BEGIN
-  -- Buscar preço do serviço de Imagem 3D do catálogo (se existir)
-  SELECT id, base_price INTO v_service_id, v_unit_price
-  FROM services
-  WHERE tenant_id = v_tenant_id
-    AND bu = 'Digital 3D'
-    AND status = 'active'
-    AND (
-      (LOWER(name) LIKE '%imagem%' AND LOWER(name) LIKE '%estática%')
-      OR LOWER(name) LIKE '%imagem%3d%'
-      OR LOWER(name) LIKE '%render%'
-    )
-  ORDER BY
-    CASE
-      WHEN LOWER(name) LIKE '%imagem%estática%' THEN 1
-      WHEN LOWER(name) LIKE '%imagem%' THEN 2
-      ELSE 3
-    END
-  LIMIT 1;
+  -- Verificar se já existe (idempotência)
+  SELECT EXISTS(
+    SELECT 1 FROM proposals
+    WHERE tenant_id = v_tenant_id AND ref_code = 'TBO-2026-043'
+  ) INTO v_exists;
 
-  -- Gerar ref_code sequencial
-  SELECT COUNT(*) INTO v_count FROM proposals WHERE tenant_id = v_tenant_id;
-  v_ref_code := 'TBO-' || EXTRACT(YEAR FROM NOW())::TEXT || '-' || LPAD((v_count + 1)::TEXT, 4, '0');
-
-  -- Calcular subtotal (13 imagens × preço unitário)
-  v_subtotal := v_total_images * COALESCE(v_unit_price, 0);
+  IF v_exists THEN
+    RAISE NOTICE 'Proposta TBO-2026-043 já existe, pulando.';
+    RETURN;
+  END IF;
 
   -- 1. Inserir proposta
   INSERT INTO proposals (
-    tenant_id, name, company, contact_name, contact_email, contact_phone,
-    project_type, project_location, ref_code, valid_days, status,
-    urgency_flag, package_discount_flag, subtotal, discount_amount, value,
-    notes, introduction, show_d3d_flow, payment_conditions
+    tenant_id, name, company, project_type, project_location, ref_code,
+    valid_days, status, urgency_flag, package_discount_flag,
+    subtotal, discount_amount, value, show_d3d_flow,
+    introduction, notes, payment_conditions
   ) VALUES (
     v_tenant_id,
-    'Essenza Tambaú Apart Hotel',
+    'Essenza Tambaú Apart Hotel — Visualização Arquitetônica',
     'Eleven Incorporadora',
-    NULL, NULL, NULL,
     'Hotel / Resort',
     'Tambaú — João Pessoa, PB',
-    v_ref_code,
-    30,
-    'draft',
+    'TBO-2026-043',
+    15,
+    'rascunho',
     false,
     false,
-    v_subtotal,
-    0,
-    v_subtotal,
-    '• Prazo estimado: 20-25 dias úteis após aprovação e recebimento do material técnico (plantas, memorial, referências)
-• Revisões incluídas: 2 rodadas de ajustes por imagem
-• Formato de entrega: JPEG alta resolução (300dpi) + versão web otimizada
-• Material necessário para início: projeto arquitetônico (DWG/RVT), memorial descritivo, referências visuais
-• Proposta válida por 30 dias a partir da data de emissão',
-    'Apresentamos a proposta de imagens 3D para o empreendimento Essenza Tambaú Apart Hotel da Eleven Incorporadora (Hotel / Resort).
-
-O pacote de 13 imagens foi planejado para cobrir todos os ambientes-chave do projeto — desde a fachada e implantação até as áreas de lazer do 4º andar, cobertura e recepção — gerando o material visual completo para a comunicação comercial do lançamento.
-
-O Essenza Tambaú se posiciona como um apart hotel em uma das localizações mais nobres de João Pessoa. As imagens serão produzidas com o padrão de qualidade TBO — fotorrealismo, iluminação cinematográfica e atenção aos detalhes de materialidade, paisagismo e ambientação de cada espaço.',
+    25000.00,
+    0.00,
+    25000.00,
     true,
+    'A produção de imagens é uma das decisões mais críticas na preparação comercial de um empreendimento. É o primeiro ponto de contato do comprador com o produto — e, muitas vezes, o que define a velocidade de vendas nas primeiras semanas.
+
+Para o Essenza Tambaú, posicionado como apart hotel em uma das localizações mais valorizadas de João Pessoa, esse material visual precisa traduzir não apenas o projeto, mas a experiência de hospedagem e investimento que ele oferece.
+
+O programa do empreendimento é denso e diversificado: fachada contemporânea com implantação urbana, cobertura com bar panorâmico, e um 4º andar completo com piscina, terraço, spa, pracinha, restaurante, coworking, área de jogos e academia — além de uma recepção que precisa comunicar hospitalidade e sofisticação desde o primeiro passo.
+
+Cada imagem desta proposta foi pensada com visão de produto: a fachada é o hero da comunicação digital, a implantação contextualiza o empreendimento no entorno urbano, o bar da cobertura vende o lifestyle aspiracional, as áreas de lazer do 4º andar constroem o argumento de conveniência e lazer completo, e a recepção fecha o argumento de experiência hoteleira premium.',
+    'Revisões: até 2 rodadas de ajustes por imagem incluídas. Alterações estruturais orçadas à parte.
+
+Entrega: imagens em alta resolução (4K+), JPEG e PNG.
+
+Não incluso: direção criativa avançada, animações 3D, tour 360°, implantações urbanísticas e material gráfico.
+
+Cronograma: detalhado após aprovação, com marcos por bloco. Início sujeito à disponibilidade de agenda.',
     '[
-      {"label": "À vista", "description": "Pagamento integral via PIX ou transferência", "highlight": false, "details": "Parcela única com 5% de desconto"},
-      {"label": "2x", "description": "50% na aprovação + 50% na entrega", "highlight": true, "details": "Duas parcelas iguais"},
-      {"label": "3x", "description": "40% na aprovação + 30% no meio + 30% na entrega", "highlight": false, "details": "Três parcelas"}
+      {"label": "Opção A — Parcelado por marcos", "description": "3× de R$ 8.333,33", "highlight": false, "details": "Parcelas vinculadas às entregas: 1ª no kickoff, 2ª na revisão, 3ª na entrega final. Boleto bancário emitido pela TBO."},
+      {"label": "Opção B — À vista com desconto", "description": "R$ 23.750,00", "highlight": true, "details": "5% de desconto para pagamento integral na aprovação da proposta. Melhor condição disponível."}
     ]'::jsonb
   )
   RETURNING id INTO v_proposal_id;
 
-  -- 2. Inserir itens do escopo
+  -- 2. Inserir itens do escopo (padrão Veredas: modelagem base + imagens agrupadas por bloco)
 
-  -- FACHADA E IMPLANTAÇÃO (2 imagens)
-  INSERT INTO proposal_items (proposal_id, service_id, tenant_id, title, description, bu, quantity, unit_price, discount_pct, sort_order)
+  INSERT INTO proposal_items (proposal_id, tenant_id, title, description, bu, quantity, unit_price, discount_pct, sort_order)
   VALUES
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Fachada', 'Vista principal do empreendimento com entorno e paisagismo', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 0),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Implantação', 'Vista aérea da implantação do empreendimento no terreno', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 1);
+    -- Modelagem 3D
+    (v_proposal_id, v_tenant_id,
+     'Modelagem 3D Completa',
+     'Maquete digital com precisão técnica — volumetria, fachada, áreas comuns, cobertura, recepção e paisagismo. Base para todas as imagens.',
+     'Digital 3D', 1, 5500.00, 0, 1),
 
-  -- COBERTURA (2 imagens)
-  INSERT INTO proposal_items (proposal_id, service_id, tenant_id, title, description, bu, quantity, unit_price, discount_pct, sort_order)
-  VALUES
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Bar da Cobertura (Ângulo 1)', 'Cobertura — bar com vista panorâmica', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 2),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Bar da Cobertura (Ângulo 2)', 'Cobertura — segundo ângulo do bar', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 3);
+    -- Fachada e Implantação (2 imagens)
+    (v_proposal_id, v_tenant_id,
+     'Imagens Estáticas — Fachada e Implantação',
+     'Fachada principal (hero comunicação digital) e implantação aérea com entorno urbano e paisagismo.',
+     'Digital 3D', 2, 1500.00, 0, 2),
 
-  -- 4º ANDAR (8 imagens)
-  INSERT INTO proposal_items (proposal_id, service_id, tenant_id, title, description, bu, quantity, unit_price, discount_pct, sort_order)
-  VALUES
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Piscina', '4º Andar — área da piscina', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 4),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Terraço com Mesas (Norte)', '4º Andar — terraço com mesas, orientação norte', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 5),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Spa', '4º Andar — espaço spa', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 6),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Pracinha', '4º Andar — área de recreação infantil', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 7),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Restaurante', '4º Andar — restaurante do empreendimento', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 8),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Coworking', '4º Andar — espaço de coworking', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 9),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Área de Jogos', '4º Andar — sala de jogos e entretenimento', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 10),
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Academia', '4º Andar — espaço fitness', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 11);
+    -- Cobertura (2 imagens)
+    (v_proposal_id, v_tenant_id,
+     'Imagens Estáticas — Bar da Cobertura',
+     'Bar panorâmico da cobertura em dois ângulos — lifestyle aspiracional e vista privilegiada.',
+     'Digital 3D', 2, 1500.00, 0, 3),
 
-  -- RECEPÇÃO (1 imagem)
-  INSERT INTO proposal_items (proposal_id, service_id, tenant_id, title, description, bu, quantity, unit_price, discount_pct, sort_order)
-  VALUES
-    (v_proposal_id, v_service_id, v_tenant_id, 'Imagem 3D — Recepção', 'Lobby e recepção do apart hotel', 'Digital 3D', 1, COALESCE(v_unit_price, 0), 0, 12);
+    -- 4º Andar (8 imagens)
+    (v_proposal_id, v_tenant_id,
+     'Imagens Estáticas — Áreas de Lazer (4º Andar)',
+     'Piscina, terraço com mesas (norte), spa, pracinha, restaurante, coworking, área de jogos e academia — argumento de conveniência e lazer completo.',
+     'Digital 3D', 8, 1500.00, 0, 4),
 
-  RAISE NOTICE 'Proposta Essenza Tambaú criada com sucesso: id=%, ref=%', v_proposal_id, v_ref_code;
+    -- Recepção (1 imagem)
+    (v_proposal_id, v_tenant_id,
+     'Imagem Estática — Recepção',
+     'Lobby e recepção do apart hotel — experiência hoteleira premium, hospitalidade e sofisticação.',
+     'Digital 3D', 1, 1500.00, 0, 5);
+
+  RAISE NOTICE 'Proposta Essenza Tambaú criada: id=%, ref=TBO-2026-043', v_proposal_id;
 END $$;
