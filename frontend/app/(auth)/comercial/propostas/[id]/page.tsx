@@ -44,6 +44,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuthStore } from "@/stores/auth-store";
+import { hasMinRole } from "@/lib/permissions";
 import { useProposal, useUpdateProposal } from "@/features/comercial/hooks/use-proposals";
 import { ProposalEditorDialog } from "@/features/comercial/components/proposal-editor-dialog";
 import { createClient } from "@/lib/supabase/client";
@@ -105,7 +106,7 @@ export default function ProposalDetailPage() {
   const queryClient = useQueryClient();
 
   const role = useAuthStore((s) => s.role);
-  const canRevertStatus = role === "founder" || role === "diretoria" || role === "admin";
+  const canRevertStatus = hasMinRole(role, "admin");
 
   const { data: rawProposal, isLoading, error } = useProposal(proposalId);
   const proposal = rawProposal as ProposalExt | undefined;
@@ -217,7 +218,7 @@ export default function ProposalDetailPage() {
   if (error || !proposal) {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <p className="text-muted-foreground">Proposta nao encontrada.</p>
+        <p className="text-muted-foreground">Proposta não encontrada.</p>
         <Button variant="outline" onClick={() => router.push("/comercial/propostas")}>
           <IconArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Button>
