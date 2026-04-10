@@ -80,7 +80,7 @@ function UpcomingList({ people }: { people: BirthdayPerson[] }) {
       }}
     >
       <h4 className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: T.orange }}>
-        Proximos aniversarios
+        Próximos aniversários
       </h4>
       <div className="space-y-2">
         {people.slice(0, 3).map((p) => (
@@ -91,10 +91,10 @@ function UpcomingList({ people }: { people: BirthdayPerson[] }) {
                 {initials(p.fullName)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs flex-1 truncate" style={{ color: "#0f0f0f" }}>
+            <span className="text-xs flex-1 truncate text-foreground">
               {p.fullName}
             </span>
-            <span className="text-[10px]" style={{ color: "#4a4a4a" }}>
+            <span className="text-[10px] text-muted-foreground">
               {p.birthDate.split("-").slice(1).reverse().join("/")}
             </span>
           </div>
@@ -128,8 +128,8 @@ export function BirthdayWidget() {
         style={{ background: "rgba(196,90,26,0.06)", borderRadius: T.r }}
       >
         <IconCake className="size-6 mx-auto mb-2" style={{ color: T.orange, opacity: 0.4 }} />
-        <p className="text-xs" style={{ color: "#4a4a4a" }}>
-          Nenhum aniversario proximo
+        <p className="text-xs text-muted-foreground">
+          Nenhum aniversário próximo
         </p>
       </div>
     );

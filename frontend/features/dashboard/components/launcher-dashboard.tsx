@@ -24,7 +24,17 @@ import {
   IconArrowRight,
   IconClock,
   IconCalendar,
+  IconCake,
 } from "@tabler/icons-react";
+import {
+  useHubBirthdays,
+  useUpcomingBirthdays,
+} from "@/features/hub/hooks/use-hub-birthdays";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 /* ─── Types ───────────────────────────────────────────────────────── */
 
@@ -252,6 +262,73 @@ function LauncherCard({ item }: { item: LauncherItem }) {
   );
 }
 
+/* ─── Birthday Banner ────────────────────────────────────────────── */
+
+function BirthdayBanner() {
+  const { data: todayBirthdays = [] } = useHubBirthdays();
+  const { data: upcoming = [] } = useUpcomingBirthdays(30);
+
+  if (todayBirthdays.length === 0 && upcoming.length === 0) return null;
+
+  function getInitials(name: string) {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/40 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 p-4 mb-8">
+      <div className="flex items-center gap-2 mb-3">
+        <IconCake className="size-4 text-orange-600 dark:text-orange-400" />
+        <span className="text-xs font-bold uppercase tracking-widest text-orange-600 dark:text-orange-400">
+          {todayBirthdays.length > 0 ? "Aniversariante do dia" : "Proximos aniversarios"}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-4">
+        {todayBirthdays.map((p) => (
+          <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white/60 dark:bg-white/10 px-4 py-2.5 ring-1 ring-orange-200 dark:ring-orange-800">
+            <Avatar className="size-9 ring-2 ring-orange-300 dark:ring-orange-600">
+              {p.avatarUrl && <AvatarImage src={p.avatarUrl} />}
+              <AvatarFallback className="text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                {getInitials(p.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{p.fullName}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {p.role ? `${p.role} · ` : ""}Hoje!
+              </p>
+            </div>
+          </div>
+        ))}
+
+        {todayBirthdays.length === 0 &&
+          upcoming.slice(0, 4).map((p) => {
+            const [, mm, dd] = p.birthDate.split("-");
+            return (
+              <div key={p.id} className="flex items-center gap-3 rounded-xl bg-white/60 dark:bg-white/10 px-4 py-2.5">
+                <Avatar className="size-8">
+                  {p.avatarUrl && <AvatarImage src={p.avatarUrl} />}
+                  <AvatarFallback className="text-[10px] font-semibold bg-orange-50 text-orange-600 dark:bg-orange-950 dark:text-orange-400">
+                    {getInitials(p.fullName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{p.fullName}</p>
+                  <p className="text-[11px] text-muted-foreground">{dd}/{mm}</p>
+                </div>
+              </div>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Component ──────────────────────────────────────────────── */
 
 export function LauncherDashboard() {
@@ -326,6 +403,9 @@ export function LauncherDashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Birthday banner ──────────────────────────────────────── */}
+      <BirthdayBanner />
 
       {/* ── Hub groups ──────────────────────────────────────────── */}
       {filteredHubs.map((group) => (
