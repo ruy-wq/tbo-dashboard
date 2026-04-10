@@ -9,6 +9,7 @@ import {
 import { useProposals, useProposal, useDeleteProposal, useUpdateProposal } from "@/features/comercial/hooks/use-proposals";
 import type { ProposalStatus } from "@/features/comercial/services/proposals";
 import { ProposalEditorDialog } from "@/features/comercial/components/proposal-editor-dialog";
+import { ProposalScopeDialog } from "@/features/comercial/components/proposal-scope-dialog";
 import { EmptyState, ErrorState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,7 @@ import {
   IconX,
   IconSend,
   IconEye,
+  IconSparkles,
 } from "@tabler/icons-react";
 import Link from "next/link";
 import type { ProposalRow } from "@/features/comercial/services/proposals";
@@ -204,6 +206,7 @@ export default function ComercialPropostas() {
   const [search, setSearch] = useState("");
   const [period, setPeriod] = useState<CommercialPeriodValue>({ preset: "all" });
   const [editorOpen, setEditorOpen] = useState(false);
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ProposalRow | null>(null);
 
@@ -276,6 +279,9 @@ export default function ComercialPropostas() {
         </div>
         <div className="flex items-center gap-2">
           <CommercialPeriodFilter value={period} onChange={setPeriod} />
+          <Button variant="outline" onClick={() => setScopeDialogOpen(true)}>
+            <IconSparkles className="h-4 w-4 mr-1" /> Gerar do Escopo
+          </Button>
           <Button onClick={handleNew}>
             <IconPlus className="h-4 w-4 mr-1" /> Nova Proposta
           </Button>
@@ -371,6 +377,12 @@ export default function ComercialPropostas() {
         open={editorOpen}
         onOpenChange={handleEditorClose}
         proposal={editingId && editingProposal ? editingProposal : null}
+      />
+
+      {/* Scope generator dialog */}
+      <ProposalScopeDialog
+        open={scopeDialogOpen}
+        onOpenChange={setScopeDialogOpen}
       />
 
       {/* Delete confirmation */}
