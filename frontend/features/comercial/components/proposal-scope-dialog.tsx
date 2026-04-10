@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -24,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  IconFileText,
   IconLoader2,
   IconSparkles,
   IconPhoto,
@@ -271,16 +269,8 @@ export function ProposalScopeDialog({ open, onOpenChange, onCreated }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <AnimatePresence mode="wait">
-          {step === "input" ? (
-            <motion.div
-              key="input"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
+        {step === "input" ? (
+            <div className="space-y-5">
               {/* Project info */}
               <div className="space-y-3">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -394,16 +384,9 @@ export function ProposalScopeDialog({ open, onOpenChange, onCreated }: Props) {
                   <IconArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              key="preview"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
+            <div className="space-y-5">
               {/* Summary bar */}
               <div className="rounded-lg bg-zinc-50 border p-4 flex items-center justify-between">
                 <div>
@@ -431,11 +414,8 @@ export function ProposalScopeDialog({ open, onOpenChange, onCreated }: Props) {
 
                 <div className="space-y-1.5">
                   {editableItems.map((item, index) => (
-                    <motion.div
+                    <div
                       key={index}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.03 }}
                       className="rounded-lg border bg-card p-3 group hover:border-zinc-300 transition-colors"
                     >
                       <div className="flex items-start gap-3">
@@ -510,7 +490,7 @@ export function ProposalScopeDialog({ open, onOpenChange, onCreated }: Props) {
                           </Button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -562,9 +542,8 @@ export function ProposalScopeDialog({ open, onOpenChange, onCreated }: Props) {
                   </Button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

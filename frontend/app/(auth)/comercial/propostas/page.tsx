@@ -379,11 +379,13 @@ export default function ComercialPropostas() {
         proposal={editingId && editingProposal ? editingProposal : null}
       />
 
-      {/* Scope generator dialog */}
-      <ProposalScopeDialog
-        open={scopeDialogOpen}
-        onOpenChange={setScopeDialogOpen}
-      />
+      {/* Scope generator dialog — lazy mount to avoid hooks running on page load */}
+      {scopeDialogOpen && (
+        <ProposalScopeDialog
+          open={scopeDialogOpen}
+          onOpenChange={setScopeDialogOpen}
+        />
+      )}
 
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
