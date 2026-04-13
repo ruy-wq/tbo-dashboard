@@ -112,8 +112,6 @@ export async function GET() {
       valid_days: 15,
       urgency_flag: false,
       package_discount_flag: false,
-      subtotal,
-      discount_amount: 0,
       value: subtotal,
       notes: "• Valores referentes a produção de imagens estáticas em alta resolução (TIFF/PNG 300dpi) e versão web (JPG 72dpi).\n• A modelagem 3D é compartilhada entre todas as imagens — investimento único.\n• Prazo estimado de entrega: 6 a 8 semanas a partir do recebimento do material técnico (plantas, cortes, fachadas).\n• Inclui até 2 rodadas de revisão por imagem após a emissão inicial.\n• Alterações de escopo ou câmeras adicionais após aprovação do clay serão orçadas separadamente.\n• Formatos de entrega: TIFF/PNG 300dpi (impressão) + JPG 72dpi (digital) via Google Drive.",
       introduction: "A produção de imagens para empreendimentos do programa MCMV exige o mesmo cuidado técnico e visual que projetos de alto padrão — o comprador precisa se enxergar morando ali.\n\nPara o empreendimento da Prestes em Curitiba, comercializado pela COHAB, propomos um pacote de visualização que valorize as áreas comuns e a implantação do condomínio, traduzindo qualidade de vida e pertencimento para o público faixa 2.",
