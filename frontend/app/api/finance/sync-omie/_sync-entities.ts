@@ -227,7 +227,13 @@ export async function syncCategories(
       log.info("Categorias page fetched", { page, count: categorias.length });
 
       for (const cat of categorias) {
-        const tipo = cat.id_tipo_lancamento === "R" ? "receita" : "despesa";
+        // OMIE id_tipo_lancamento is unreliable (often empty).
+        // Derive type from code prefix: "1." = receita, "2." = despesa, "0." = transfer.
+        const codePrefix = (cat.codigo || "").charAt(0);
+        const tipo: "receita" | "despesa" =
+          cat.id_tipo_lancamento === "R" || codePrefix === "1"
+            ? "receita"
+            : "despesa";
 
         allRecords.push({
           tenant_id: tenantId,

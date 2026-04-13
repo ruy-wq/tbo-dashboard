@@ -178,8 +178,22 @@ export async function syncContasPagar(
           omie_multa: Number(conta.nValorMulta || 0),
           omie_desconto: Number(conta.nValorDesconto || 0),
           omie_num_titulo: conta.cNumTitulo ? String(conta.cNumTitulo) : null,
-          omie_categoria_codigo: conta.codigo_categoria ? String(conta.codigo_categoria) : null,
-          omie_departamento_codigo: conta.codigo_departamento ? String(conta.codigo_departamento) : null,
+          omie_categoria_codigo: (() => {
+            // Primary: direct field
+            if (conta.codigo_categoria) return String(conta.codigo_categoria);
+            // Fallback: first entry in categorias array
+            const cats = conta.categorias as Array<{ codigo_categoria?: string }> | undefined;
+            if (cats?.[0]?.codigo_categoria) return String(cats[0].codigo_categoria);
+            return null;
+          })(),
+          omie_departamento_codigo: (() => {
+            // Primary: direct field
+            if (conta.codigo_departamento) return String(conta.codigo_departamento);
+            // Fallback: first entry in distribuicao array
+            const dist = conta.distribuicao as Array<{ codigo_departamento?: string }> | undefined;
+            if (dist?.[0]?.codigo_departamento) return String(dist[0].codigo_departamento);
+            return null;
+          })(),
           created_by: userId,
           updated_by: userId,
         });
@@ -334,8 +348,18 @@ export async function syncContasReceber(
           omie_multa: Number(conta.nValorMulta || 0),
           omie_desconto: Number(conta.nValorDesconto || 0),
           omie_num_titulo: conta.cNumTitulo ? String(conta.cNumTitulo) : null,
-          omie_categoria_codigo: conta.codigo_categoria ? String(conta.codigo_categoria) : null,
-          omie_departamento_codigo: conta.codigo_departamento ? String(conta.codigo_departamento) : null,
+          omie_categoria_codigo: (() => {
+            if (conta.codigo_categoria) return String(conta.codigo_categoria);
+            const cats = conta.categorias as Array<{ codigo_categoria?: string }> | undefined;
+            if (cats?.[0]?.codigo_categoria) return String(cats[0].codigo_categoria);
+            return null;
+          })(),
+          omie_departamento_codigo: (() => {
+            if (conta.codigo_departamento) return String(conta.codigo_departamento);
+            const dist = conta.distribuicao as Array<{ codigo_departamento?: string }> | undefined;
+            if (dist?.[0]?.codigo_departamento) return String(dist[0].codigo_departamento);
+            return null;
+          })(),
           created_by: userId,
           updated_by: userId,
         });

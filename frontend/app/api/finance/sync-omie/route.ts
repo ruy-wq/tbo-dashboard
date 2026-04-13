@@ -12,6 +12,7 @@ import {
   buildClientNameLookup,
 } from "./_lookups";
 import { syncContasPagar, syncContasReceber } from "./_sync-transactions";
+import { runPostSyncReconciliation } from "./_post-sync";
 import { createSyncLogger } from "./_logger";
 
 const log = createSyncLogger("sync-omie");
@@ -137,7 +138,7 @@ async function runFullSync(
   creds: OmieCredentials,
   triggerSource: "manual" | "cron",
   triggeredBy?: string
-): Promise<{ ok: boolean; message: string; totals?: Record<string, number>; errors?: SyncLogError[] }> {
+): Promise<{ ok: boolean; message: string; totals?: Record<string, number>; postSync?: Record<string, number>; errors?: SyncLogError[] }> {
   const startedAt = new Date().toISOString();
   const startTime = Date.now();
 
@@ -273,16 +274,37 @@ async function runFullSync(
       errors: syncErrors,
     });
 
+    // ── Phase 6: Post-Sync Reconciliation ──────────────────────────────────
+    log.info("Phase 6: Post-Sync Reconciliation");
+    await updateSyncProgress(supabase, syncLogId, {
+      current_phase: "reconciliation",
+    });
+
+    const postSyncResult = await runPostSyncReconciliation(supabase, tenantId);
+    postSyncResult.errors.forEach((e) =>
+      syncErrors.push({ entity: "post_sync", message: e })
+    );
+
     const totalInserted =
       vendorsSynced + clientsSynced + bankAccountsSynced +
       categoriesSynced + ccResult.inserted + payablesSynced +
       receivablesSynced;
 
-    log.info("Sync complete", { totalUpserted: totalInserted, errors: syncErrors.length });
+    log.info("Sync complete", {
+      totalUpserted: totalInserted,
+      postSync: {
+        categoriesCreated: postSyncResult.categoriesCreated,
+        transactionsRelinked: postSyncResult.transactionsRelinked,
+        overdueUpdated: postSyncResult.overdueUpdated,
+        busUpdated: postSyncResult.busUpdated,
+        snapshotsUpserted: postSyncResult.snapshotsUpserted,
+      },
+      errors: syncErrors.length,
+    });
 
     return {
       ok: true,
-      message: `Sync concluido: ${totalInserted} registros sincronizados`,
+      message: `Sync concluido: ${totalInserted} registros sincronizados, ${postSyncResult.transactionsRelinked} categorizados, ${postSyncResult.overdueUpdated} atrasados atualizados`,
       totals: {
         vendors: vendorsSynced,
         clients: clientsSynced,
@@ -291,6 +313,13 @@ async function runFullSync(
         costCenters: ccResult.inserted,
         payables: payablesSynced,
         receivables: receivablesSynced,
+      },
+      postSync: {
+        categoriesCreated: postSyncResult.categoriesCreated,
+        transactionsRelinked: postSyncResult.transactionsRelinked,
+        overdueUpdated: postSyncResult.overdueUpdated,
+        busUpdated: postSyncResult.busUpdated,
+        snapshotsUpserted: postSyncResult.snapshotsUpserted,
       },
       errors: syncErrors.length > 0 ? syncErrors.slice(0, 20) : undefined,
     };
