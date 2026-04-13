@@ -8,11 +8,11 @@ import type { ProposalItemDraft } from "./proposal-items-editor";
 interface Props {
   items: ProposalItemDraft[];
   urgencyFlag: boolean;
-  packageDiscountFlag: boolean;
+  packageDiscountPct: number; // 0, 5, or 8
+  cashDiscountPct: number;    // e.g. 5
   urgencyMultiplier: number;
-  packageDiscountPct: number;
   onUrgencyChange: (v: boolean) => void;
-  onPackageDiscountChange: (v: boolean) => void;
+  onPackageDiscountPctChange: (pct: number) => void;
 }
 
 function fmt(n: number) {
@@ -26,21 +26,25 @@ function fmtPct(n: number) {
 export function ProposalSummaryCard({
   items,
   urgencyFlag,
-  packageDiscountFlag,
-  urgencyMultiplier,
   packageDiscountPct,
+  cashDiscountPct,
+  urgencyMultiplier,
   onUrgencyChange,
-  onPackageDiscountChange,
+  onPackageDiscountPctChange,
 }: Props) {
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.unit_price * (1 - item.discount_pct / 100),
     0,
   );
 
-  const packageDiscount = packageDiscountFlag ? subtotal * (packageDiscountPct / 100) : 0;
+  const packageDiscount = packageDiscountPct > 0 ? subtotal * (packageDiscountPct / 100) : 0;
   const afterDiscount = subtotal - packageDiscount;
   const total = urgencyFlag ? afterDiscount * urgencyMultiplier : afterDiscount;
   const urgencyAdd = urgencyFlag ? afterDiscount * (urgencyMultiplier - 1) : 0;
+
+  // Payment conditions
+  const cashTotal = total * (1 - cashDiscountPct / 100);
+  const installment2x = total / 2;
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
@@ -63,16 +67,31 @@ export function ProposalSummaryCard({
             </span>
           </Label>
         </div>
+
         <div className="flex items-center gap-2">
           <Switch
-            id="pkg"
-            checked={packageDiscountFlag}
-            onCheckedChange={onPackageDiscountChange}
+            id="pkg5"
+            checked={packageDiscountPct === 5}
+            onCheckedChange={(v) => onPackageDiscountPctChange(v ? 5 : 0)}
           />
-          <Label htmlFor="pkg" className="text-sm cursor-pointer">
-            Desconto pacote
+          <Label htmlFor="pkg5" className="text-sm cursor-pointer">
+            Pacote 5%
             <span className="ml-1 text-xs text-emerald-600 font-medium">
-              (−{fmtPct(packageDiscountPct)})
+              (−5,0%)
+            </span>
+          </Label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Switch
+            id="pkg8"
+            checked={packageDiscountPct === 8}
+            onCheckedChange={(v) => onPackageDiscountPctChange(v ? 8 : 0)}
+          />
+          <Label htmlFor="pkg8" className="text-sm cursor-pointer">
+            Pacote 8%
+            <span className="ml-1 text-xs text-emerald-600 font-medium">
+              (−8,0%)
             </span>
           </Label>
         </div>
@@ -86,7 +105,7 @@ export function ProposalSummaryCard({
           <span>Subtotal ({items.length} {items.length === 1 ? "item" : "itens"})</span>
           <span>{fmt(subtotal)}</span>
         </div>
-        {packageDiscountFlag && packageDiscount > 0 && (
+        {packageDiscountPct > 0 && packageDiscount > 0 && (
           <div className="flex justify-between text-emerald-600">
             <span>Desconto pacote (−{fmtPct(packageDiscountPct)})</span>
             <span>−{fmt(packageDiscount)}</span>
@@ -104,6 +123,33 @@ export function ProposalSummaryCard({
           <span className="text-primary">{fmt(total)}</span>
         </div>
       </div>
+
+      {/* Payment conditions */}
+      {total > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Condições de Pagamento
+            </p>
+            <div className="space-y-1.5 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">
+                  À vista
+                  <span className="ml-1 text-xs text-emerald-600 font-medium">
+                    (−{fmtPct(cashDiscountPct)})
+                  </span>
+                </span>
+                <span className="font-medium text-emerald-600">{fmt(cashTotal)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Parcelado 2x</span>
+                <span className="font-medium">2x de {fmt(installment2x)}</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

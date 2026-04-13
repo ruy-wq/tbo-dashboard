@@ -77,10 +77,10 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
   const [headerSaved, setHeaderSaved] = useState(false);
   const [items, setItems] = useState<ProposalItemDraft[]>([]);
   const [urgencyFlag, setUrgencyFlag] = useState(false);
-  const [packageDiscountFlag, setPackageDiscountFlag] = useState(false);
+  const [packageDiscountPct, setPackageDiscountPct] = useState(0);
+  const [cashDiscountPct, setCashDiscountPct] = useState(5);
 
   const urgencyMultiplier = premises?.urgency_multiplier ?? 1.4;
-  const packageDiscountPct = premises?.package_discount_pct ?? 8;
 
   const { register, handleSubmit, reset, setValue, watch } = useForm<HeaderValues>({
     defaultValues: {
@@ -107,7 +107,8 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
       setProposalId(proposal.id);
       setHeaderSaved(true);
       setUrgencyFlag(proposal.urgency_flag);
-      setPackageDiscountFlag(proposal.package_discount_flag);
+      setPackageDiscountPct(proposal.package_discount_pct ?? (proposal.package_discount_flag ? 8 : 0));
+      setCashDiscountPct(proposal.cash_discount_pct ?? 5);
       setItems(
         (proposal.items ?? []).map((item) => ({
           id: item.id,
@@ -131,7 +132,8 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
       setHeaderSaved(false);
       setItems([]);
       setUrgencyFlag(false);
-      setPackageDiscountFlag(false);
+      setPackageDiscountPct(0);
+      setCashDiscountPct(5);
     }
   }, [proposal, reset]);
 
@@ -139,7 +141,7 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
     (s, i) => s + i.quantity * i.unit_price * (1 - i.discount_pct / 100),
     0,
   );
-  const packageDiscount = packageDiscountFlag ? subtotal * (packageDiscountPct / 100) : 0;
+  const packageDiscount = packageDiscountPct > 0 ? subtotal * (packageDiscountPct / 100) : 0;
   const afterDiscount = subtotal - packageDiscount;
   const totalValue = urgencyFlag ? afterDiscount * urgencyMultiplier : afterDiscount;
 
@@ -188,7 +190,9 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
       id: proposalId,
       updates: {
         urgency_flag: urgencyFlag,
-        package_discount_flag: packageDiscountFlag,
+        package_discount_flag: packageDiscountPct > 0,
+        package_discount_pct: packageDiscountPct,
+        cash_discount_pct: cashDiscountPct,
         subtotal,
         discount_amount: packageDiscount,
         value: totalValue,
@@ -342,11 +346,11 @@ export function ProposalEditorDialog({ open, onOpenChange, proposal }: Props) {
               <ProposalSummaryCard
                 items={items}
                 urgencyFlag={urgencyFlag}
-                packageDiscountFlag={packageDiscountFlag}
-                urgencyMultiplier={urgencyMultiplier}
                 packageDiscountPct={packageDiscountPct}
+                cashDiscountPct={cashDiscountPct}
+                urgencyMultiplier={urgencyMultiplier}
                 onUrgencyChange={setUrgencyFlag}
-                onPackageDiscountChange={setPackageDiscountFlag}
+                onPackageDiscountPctChange={setPackageDiscountPct}
               />
             </>
           )}

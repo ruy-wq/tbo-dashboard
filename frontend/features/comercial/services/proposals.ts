@@ -21,6 +21,8 @@ export interface ProposalRow {
   status: ProposalStatus;
   urgency_flag: boolean;
   package_discount_flag: boolean;
+  package_discount_pct: number;
+  cash_discount_pct: number;
   subtotal: number;
   discount_amount: number;
   value: number;          // total final
@@ -56,6 +58,8 @@ export interface ProposalInsert {
   status?: ProposalStatus;
   urgency_flag?: boolean;
   package_discount_flag?: boolean;
+  package_discount_pct?: number;
+  cash_discount_pct?: number;
   subtotal?: number;
   discount_amount?: number;
   value?: number;
