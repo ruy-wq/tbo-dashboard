@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import {
   IconBrandInstagram,
@@ -8,11 +9,15 @@ import {
   IconChartBar,
   IconFileText,
   IconArrowRight,
+  IconBrandMeta,
+  IconLayoutDashboard,
 } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RequireRole } from "@/features/auth/components/require-role";
 import { useRsmAccounts, useRsmPosts } from "@/features/marketing/hooks/use-marketing-social";
+import { InstagramDashboard } from "@/features/marketing/components/instagram/instagram-dashboard";
 
 function KPICard({ label, value, isLoading }: { label: string; value: string; isLoading?: boolean }) {
   if (isLoading) return <div className="rounded-lg border bg-card p-4 space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-7 w-16" /></div>;
@@ -26,7 +31,7 @@ const SECTIONS = [
   { href: "/marketing/redes-sociais/relatorios", label: "Relatorios", description: "Relatorios de redes sociais", icon: IconFileText, color: "#f59e0b", bgClass: "bg-amber-500/10" },
 ] as const;
 
-function RedesSociaisContent() {
+function OverviewTab() {
   const { data: accounts, isLoading: la } = useRsmAccounts();
   const { data: posts, isLoading: lp } = useRsmPosts();
   const isLoading = la || lp;
@@ -35,13 +40,6 @@ function RedesSociaisContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Redes Sociais</h1>
-        <p className="text-sm text-muted-foreground">
-          Gestao centralizada de redes sociais, absorvendo o modulo RSM.
-        </p>
-      </div>
-
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <KPICard label="Contas conectadas" value={String(accounts?.length ?? 0)} isLoading={isLoading} />
         <KPICard label="Posts publicados" value={String((posts ?? []).filter((p) => p.status === "publicado").length)} isLoading={isLoading} />
@@ -70,6 +68,42 @@ function RedesSociaisContent() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function RedesSociaisContent() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Redes Sociais</h1>
+        <p className="text-sm text-muted-foreground">
+          Gestao centralizada de redes sociais com integracao Meta Instagram API.
+        </p>
+      </div>
+
+      <Tabs defaultValue="instagram" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="instagram" className="gap-1.5">
+            <IconBrandInstagram className="size-4" />
+            Instagram
+          </TabsTrigger>
+          <TabsTrigger value="overview" className="gap-1.5">
+            <IconLayoutDashboard className="size-4" />
+            Visao Geral
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="instagram">
+          <Suspense fallback={<Skeleton className="h-[400px] w-full rounded-lg" />}>
+            <InstagramDashboard />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="overview">
+          <OverviewTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
