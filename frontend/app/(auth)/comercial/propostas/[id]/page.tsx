@@ -202,6 +202,19 @@ export default function ProposalDetailPage() {
     return items;
   }, [proposal]);
 
+  // Group items by BU (must be before early returns to respect Rules of Hooks)
+  const groupedItems = useMemo(() => {
+    const proposalItems = proposal?.items ?? [];
+    const map = new Map<string, typeof proposalItems>();
+    proposalItems.forEach((item) => {
+      const bu = item.bu || "Geral";
+      const existing = map.get(bu) ?? [];
+      existing.push(item);
+      map.set(bu, existing);
+    });
+    return Array.from(map.entries());
+  }, [proposal?.items]);
+
   // ─── Loading ──────────────────────────────────────────────────────────────────
 
   if (isLoading) {
@@ -231,19 +244,6 @@ export default function ProposalDetailPage() {
   const paymentOptions: PaymentConditionOption[] = Array.isArray(proposal.payment_conditions)
     ? proposal.payment_conditions
     : [];
-  const items = proposal.items ?? [];
-
-  // Group items by BU
-  const groupedItems = useMemo(() => {
-    const map = new Map<string, typeof items>();
-    items.forEach((item) => {
-      const bu = item.bu || "Geral";
-      const existing = map.get(bu) ?? [];
-      existing.push(item);
-      map.set(bu, existing);
-    });
-    return Array.from(map.entries());
-  }, [items]);
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
