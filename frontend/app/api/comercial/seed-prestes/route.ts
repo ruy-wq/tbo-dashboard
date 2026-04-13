@@ -110,7 +110,7 @@ export async function GET() {
       project_location: "Curitiba, PR",
       ref_code: refCode,
       valid_days: 15,
-      status: "draft",
+      status: "rascunho",
       urgency_flag: false,
       package_discount_flag: false,
       subtotal,
