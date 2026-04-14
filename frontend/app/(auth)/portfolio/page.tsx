@@ -50,6 +50,7 @@ import type { PortfolioItem, PortfolioInsert } from "@/features/portfolio/types/
 import { PortfolioCard } from "@/features/portfolio/components/portfolio-card";
 import { PortfolioFormDialog } from "@/features/portfolio/components/portfolio-form-dialog";
 import { CreateShowcaseDialog } from "@/features/portfolio/components/create-showcase-dialog";
+import { PortfolioDetailSheet } from "@/features/portfolio/components/portfolio-detail-sheet";
 import { RequireRole } from "@/features/auth/components/require-role";
 import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
@@ -76,6 +77,9 @@ export default function PortfolioPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<PortfolioItem | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // ── Detail sheet ────────────────────────────────────────────────────────
+  const [detailItem, setDetailItem] = useState<PortfolioItem | null>(null);
 
   // ── Selection for showcase ──────────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -372,9 +376,9 @@ export default function PortfolioPage() {
                   </button>
                 )}
                 <div
-                  onClick={selectMode ? () => toggleSelect(item.id) : undefined}
+                  onClick={selectMode ? () => toggleSelect(item.id) : () => setDetailItem(item)}
                   className={cn(
-                    selectMode && "cursor-pointer",
+                    "cursor-pointer",
                     selectMode && selectedIds.has(item.id) && "ring-2 ring-primary ring-offset-2 rounded-lg",
                   )}
                 >
@@ -403,7 +407,7 @@ export default function PortfolioPage() {
                 key={item.id}
                 item={item}
                 onToggleFeatured={toggleFeatured}
-                onEdit={handleEdit}
+                onEdit={(i) => setDetailItem(i)}
                 onDelete={setDeleteId}
               />
             ))}
@@ -470,6 +474,16 @@ export default function PortfolioPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Detail sheet */}
+      <PortfolioDetailSheet
+        item={detailItem}
+        open={!!detailItem}
+        onOpenChange={(open) => { if (!open) setDetailItem(null); }}
+        onEdit={handleEdit}
+        onDelete={setDeleteId}
+        onToggleFeatured={toggleFeatured}
+      />
 
       {/* Showcase dialog */}
       <CreateShowcaseDialog
