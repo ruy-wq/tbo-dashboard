@@ -39,6 +39,7 @@ export const ROLE_MODULES: Record<RoleSlug, string[]> = {
     "ativos",
     "review",
     "helpdesk",
+    "lancamentos",
   ],
   colaborador: [
     "dashboard",
@@ -95,6 +96,7 @@ const ALL_MODULES = [
   "helpdesk",
   "atividades",
   "favoritos",
+  "lancamentos",
 ];
 
 /**

@@ -40,6 +40,7 @@ export const SIDEBAR_NAV_GROUPS: readonly NavGroup[] = [
     label: "Receita & Caixa",
     items: [
       { href: "/comercial", label: "Pipeline", icon: "briefcase", module: "comercial" },
+      { href: "/lancamentos", label: "Lançamentos", icon: "rocket", module: "lancamentos" },
       { href: "/clientes", label: "Clientes", icon: "building-2", module: "clientes" },
       { href: "/contratos", label: "Contratos", icon: "file-text", module: "contratos" },
       { href: "/financeiro", label: "Financeiro", icon: "dollar-sign", module: "financeiro" },
