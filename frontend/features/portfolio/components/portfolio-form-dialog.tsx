@@ -25,6 +25,7 @@ import {
   type PortfolioItem,
   type PortfolioInsert,
 } from "@/features/portfolio/types/portfolio";
+import { PortfolioUpload } from "@/features/portfolio/components/portfolio-upload";
 
 interface PortfolioFormDialogProps {
   open: boolean;
@@ -182,37 +183,23 @@ export function PortfolioFormDialog({
             />
           </div>
 
-          {/* Thumbnail URL */}
-          <div className="space-y-1.5">
-            <Label>URL da Thumbnail</Label>
-            <Input
-              value={thumbnailUrl}
-              onChange={(e) => setThumbnailUrl(e.target.value)}
-              placeholder="https://..."
-            />
-            {thumbnailUrl && (
-              <div className="mt-1 overflow-hidden rounded-md border aspect-video">
-                <img
-                  src={thumbnailUrl}
-                  alt="Preview"
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          {/* Thumbnail */}
+          <PortfolioUpload
+            label="Thumbnail (capa)"
+            accept="image"
+            value={thumbnailUrl}
+            onChange={setThumbnailUrl}
+            hint="Imagem de capa do case. Upload ou cole URL."
+          />
 
-          {/* External URL */}
-          <div className="space-y-1.5">
-            <Label>Link externo (Vimeo, Drive, etc.)</Label>
-            <Input
-              value={externalUrl}
-              onChange={(e) => setExternalUrl(e.target.value)}
-              placeholder="https://vimeo.com/..."
-            />
-          </div>
+          {/* Video / Link externo */}
+          <PortfolioUpload
+            label="Video / Link"
+            accept="video"
+            value={externalUrl}
+            onChange={setExternalUrl}
+            hint="Upload de video ou link do Vimeo, YouTube, Google Drive."
+          />
 
           {/* Description */}
           <div className="space-y-1.5">
