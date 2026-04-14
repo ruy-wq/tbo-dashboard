@@ -88,7 +88,7 @@ export function BriefingForm({
   };
 
   const progress =
-    current === 0 ? 0 : current >= 5 ? 100 : Math.round((current / 4) * 100);
+    current === 0 ? 0 : current >= 7 ? 100 : Math.round((current / 6) * 100);
 
   // ── Submit ──
   const handleSubmit = async () => {
@@ -113,7 +113,7 @@ export function BriefingForm({
       }
 
       setSubmitted(true);
-      go(5);
+      go(7);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Erro ao enviar briefing",
@@ -200,9 +200,9 @@ export function BriefingForm({
               Começar briefing
             </button>
             <div className="mt-4 flex items-center justify-center gap-2.5 text-xs text-zinc-500">
-              <span>4 seções</span>
+              <span>6 seções</span>
               <span className="text-zinc-700">&middot;</span>
-              <span>~8 min</span>
+              <span>~12 min</span>
               <span className="text-zinc-700">&middot;</span>
               <span>Salva automaticamente</span>
             </div>
@@ -438,8 +438,184 @@ export function BriefingForm({
               onChange={(val) => set("nao_queremos", val)}
               placeholder="O que evitar na comunicação"
             />
+            <NavRow onBack={() => go(3)} onNext={() => validateAndGo(4, 5)} />
+          </View>
+
+          {/* ── View 5: Digital 3D — Escopo & Direção ── */}
+          <View active={current === 5}>
+            <SectionHeader num={5} title="Digital 3D — Escopo & Direção" />
+            <SelectField
+              label="Fase do projeto"
+              value={v("fase_projeto_3d")}
+              onChange={(val) => set("fase_projeto_3d", val)}
+              options={[
+                { value: "", label: "Selecione..." },
+                { value: "conceito", label: "Conceito" },
+                { value: "pre-lancamento", label: "Pré-lançamento" },
+                { value: "lancamento", label: "Lançamento" },
+                { value: "institucional", label: "Institucional" },
+              ]}
+            />
+            <TextareaField
+              label="Principal objetivo das imagens 3D"
+              hint="Ex: gerar desejo, apoiar vendas, posicionar marca, material institucional"
+              value={v("objetivo_3d")}
+              onChange={(val) => set("objetivo_3d", val)}
+              placeholder="O que as imagens precisam comunicar?"
+            />
+            <TextareaField
+              label="Quais são as imagens mais importantes do escopo?"
+              hint="Liste as cenas prioritárias (ex: fachada diurna, piscina, rooftop)"
+              value={v("imagens_importantes_3d")}
+              onChange={(val) => set("imagens_importantes_3d", val)}
+              placeholder="1. Fachada diurna&#10;2. Piscina&#10;3. ..."
+              rows={4}
+            />
+            <Field
+              label="Existe alguma cena considerada imagem-chave?"
+              hint="A imagem que define o projeto"
+              value={v("imagem_chave_3d")}
+              onChange={(val) => set("imagem_chave_3d", val)}
+              placeholder="Ex: Vista aérea lateral mostrando o entorno"
+            />
+            <SelectField
+              label="A linguagem visual deve ser mais..."
+              value={v("linguagem_3d")}
+              onChange={(val) => set("linguagem_3d", val)}
+              options={[
+                { value: "", label: "Selecione..." },
+                { value: "realista", label: "Realista" },
+                { value: "poetica", label: "Poética" },
+                { value: "conceitual", label: "Conceitual" },
+                { value: "comercial", label: "Comercial" },
+              ]}
+            />
+            <TextareaField
+              label="Referências visuais obrigatórias"
+              hint="Links de moodboard, projetos, fotógrafos ou renders que admira"
+              value={v("referencias_3d")}
+              onChange={(val) => set("referencias_3d", val)}
+              placeholder="Cole links ou descreva referências"
+            />
+            <TextareaField
+              label="Referências que NÃO representam o que buscam"
+              value={v("anti_referencias_3d")}
+              onChange={(val) => set("anti_referencias_3d", val)}
+              placeholder="O que evitar visualmente"
+            />
+            <NavRow onBack={() => go(4)} onNext={() => validateAndGo(5, 6)} />
+          </View>
+
+          {/* ── View 6: Digital 3D — Atmosfera, Materiais & Aprovações ── */}
+          <View active={current === 6}>
+            <SectionHeader num={6} title="Digital 3D — Atmosfera & Materiais" />
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[2px] text-zinc-500">Luz & Clima</p>
+            <Field
+              label="Qual clima melhor representa o projeto?"
+              hint="Manhã, tarde, golden hour, noite, blue hour"
+              value={v("clima_3d")}
+              onChange={(val) => set("clima_3d", val)}
+              placeholder="Ex: Golden hour + noite"
+            />
+            <SelectField
+              label="A luz deve ser mais..."
+              value={v("luz_3d")}
+              onChange={(val) => set("luz_3d", val)}
+              options={[
+                { value: "", label: "Selecione..." },
+                { value: "suave", label: "Suave" },
+                { value: "dramatica", label: "Dramática" },
+                { value: "natural", label: "Natural" },
+                { value: "contrastada", label: "Contrastada" },
+              ]}
+            />
+            <Field
+              label="Atmosfera emocional desejada"
+              hint="Ex: calma, imponência, intimidade, acolhimento"
+              value={v("atmosfera_3d")}
+              onChange={(val) => set("atmosfera_3d", val)}
+              placeholder="O que o espectador deve sentir"
+            />
+            <div className="my-5 h-px bg-zinc-800" />
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[2px] text-zinc-500">Materialidade</p>
+            <Field
+              label="Materiais protagonistas do projeto"
+              hint="Ex: concreto, madeira, pedra, vidro, terracota"
+              value={v("materiais_3d")}
+              onChange={(val) => set("materiais_3d", val)}
+              placeholder="Principais materiais e acabamentos"
+            />
+            <Field
+              label="Sensação que o projeto deve transmitir"
+              hint="Calor, neutralidade, sofisticação, brutalismo, leveza"
+              value={v("sensacao_materiais_3d")}
+              onChange={(val) => set("sensacao_materiais_3d", val)}
+              placeholder="Ex: Sofisticação + leveza"
+            />
+            <div className="my-5 h-px bg-zinc-800" />
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[2px] text-zinc-500">Paisagismo & Pessoas</p>
+            <SelectField
+              label="Papel do paisagismo nas imagens"
+              value={v("paisagismo_3d")}
+              onChange={(val) => set("paisagismo_3d", val)}
+              options={[
+                { value: "", label: "Selecione..." },
+                { value: "protagonista", label: "Protagonista" },
+                { value: "complementar", label: "Complementar" },
+                { value: "discreto", label: "Discreto" },
+              ]}
+            />
+            <Field
+              label="Vegetação ou linguagem paisagística desejada"
+              value={v("vegetacao_3d")}
+              onChange={(val) => set("vegetacao_3d", val)}
+              placeholder="Referências ou estilo de paisagismo"
+            />
+            <SelectField
+              label="Presença de pessoas nas imagens?"
+              value={v("pessoas_3d")}
+              onChange={(val) => set("pessoas_3d", val)}
+              options={[
+                { value: "", label: "Selecione..." },
+                { value: "sim", label: "Sim" },
+                { value: "nao", label: "Não" },
+              ]}
+            />
+            <Field
+              label="Perfil das pessoas (se sim)"
+              hint="Famílias, casais, jovens, editorial"
+              value={v("perfil_pessoas_3d")}
+              onChange={(val) => set("perfil_pessoas_3d", val)}
+              placeholder="Ex: Casais 30+, homens e mulheres solteiros"
+            />
+            <Field
+              label="Foco maior em arquitetura ou lifestyle?"
+              value={v("foco_arq_lifestyle_3d")}
+              onChange={(val) => set("foco_arq_lifestyle_3d", val)}
+              placeholder="Arquitetura, lifestyle ou ambos"
+            />
+            <div className="my-5 h-px bg-zinc-800" />
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[2px] text-zinc-500">Aprovações</p>
+            <Field
+              label="Responsável pelas aprovações"
+              value={v("responsavel_aprovacao_3d")}
+              onChange={(val) => set("responsavel_aprovacao_3d", val)}
+              placeholder="Nome e cargo"
+            />
+            <Field
+              label="Restrição de prazo importante?"
+              value={v("prazo_3d")}
+              onChange={(val) => set("prazo_3d", val)}
+              placeholder="Ex: Pré-lançamento em Junho/2026"
+            />
+            <TextareaField
+              label="Como saberemos que as imagens foram bem-sucedidas?"
+              value={v("criterio_sucesso_3d")}
+              onChange={(val) => set("criterio_sucesso_3d", val)}
+              placeholder="O que define uma imagem aprovada para vocês?"
+            />
             <div className="mt-6 flex gap-2.5">
-              <button type="button" className="nav-back" onClick={() => go(3)}>
+              <button type="button" className="nav-back" onClick={() => go(5)}>
                 &larr;
               </button>
               <button
@@ -453,8 +629,8 @@ export function BriefingForm({
             </div>
           </View>
 
-          {/* ── View 5: Success ── */}
-          <View active={current === 5}>
+          {/* ── View 7: Success ── */}
+          <View active={current === 7}>
             <div className="py-5 text-center">
               <div className="mb-5 inline-flex h-16 w-16 animate-[popIn_0.5s_ease] items-center justify-center rounded-full bg-[#E85102]/15 text-[28px]">
                 &#10003;
@@ -574,7 +750,7 @@ function SectionHeader({ num, title }: { num: number; title: string }) {
   return (
     <>
       <p className="mb-1 text-[11px] uppercase tracking-[1.5px] text-zinc-500">
-        Seção {num} de 4
+        Seção {num} de 6
       </p>
       <div className="mb-6 flex items-center gap-2.5">
         <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#E85102]/15 text-[13px] font-semibold text-[#E85102]">
