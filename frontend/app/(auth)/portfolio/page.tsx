@@ -32,6 +32,10 @@ import {
   IconPhoto,
   IconFilter,
   IconX,
+  IconLink,
+  IconSquareCheck,
+  IconSquare,
+  IconCheck,
 } from "@tabler/icons-react";
 import { BU_LIST, BU_COLORS } from "@/lib/constants";
 import {
@@ -45,6 +49,7 @@ import { PORTFOLIO_CATEGORIES } from "@/features/portfolio/types/portfolio";
 import type { PortfolioItem, PortfolioInsert } from "@/features/portfolio/types/portfolio";
 import { PortfolioCard } from "@/features/portfolio/components/portfolio-card";
 import { PortfolioFormDialog } from "@/features/portfolio/components/portfolio-form-dialog";
+import { CreateShowcaseDialog } from "@/features/portfolio/components/create-showcase-dialog";
 import { RequireRole } from "@/features/auth/components/require-role";
 import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
@@ -71,6 +76,29 @@ export default function PortfolioPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<PortfolioItem | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // ── Selection for showcase ──────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(filtered.map((i) => i.id)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }
 
   // ── Available categories based on BU filter ─────────────────────────────
   const availableCategories = useMemo(() => {
@@ -163,10 +191,22 @@ export default function PortfolioPage() {
               Centralizador de entregas finais por BU e categoria para o comercial.
             </p>
           </div>
-          <Button onClick={() => { setEditItem(null); setFormOpen(true); }}>
-            <IconPlus className="size-4 mr-2" />
-            Novo Case
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={selectMode ? "default" : "outline"}
+              onClick={() => {
+                if (selectMode) clearSelection();
+                else setSelectMode(true);
+              }}
+            >
+              {selectMode ? <IconX className="size-4 mr-2" /> : <IconSquareCheck className="size-4 mr-2" />}
+              {selectMode ? "Cancelar" : "Selecionar"}
+            </Button>
+            <Button onClick={() => { setEditItem(null); setFormOpen(true); }}>
+              <IconPlus className="size-4 mr-2" />
+              Novo Case
+            </Button>
+          </div>
         </div>
 
         {/* BU quick-filter chips */}
@@ -316,13 +356,36 @@ export default function PortfolioPage() {
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filtered.map((item) => (
-              <PortfolioCard
-                key={item.id}
-                item={item}
-                onToggleFeatured={toggleFeatured}
-                onEdit={handleEdit}
-                onDelete={setDeleteId}
-              />
+              <div key={item.id} className="relative">
+                {selectMode && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(item.id)}
+                    className={cn(
+                      "absolute top-2 left-2 z-10 size-6 rounded-md border-2 flex items-center justify-center transition-colors",
+                      selectedIds.has(item.id)
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "bg-background/80 border-border hover:border-primary/50",
+                    )}
+                  >
+                    {selectedIds.has(item.id) && <IconCheck className="size-3.5" />}
+                  </button>
+                )}
+                <div
+                  onClick={selectMode ? () => toggleSelect(item.id) : undefined}
+                  className={cn(
+                    selectMode && "cursor-pointer",
+                    selectMode && selectedIds.has(item.id) && "ring-2 ring-primary ring-offset-2 rounded-lg",
+                  )}
+                >
+                  <PortfolioCard
+                    item={item}
+                    onToggleFeatured={selectMode ? () => toggleSelect(item.id) : toggleFeatured}
+                    onEdit={selectMode ? () => toggleSelect(item.id) : handleEdit}
+                    onDelete={selectMode ? () => toggleSelect(item.id) : setDeleteId}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         ) : (
@@ -367,6 +430,29 @@ export default function PortfolioPage() {
         isPending={createMut.isPending || updateMut.isPending}
       />
 
+      {/* Selection action bar */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border bg-background/95 backdrop-blur-sm shadow-lg px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} case{selectedIds.size !== 1 ? "s" : ""}
+          </span>
+          <Button variant="outline" size="sm" onClick={selectAll}>
+            <IconCheck className="size-3.5 mr-1.5" />
+            Selecionar todos ({filtered.length})
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowcaseOpen(true)}
+          >
+            <IconLink className="size-3.5 mr-1.5" />
+            Gerar Link
+          </Button>
+          <Button variant="ghost" size="sm" onClick={clearSelection}>
+            <IconX className="size-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
@@ -384,6 +470,14 @@ export default function PortfolioPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Showcase dialog */}
+      <CreateShowcaseDialog
+        open={showcaseOpen}
+        onOpenChange={setShowcaseOpen}
+        selectedIds={Array.from(selectedIds)}
+        defaultTitle={buFilter !== "all" ? `Cases ${buFilter}` : "Cases TBO"}
+      />
     </RequireRole>
   );
 }
