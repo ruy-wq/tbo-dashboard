@@ -82,45 +82,8 @@ export function BriefingForm({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ── Per-section required fields ──
-  const sectionRequired: Record<number, { field: string; label: string }[]> = {
-    1: [
-      { field: "nome_empreendimento", label: "Nome do Empreendimento" },
-      { field: "incorporadora", label: "Incorporadora" },
-      { field: "padrao", label: "Padrão" },
-      { field: "tipologias", label: "Tipologias" },
-      { field: "total_unidades", label: "Total de unidades" },
-    ],
-    2: [
-      { field: "persona_principal", label: "Persona principal" },
-      { field: "motivacao_compra", label: "Motivação de compra" },
-      { field: "mais_valoriza", label: "O que mais valoriza" },
-    ],
-    3: [
-      { field: "diferencial_principal", label: "Principal diferencial" },
-    ],
-    4: [
-      { field: "tom_voz", label: "Tom de voz" },
-    ],
-  };
-
-  const isSectionIncomplete = (section: number) => {
-    const required = sectionRequired[section];
-    if (!required) return false;
-    return required.some((r) => !v(r.field).trim());
-  };
-
-  const validateAndGo = (fromSection: number, toSection: number) => {
-    const required = sectionRequired[fromSection];
-    if (required) {
-      const missing = required.filter((r) => !v(r.field).trim());
-      if (missing.length > 0) {
-        toast.error(
-          `Preencha: ${missing.map((m) => m.label).join(", ")}`,
-        );
-        return;
-      }
-    }
+  // ── Navigation without mandatory validation (free-flow) ──
+  const validateAndGo = (_fromSection: number, toSection: number) => {
     go(toSection);
   };
 
@@ -129,16 +92,6 @@ export function BriefingForm({
 
   // ── Submit ──
   const handleSubmit = async () => {
-    // Validate all sections before final submit
-    for (const [sec, fields] of Object.entries(sectionRequired)) {
-      const missing = fields.filter((r) => !v(r.field).trim());
-      if (missing.length > 0) {
-        go(Number(sec));
-        toast.error(`Preencha: ${missing.map((m) => m.label).join(", ")}`);
-        return;
-      }
-    }
-
     setSubmitting(true);
     try {
       const res = await fetch("/api/briefing/submit", {
@@ -342,7 +295,7 @@ export function BriefingForm({
               onChange={(val) => set("vgv", val)}
               placeholder="R$ 80.000.000"
             />
-            <NavRow onBack={() => go(0)} onNext={() => validateAndGo(1, 2)} disabled={isSectionIncomplete(1)} />
+            <NavRow onBack={() => go(0)} onNext={() => validateAndGo(1, 2)} />
           </View>
 
           {/* ── View 2: Público-Alvo ── */}
@@ -392,7 +345,7 @@ export function BriefingForm({
               onChange={(val) => set("medo_objecao", val)}
               placeholder="Principal barreira de compra"
             />
-            <NavRow onBack={() => go(1)} onNext={() => validateAndGo(2, 3)} disabled={isSectionIncomplete(2)} />
+            <NavRow onBack={() => go(1)} onNext={() => validateAndGo(2, 3)} />
           </View>
 
           {/* ── View 3: O Produto ── */}
@@ -438,7 +391,7 @@ export function BriefingForm({
               onChange={(val) => set("posicionamento", val)}
               placeholder="Mais barato? Melhor localizado? Premium?"
             />
-            <NavRow onBack={() => go(2)} onNext={() => validateAndGo(3, 4)} disabled={isSectionIncomplete(3)} />
+            <NavRow onBack={() => go(2)} onNext={() => validateAndGo(3, 4)} />
           </View>
 
           {/* ── View 4: Direção Criativa ── */}
@@ -493,7 +446,7 @@ export function BriefingForm({
                 type="button"
                 className="btn-primary flex-1"
                 onClick={handleSubmit}
-                disabled={submitting || isSectionIncomplete(4)}
+                disabled={submitting}
               >
                 {submitting ? "Enviando..." : "Enviar Briefing ✓"}
               </button>
