@@ -115,9 +115,13 @@ export async function updateEmailCampaign(
   return row as unknown as EmailCampaign;
 }
 
-export async function sendEmailCampaign(supabase: SupabaseClient, id: string): Promise<EmailCampaign> {
-  // Marca status como "sending" — envio real seria via Edge Function
-  return updateEmailCampaign(supabase, id, { status: "sending" });
+export async function sendEmailCampaign(supabase: SupabaseClient, id: string): Promise<{ success: boolean; recipients: number; delivered: number; bounced: number }> {
+  // Chama Edge Function que resolve segmento → emails → envia via Resend
+  const { data, error } = await supabase.functions.invoke("send-email-campaign", {
+    body: { campaign_id: id },
+  });
+  if (error) throw error;
+  return data as { success: boolean; recipients: number; delivered: number; bounced: number };
 }
 
 // ── Sends ──────────────────────────────────────────────────────────

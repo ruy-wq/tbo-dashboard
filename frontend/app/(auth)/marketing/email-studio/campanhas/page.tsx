@@ -10,6 +10,7 @@ import {
   IconSpeakerphone,
   IconPlayerStop,
   IconX,
+  IconSend,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,13 +29,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EmptyState, ErrorState } from "@/components/shared";
 import { RequireRole } from "@/features/auth/components/require-role";
-import { useEmailCampaigns, useUpdateEmailCampaign } from "@/features/marketing/hooks/use-email-studio";
+import { useEmailCampaigns, useUpdateEmailCampaign, useSendEmailCampaign } from "@/features/marketing/hooks/use-email-studio";
 import { EmailCampaignFormModal } from "@/features/marketing/components/email-studio/email-campaign-form-modal";
 import { EMAIL_CAMPAIGN_STATUS } from "@/lib/constants";
 import type { EmailCampaign, EmailCampaignStatus } from "@/features/marketing/types/marketing";
 
-// Feature #21 preview — action type for cancel/pause confirmation
-type ActionType = "cancel" | "pause";
+// Feature #21 preview — action type for cancel/pause/send confirmation
+type ActionType = "cancel" | "pause" | "send";
 
 function CampanhasContent() {
   const [search, setSearch] = useState("");
@@ -44,6 +45,7 @@ function CampanhasContent() {
 
   const { data: campaigns, isLoading, error, refetch } = useEmailCampaigns();
   const updateMutation = useUpdateEmailCampaign();
+  const sendMutation = useSendEmailCampaign();
 
   const filtered = (campaigns ?? []).filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
@@ -54,6 +56,12 @@ function CampanhasContent() {
 
   function confirmAction() {
     if (!actionTarget) return;
+    if (actionTarget.type === "send") {
+      sendMutation.mutate(actionTarget.campaign.id, {
+        onSettled: () => setActionTarget(null),
+      });
+      return;
+    }
     const newStatus: EmailCampaignStatus =
       actionTarget.type === "cancel" ? "cancelled" : "paused";
     updateMutation.mutate(
@@ -142,6 +150,7 @@ function CampanhasContent() {
               {filtered.map((campaign) => {
                 // Feature #20 — badge com cores por status
                 const statusDef = EMAIL_CAMPAIGN_STATUS[campaign.status as keyof typeof EMAIL_CAMPAIGN_STATUS];
+                const canSend = campaign.status === "draft" || campaign.status === "scheduled";
                 const canPause = campaign.status === "sending";
                 const canCancel = campaign.status === "draft" || campaign.status === "scheduled";
 
@@ -188,6 +197,16 @@ function CampanhasContent() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {canSend && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-emerald-600 hover:text-emerald-700"
+                            onClick={() => setActionTarget({ campaign, type: "send" })}
+                          >
+                            <IconSend size={12} className="mr-1" /> Enviar
+                          </Button>
+                        )}
                         {canPause && (
                           <Button
                             size="sm"
@@ -229,12 +248,18 @@ function CampanhasContent() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {actionTarget?.type === "cancel" ? "Cancelar Campanha" : "Pausar Campanha"}
+              {actionTarget?.type === "send"
+                ? "Enviar Campanha"
+                : actionTarget?.type === "cancel"
+                  ? "Cancelar Campanha"
+                  : "Pausar Campanha"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {actionTarget?.type === "cancel"
-                ? `Tem certeza que deseja cancelar "${actionTarget.campaign.name}"? Esta ação não pode ser desfeita.`
-                : `Deseja pausar o envio de "${actionTarget?.campaign.name}"? Você poderá retomar depois.`}
+              {actionTarget?.type === "send"
+                ? `Confirma o envio de "${actionTarget.campaign.name}" para todos os contatos do segmento? Os emails serão disparados imediatamente via Resend.`
+                : actionTarget?.type === "cancel"
+                  ? `Tem certeza que deseja cancelar "${actionTarget.campaign.name}"? Esta ação não pode ser desfeita.`
+                  : `Deseja pausar o envio de "${actionTarget?.campaign.name}"? Você poderá retomar depois.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -243,16 +268,20 @@ function CampanhasContent() {
               className={
                 actionTarget?.type === "cancel"
                   ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  : ""
+                  : actionTarget?.type === "send"
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                    : ""
               }
               onClick={confirmAction}
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || sendMutation.isPending}
             >
-              {updateMutation.isPending
+              {updateMutation.isPending || sendMutation.isPending
                 ? "Processando..."
-                : actionTarget?.type === "cancel"
-                  ? "Cancelar Campanha"
-                  : "Pausar Envio"}
+                : actionTarget?.type === "send"
+                  ? "Confirmar Envio"
+                  : actionTarget?.type === "cancel"
+                    ? "Cancelar Campanha"
+                    : "Pausar Envio"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
