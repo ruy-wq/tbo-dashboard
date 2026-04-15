@@ -2,7 +2,7 @@
 
 // Feature #90 — Página pública de descadastro (LGPD compliance)
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { IconMailOff, IconCheck, IconAlertTriangle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,18 @@ import { Card, CardContent } from "@/components/ui/card";
 type UnsubState = "confirm" | "submitting" | "success" | "error";
 
 export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    }>
+      <UnsubscribeContent />
+    </Suspense>
+  );
+}
+
+function UnsubscribeContent() {
   const params = useSearchParams();
   const email = params.get("e") || "";
   const campaignId = params.get("cid") || "";
@@ -141,3 +153,4 @@ export default function UnsubscribePage() {
     </div>
   );
 }
+
