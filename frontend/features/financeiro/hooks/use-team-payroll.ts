@@ -108,7 +108,7 @@ export function useUpdateTeamPayroll(month: string) {
         };
         const active = optimistic.entries.filter((e) => e.is_active && e.salary > 0);
         optimistic.totalFolha = active.reduce((s, e) => s + Number(e.salary), 0);
-        optimistic.headcount = active.length;
+        // headcount comes from profiles, not payroll entries — preserve it
         optimistic.totalDespesas = optimistic.entries.reduce((s, e) => s + Number(e.salary), 0);
         qc.setQueryData([QK, tenantId, month], optimistic);
       }
@@ -148,7 +148,7 @@ export function useDeleteTeamPayroll(month: string) {
         };
         const active = optimistic.entries.filter((e) => e.is_active && e.salary > 0);
         optimistic.totalFolha = active.reduce((s, e) => s + Number(e.salary), 0);
-        optimistic.headcount = active.length;
+        // headcount comes from profiles, not payroll entries — preserve it
         optimistic.totalDespesas = optimistic.entries.reduce((s, e) => s + Number(e.salary), 0);
         qc.setQueryData([QK, tenantId, month], optimistic);
       }

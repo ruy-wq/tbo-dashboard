@@ -90,23 +90,40 @@ function mapRow(r: RawPayrollRow): TeamPayrollEntry {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
+/** Active headcount from profiles (source of truth). */
+export async function getActiveHeadcount(
+  supabase: SupabaseClient<Database>,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("profiles" as never)
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 export async function getTeamPayroll(
   supabase: SupabaseClient<Database>,
   month: string,
 ): Promise<TeamPayrollSummary> {
-  const { data, error } = await supabase
-    .from(TABLE as never)
-    .select(SELECT_WITH_PROFILE)
-    .eq("month", month)
-    .order("salary", { ascending: false });
+  const [payrollRes, headcountFromProfiles] = await Promise.all([
+    supabase
+      .from(TABLE as never)
+      .select(SELECT_WITH_PROFILE)
+      .eq("month", month)
+      .order("salary", { ascending: false }),
+    getActiveHeadcount(supabase),
+  ]);
 
-  if (error) throw new Error(error.message);
+  if (payrollRes.error) throw new Error(payrollRes.error.message);
 
-  const entries = (data ?? []).map((r) => mapRow(r as unknown as RawPayrollRow));
+  const entries = (payrollRes.data ?? []).map((r) => mapRow(r as unknown as RawPayrollRow));
   const activeEntries = entries.filter((e) => e.is_active && e.salary > 0);
   const totalFolha = activeEntries.reduce((sum, e) => sum + Number(e.salary), 0);
   const totalDespesas = entries.reduce((sum, e) => sum + Number(e.salary), 0);
-  const headcount = activeEntries.length;
+  // Headcount from profiles (source of truth), not from payroll entries
+  const headcount = headcountFromProfiles;
 
   return { entries, totalFolha, totalDespesas, headcount, month };
 }
