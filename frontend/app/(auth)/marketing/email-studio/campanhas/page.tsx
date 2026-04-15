@@ -131,6 +131,7 @@ function CampanhasContent() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Campanha</th>
                 <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">Assunto</th>
+                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">Segmento</th>
                 {/* Feature #20 — coluna Status */}
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">Agendado</th>
@@ -149,6 +150,17 @@ function CampanhasContent() {
                     <td className="px-4 py-3 font-medium">{campaign.name}</td>
                     <td className="hidden px-4 py-3 text-muted-foreground md:table-cell truncate max-w-xs">
                       {campaign.subject}
+                    </td>
+                    <td className="hidden px-4 py-3 lg:table-cell">
+                      {campaign.segment_name ? (
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {campaign.segment_name}
+                        </Badge>
+                      ) : campaign.list_name ? (
+                        <span className="text-xs text-muted-foreground">{campaign.list_name}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {/* Feature #20 — Badge de status com cores */}

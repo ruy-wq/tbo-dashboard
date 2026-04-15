@@ -6,6 +6,7 @@ import {
   IconSpeakerphone,
   IconSend,
   IconChartBar,
+  IconUsersGroup,
   IconArrowRight,
   IconPlus,
 } from "@tabler/icons-react";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequireRole } from "@/features/auth/components/require-role";
 import { useEmailTemplates, useEmailCampaigns, useEmailSends } from "@/features/marketing/hooks/use-email-studio";
+import { useEmailSegments } from "@/features/marketing/hooks/use-email-segments";
 
 function KPICard({
   label,
@@ -50,6 +52,14 @@ const SECTIONS = [
     bgClass: "bg-blue-500/10",
   },
   {
+    href: "/marketing/email-studio/segmentos",
+    label: "Segmentos",
+    description: "Segmentar contatos por etapa de funil e critérios",
+    icon: IconUsersGroup,
+    color: "#ec4899",
+    bgClass: "bg-pink-500/10",
+  },
+  {
     href: "/marketing/email-studio/campanhas",
     label: "Campanhas",
     description: "Criar, agendar e gerenciar campanhas de email",
@@ -79,8 +89,9 @@ function EmailStudioContent() {
   const { data: templates, isLoading: loadingTemplates } = useEmailTemplates();
   const { data: campaigns, isLoading: loadingCampaigns } = useEmailCampaigns();
   const { data: sends, isLoading: loadingSends } = useEmailSends();
+  const { data: segments, isLoading: loadingSegments } = useEmailSegments();
 
-  const isLoading = loadingTemplates || loadingCampaigns || loadingSends;
+  const isLoading = loadingTemplates || loadingCampaigns || loadingSends || loadingSegments;
 
   return (
     <div className="space-y-6">
@@ -98,11 +109,12 @@ function EmailStudioContent() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <KPICard label="Templates" value={String(templates?.length ?? 0)} isLoading={isLoading} />
+        <KPICard label="Segmentos" value={String(segments?.length ?? 0)} isLoading={isLoading} />
         <KPICard label="Campanhas" value={String(campaigns?.length ?? 0)} isLoading={isLoading} />
         <KPICard
-          label="Campanhas enviadas"
+          label="Enviadas"
           value={String(campaigns?.filter((c) => c.status === "sent").length ?? 0)}
           isLoading={isLoading}
         />

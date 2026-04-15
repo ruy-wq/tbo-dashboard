@@ -23,6 +23,8 @@ export interface EmailCampaign {
   status: EmailCampaignStatus;
   list_id: string | null;
   list_name: string | null;
+  segment_id: string | null;
+  segment_name: string | null;
   scheduled_at: string | null;
   sent_at: string | null;
   created_by: string | null;
@@ -67,6 +69,61 @@ export interface EmailAnalytics {
   bounce_rate: number;
   unsubscribe_rate: number;
 }
+
+// ─── Email Segment Types ────────────────────────────────────────────
+
+export type SegmentRuleField =
+  | "funnel_stage"
+  | "deal_source"
+  | "deal_value_min"
+  | "deal_value_max"
+  | "tags"
+  | "created_after"
+  | "created_before"
+  | "has_email"
+  | "bu";
+
+export type SegmentRuleOperator =
+  | "equals"
+  | "not_equals"
+  | "in"
+  | "not_in"
+  | "greater_than"
+  | "less_than"
+  | "contains"
+  | "is_true";
+
+export interface SegmentRule {
+  field: SegmentRuleField;
+  operator: SegmentRuleOperator;
+  value: string | string[] | number | boolean;
+}
+
+export interface SegmentRuleSet {
+  rules: SegmentRule[];
+  match: "all" | "any";
+}
+
+export interface EmailSegment {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string | null;
+  rules: SegmentRuleSet;
+  estimated_count: number;
+  last_counted_at: string | null;
+  segment_type: "static" | "dynamic";
+  static_deal_ids: string[];
+  tags: string[];
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmailSegmentInput = Pick<
+  EmailSegment,
+  "name" | "description" | "rules" | "segment_type" | "tags"
+>;
 
 // ─── Marketing Campaign Types ───────────────────────────────────────
 

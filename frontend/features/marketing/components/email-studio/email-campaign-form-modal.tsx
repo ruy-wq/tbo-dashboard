@@ -27,14 +27,28 @@ import {
   useCreateEmailCampaign,
   useEmailTemplates,
 } from "../../hooks/use-email-studio";
+import { useEmailSegments } from "../../hooks/use-email-segments";
+import { DEAL_STAGES } from "@/lib/constants";
+import { Badge } from "@/components/ui/badge";
+import { IconUsersGroup } from "@tabler/icons-react";
+import type { EmailSegment, SegmentRule } from "../../types/marketing";
 
 const schema = z.object({
   name: z.string().min(2, "Nome obrigatório (mín. 2 caracteres)"),
   subject: z.string().min(2, "Assunto obrigatório (mín. 2 caracteres)"),
   template_id: z.string().nullable(),
-  list_name: z.string().min(1, "Nome da lista obrigatório"),
+  segment_id: z.string().nullable(),
   scheduled_at: z.string().nullable(),
 });
+
+function formatSegmentSummary(segment: EmailSegment): string {
+  const stageRule = segment.rules.rules.find((r: SegmentRule) => r.field === "funnel_stage");
+  if (!stageRule) return `${segment.estimated_count} contatos`;
+  const stages = Array.isArray(stageRule.value)
+    ? stageRule.value.map((v: string) => DEAL_STAGES[v as keyof typeof DEAL_STAGES]?.label ?? v).join(", ")
+    : DEAL_STAGES[stageRule.value as keyof typeof DEAL_STAGES]?.label ?? String(stageRule.value);
+  return `${stages} · ${segment.estimated_count} contatos`;
+}
 
 type FormValues = z.infer<typeof schema>;
 
@@ -46,6 +60,7 @@ interface Props {
 export function EmailCampaignFormModal({ open, onClose }: Props) {
   const createMutation = useCreateEmailCampaign();
   const { data: templates } = useEmailTemplates();
+  const { data: segments } = useEmailSegments();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -53,7 +68,7 @@ export function EmailCampaignFormModal({ open, onClose }: Props) {
       name: "",
       subject: "",
       template_id: null,
-      list_name: "",
+      segment_id: null,
       scheduled_at: null,
     },
   });
@@ -64,7 +79,7 @@ export function EmailCampaignFormModal({ open, onClose }: Props) {
         name: "",
         subject: "",
         template_id: null,
-        list_name: "",
+        segment_id: null,
         scheduled_at: null,
       });
     }
@@ -76,7 +91,7 @@ export function EmailCampaignFormModal({ open, onClose }: Props) {
         name: values.name,
         subject: values.subject,
         template_id: values.template_id ?? null,
-        list_id: null,
+        list_id: values.segment_id ?? null,
         scheduled_at: values.scheduled_at ?? null,
       },
       { onSuccess: onClose },
@@ -156,20 +171,53 @@ export function EmailCampaignFormModal({ open, onClose }: Props) {
               )}
             />
 
-            {/* Lista */}
+            {/* Segmento */}
             <FormField
               control={form.control}
-              name="list_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Lista de Contatos</FormLabel>
-                  <Input placeholder="Ex: Clientes Ativos, Newsletter Geral..." {...field} />
-                  <p className="text-xs text-muted-foreground">
-                    Nome da lista de destinatários desta campanha.
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
+              name="segment_id"
+              render={({ field }) => {
+                const selectedSegment = segments?.find((s) => s.id === field.value);
+                return (
+                  <FormItem>
+                    <FormLabel>Segmento de Contatos</FormLabel>
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(v) => field.onChange(v || null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar segmento..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(segments ?? []).map((seg) => (
+                          <SelectItem key={seg.id} value={seg.id}>
+                            <div className="flex items-center gap-2">
+                              <IconUsersGroup size={14} className="shrink-0 text-muted-foreground" />
+                              <span>{seg.name}</span>
+                              <Badge variant="secondary" className="ml-auto text-xs">
+                                {seg.estimated_count}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedSegment && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatSegmentSummary(selectedSegment)}
+                      </p>
+                    )}
+                    {(!segments || segments.length === 0) && (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhum segmento criado.{" "}
+                        <a href="/marketing/email-studio/segmentos" className="text-primary hover:underline">
+                          Criar segmento
+                        </a>
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             {/* Agendamento */}
