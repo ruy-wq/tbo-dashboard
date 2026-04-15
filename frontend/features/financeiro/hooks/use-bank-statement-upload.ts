@@ -302,7 +302,7 @@ export function useBankStatementUpload() {
       // Update last_sync_at on account
       await supabase
         .from("finance_bank_accounts")
-        .update({ last_sync_at: new Date().toISOString() } as never)
+        .update({ last_sync_at: new Date().toISOString() })
         .eq("id", bankAccountId);
 
       logger.info("Import complete", result);

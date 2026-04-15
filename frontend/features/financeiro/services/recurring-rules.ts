@@ -6,24 +6,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 import {
-  TABLE_TRANSACTIONS,
-  TABLE_RECURRING_RULES,
   type RecurringRule,
   type RecurringRuleSummary,
   type GenerateResult,
 } from "./finance-types";
 import type { RecurringRuleInput } from "./finance-schemas";
 
-type AnySupabase = SupabaseClient;
-
 // ── Queries ──────────────────────────────────────────────────────────────────
 
 export async function getRecurringRules(
   supabase: SupabaseClient<Database>
 ): Promise<RecurringRuleSummary> {
-  const db = supabase as AnySupabase;
-  const { data, error } = await db
-    .from(TABLE_RECURRING_RULES)
+  const { data, error } = await supabase
+    .from("finance_recurring_rules")
     .select("*")
     .order("description", { ascending: true });
 
@@ -54,9 +49,8 @@ export async function createRecurringRule(
   userId: string,
   input: RecurringRuleInput
 ): Promise<RecurringRule> {
-  const db = supabase as AnySupabase;
-  const { data, error } = await db
-    .from(TABLE_RECURRING_RULES)
+  const { data, error } = await supabase
+    .from("finance_recurring_rules")
     .insert({
       tenant_id: tenantId,
       ...input,
@@ -87,9 +81,8 @@ export async function updateRecurringRule(
   userId: string,
   updates: Partial<RecurringRuleInput> & { is_active?: boolean }
 ): Promise<RecurringRule> {
-  const db = supabase as AnySupabase;
-  const { data, error } = await db
-    .from(TABLE_RECURRING_RULES)
+  const { data, error } = await supabase
+    .from("finance_recurring_rules")
     .update({ ...updates, updated_by: userId } as never)
     .eq("id", id)
     .select("*")
@@ -103,9 +96,8 @@ export async function deleteRecurringRule(
   supabase: SupabaseClient<Database>,
   id: string
 ): Promise<void> {
-  const db = supabase as AnySupabase;
-  const { error } = await db
-    .from(TABLE_RECURRING_RULES)
+  const { error } = await supabase
+    .from("finance_recurring_rules")
     .delete()
     .eq("id", id);
 
@@ -129,14 +121,13 @@ export async function generateRecurringTransactions(
   userId: string,
   targetMonth: string
 ): Promise<GenerateResult> {
-  const db = supabase as AnySupabase;
   const errors: string[] = [];
   let created = 0;
   let skipped = 0;
 
   // Fetch active rules that apply to this month
-  const { data: rules, error: rulesErr } = await db
-    .from(TABLE_RECURRING_RULES)
+  const { data: rules, error: rulesErr } = await supabase
+    .from("finance_recurring_rules")
     .select("*")
     .eq("tenant_id", tenantId)
     .eq("is_active", true)
@@ -175,8 +166,8 @@ export async function generateRecurringTransactions(
     };
 
     // Idempotent: UNIQUE index on (recurring_rule_id, date) prevents duplicates
-    const { error: insertErr, data: inserted } = await db
-      .from(TABLE_TRANSACTIONS)
+    const { error: insertErr, data: inserted } = await supabase
+      .from("finance_transactions")
       .upsert(record as never, {
         onConflict: "recurring_rule_id,date",
         ignoreDuplicates: true,

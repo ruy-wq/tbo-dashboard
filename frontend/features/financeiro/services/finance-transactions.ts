@@ -1,3 +1,4 @@
+import type { Database } from "@/lib/supabase/types";
 import type { FinanceSupabase } from "./finance-types";
 import {
   TABLE_TRANSACTIONS,
@@ -15,6 +16,9 @@ import {
 } from "./finance-types";
 import type { CreateTransactionInput, UpdateTransactionInput } from "./finance-schemas";
 import { roundMoney, sanitizeText } from "./finance-schemas";
+
+type TransactionInsert = Database["public"]["Tables"]["finance_transactions"]["Insert"];
+type TransactionUpdate = Database["public"]["Tables"]["finance_transactions"]["Update"];
 
 // ── Input sanitization ────────────────────────────────────────────────────────
 
@@ -95,7 +99,7 @@ export async function getFinanceTransactions(
   if (error) throw error;
 
   return {
-    data: (data ?? []) as unknown as FinanceTransaction[],
+    data: (data ?? []) as FinanceTransaction[],
     count: count ?? 0,
   };
 }
@@ -299,7 +303,7 @@ export async function getFinanceChartData(
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as unknown as FinanceTransaction[];
+    const rows = (data ?? []) as FinanceTransaction[];
     allData.push(...rows);
 
     hasMore = rows.length === CHART_PAGE_SIZE;
@@ -318,19 +322,38 @@ export async function createFinanceTransaction(
   input: CreateTransactionInput
 ): Promise<FinanceTransaction> {
   const sanitized = sanitizeCreateInput(input);
+  const payload: TransactionInsert = {
+    description: sanitized.description,
+    tenant_id: tenantId,
+    type: sanitized.type,
+    status: sanitized.status,
+    amount: sanitized.amount,
+    paid_amount: sanitized.paid_amount ?? 0,
+    date: sanitized.date,
+    due_date: sanitized.due_date ?? null,
+    paid_date: sanitized.paid_date ?? null,
+    category_id: sanitized.category_id ?? null,
+    cost_center_id: sanitized.cost_center_id ?? null,
+    project_id: sanitized.project_id ?? null,
+    counterpart: sanitized.counterpart ?? null,
+    counterpart_doc: sanitized.counterpart_doc ?? null,
+    payment_method: sanitized.payment_method ?? null,
+    bank_account: sanitized.bank_account ?? null,
+    business_unit: sanitized.business_unit ?? null,
+    tags: sanitized.tags ?? [],
+    notes: sanitized.notes ?? null,
+    contract_id: sanitized.contract_id ?? null,
+    created_by: userId,
+    updated_by: userId,
+  };
   const { data, error } = await supabase
     .from(TABLE_TRANSACTIONS)
-    .insert({
-      ...sanitized,
-      tenant_id: tenantId,
-      created_by: userId,
-      updated_by: userId,
-    } as never)
+    .insert(payload)
     .select("*")
     .single();
 
   if (error) throw error;
-  return data as unknown as FinanceTransaction;
+  return data as FinanceTransaction;
 }
 
 // ── Update Transaction ──────────────────────────────────────────────────────
@@ -354,13 +377,14 @@ export async function updateFinanceTransaction(
   if (fetchErr) throw fetchErr;
   const prev = current as Record<string, unknown>;
 
+  const updatePayload: TransactionUpdate = {
+    ...updates_,
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  };
   const { data, error } = await supabase
     .from(TABLE_TRANSACTIONS)
-    .update({
-      ...updates_,
-      updated_by: userId,
-      updated_at: new Date().toISOString(),
-    } as never)
+    .update(updatePayload)
     .eq("id", id)
     .select("*")
     .single();
@@ -368,26 +392,28 @@ export async function updateFinanceTransaction(
   if (error) throw error;
 
   // Log audit trail for changed fields
+  // Note: finance_transaction_audit table is not in generated Database types yet,
+  // so we use a typed RPC-style insert via the untyped .from() path.
   const auditRows = AUDIT_FIELDS
     .filter((f) => f in updates_ && String(updates_[f as keyof typeof updates_] ?? "") !== String(prev[f] ?? ""))
     .map((f) => ({
-      tenant_id: prev.tenant_id,
+      tenant_id: prev.tenant_id as string,
       transaction_id: id,
       field_name: f,
       old_value: prev[f] != null ? String(prev[f]) : null,
       new_value: updates_[f as keyof typeof updates_] != null ? String(updates_[f as keyof typeof updates_]) : null,
       changed_by: userId,
-      source: "manual",
+      source: "manual" as const,
     }));
 
   if (auditRows.length > 0) {
-    // Table not yet in generated Database types — cast to untyped client
-    await (supabase as unknown as { from: (t: string) => { insert: (d: unknown[]) => Promise<unknown> } })
+    // Table not in generated Database types — keep cast until types are regenerated
+    await (supabase as unknown as { from: (t: string) => { insert: (d: typeof auditRows) => Promise<unknown> } })
       .from("finance_transaction_audit")
       .insert(auditRows);
   }
 
-  return data as unknown as FinanceTransaction;
+  return data as FinanceTransaction;
 }
 
 // ── Delete Transaction ──────────────────────────────────────────────────────
@@ -417,7 +443,7 @@ export async function getFinanceTransactionById(
     .single();
 
   if (error) throw error;
-  return data as unknown as FinanceTransaction;
+  return data as FinanceTransaction;
 }
 
 // ── Client-side API wrappers ─────────────────────────────────────────────────

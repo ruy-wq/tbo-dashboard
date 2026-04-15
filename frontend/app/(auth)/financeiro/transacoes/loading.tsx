@@ -1,35 +1,31 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export default function FiscalLoading() {
+export default function TransacoesLoading() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1.5">
           <Skeleton className="h-7 w-40" />
-          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-56" />
         </div>
-        <Skeleton className="h-9 w-32 rounded-md" />
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-44 rounded-md" />
+          <Skeleton className="h-9 w-32 rounded-md" />
+          <Skeleton className="h-9 w-36 rounded-md" />
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b">
+      {/* Summary cards — 3 */}
+      <div className="grid grid-cols-3 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-9 w-32 rounded-t-md" />
-        ))}
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardHeader className="pb-2">
-              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-20" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-6 w-28 mb-1" />
-              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-28" />
             </CardContent>
           </Card>
         ))}
@@ -37,27 +33,33 @@ export default function FiscalLoading() {
 
       {/* Filters */}
       <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-[160px] rounded-md" />
-        <Skeleton className="h-9 flex-1 max-w-sm rounded-md" />
         <Skeleton className="h-9 w-[140px] rounded-md" />
+        <Skeleton className="h-9 flex-1 max-w-sm rounded-md" />
+        <Skeleton className="h-9 w-[160px] rounded-md" />
+        <Skeleton className="h-9 w-[180px] rounded-md" />
       </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
+          {/* Header row */}
           <div className="flex items-center gap-4 px-4 py-3 border-b">
-            {[80, 100, 120, 100, 80, 80, 60].map((w, i) => (
+            {[40, 200, 120, 120, 100, 90, 80, 80, 70, 40].map((w, i) => (
               <Skeleton key={i} className="h-3" style={{ width: w }} />
             ))}
           </div>
-          {Array.from({ length: 6 }).map((_, i) => (
+          {/* Data rows */}
+          {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border/40">
-              <Skeleton className="h-3 w-16" />
+              <Skeleton className="size-4 rounded-full" />
+              <Skeleton className="h-4 w-48" />
               <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-3 w-32" />
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-4 w-20 ml-auto" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-5 w-16 rounded-full" />
               <Skeleton className="size-6 rounded-md" />
             </div>
           ))}

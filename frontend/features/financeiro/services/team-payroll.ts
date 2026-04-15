@@ -42,7 +42,6 @@ export interface TeamPayrollSummary {
   month: string;
 }
 
-const TABLE = "finance_team_payroll";
 const SELECT_WITH_PROFILE =
   "id, tenant_id, month, profile_id, name, role, section, salary, is_active, notes, created_by, created_at, updated_at, profiles:profile_id(full_name, cargo, avatar_url)";
 const SELECT_COLS =
@@ -95,7 +94,7 @@ export async function getActiveHeadcount(
   supabase: SupabaseClient<Database>,
 ): Promise<number> {
   const { count, error } = await supabase
-    .from("profiles" as never)
+    .from("profiles")
     .select("id", { count: "exact", head: true })
     .eq("is_active", true);
 
@@ -109,7 +108,7 @@ export async function getTeamPayroll(
 ): Promise<TeamPayrollSummary> {
   const [payrollRes, headcountFromProfiles] = await Promise.all([
     supabase
-      .from(TABLE as never)
+      .from("finance_team_payroll")
       .select(SELECT_WITH_PROFILE)
       .eq("month", month)
       .order("salary", { ascending: false }),
@@ -151,7 +150,7 @@ export async function upsertTeamPayrollEntry(
   };
 
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_team_payroll")
     .upsert(payload as never, { onConflict: "tenant_id,month,name" })
     .select(SELECT_COLS)
     .single();
@@ -167,7 +166,7 @@ export async function updateTeamPayrollEntry(
   updates: Partial<Pick<TeamPayrollEntry, "name" | "role" | "section" | "salary" | "is_active" | "notes">>,
 ): Promise<TeamPayrollEntry> {
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_team_payroll")
     .update({ ...updates, updated_at: new Date().toISOString() } as never)
     .eq("id", id)
     .select(SELECT_COLS)
@@ -183,7 +182,7 @@ export async function deleteTeamPayrollEntry(
   id: string,
 ): Promise<void> {
   const { error } = await supabase
-    .from(TABLE as never)
+    .from("finance_team_payroll")
     .delete()
     .eq("id", id);
 
@@ -214,7 +213,7 @@ export async function duplicateMonthPayroll(
   }));
 
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_team_payroll")
     .upsert(payloads as never, { onConflict: "tenant_id,month,name" })
     .select(SELECT_COLS);
 

@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import type {
   Boleto,
   BoletoInsert,
@@ -11,10 +12,9 @@ import type {
   BoletoSummary,
 } from "@/lib/supabase/types/boletos";
 
-const TABLE = "finance_boletos" as const;
 const DEFAULT_PAGE_SIZE = 50;
 
-type Supabase = SupabaseClient;
+type Supabase = SupabaseClient<Database>;
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ export async function listBoletos(
   const to = from + pageSize - 1;
 
   let query = supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .select("*", { count: "exact" })
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false })
@@ -51,7 +51,7 @@ export async function listBoletos(
 
   const { data, error, count } = await query;
   if (error) throw new Error(`listBoletos: ${error.message}`);
-  return { data: (data ?? []) as unknown as Boleto[], count: count ?? 0 };
+  return { data: (data ?? []) as Boleto[], count: count ?? 0 };
 }
 
 export async function getBoleto(
@@ -59,7 +59,7 @@ export async function getBoleto(
   id: string
 ): Promise<Boleto | null> {
   const { data, error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .select("*")
     .eq("id", id)
     .single();
@@ -67,7 +67,7 @@ export async function getBoleto(
     if (error.code === "PGRST116") return null;
     throw new Error(`getBoleto: ${error.message}`);
   }
-  return data as unknown as Boleto;
+  return data as Boleto;
 }
 
 export async function createBoleto(
@@ -75,12 +75,12 @@ export async function createBoleto(
   payload: BoletoInsert
 ): Promise<Boleto> {
   const { data, error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .insert(payload as never)
     .select()
     .single();
   if (error) throw new Error(`createBoleto: ${error.message}`);
-  return data as unknown as Boleto;
+  return data as Boleto;
 }
 
 export async function updateBoleto(
@@ -89,13 +89,13 @@ export async function updateBoleto(
   payload: BoletoUpdate
 ): Promise<Boleto> {
   const { data, error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .update({ ...payload, updated_at: new Date().toISOString() } as never)
     .eq("id", id)
     .select()
     .single();
   if (error) throw new Error(`updateBoleto: ${error.message}`);
-  return data as unknown as Boleto;
+  return data as Boleto;
 }
 
 export async function cancelBoleto(
@@ -112,7 +112,7 @@ export async function markRemessaSent(
   ids: string[]
 ): Promise<void> {
   const { error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .update({ remessa_sent_at: new Date().toISOString() } as never)
     .in("id", ids);
   if (error) throw new Error(`markRemessaSent: ${error.message}`);
@@ -127,7 +127,7 @@ export async function applyRetornoRecord(
   payload: BoletoUpdate
 ): Promise<void> {
   const { error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .update({ ...payload, updated_at: new Date().toISOString() } as never)
     .eq("tenant_id", tenantId)
     .eq("nosso_numero", nossoNumero);
@@ -141,13 +141,13 @@ export async function getBoletosSummary(
   tenantId: string
 ): Promise<BoletoSummary> {
   const { data, error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .select("status, amount, paid_amount")
     .eq("tenant_id", tenantId);
 
   if (error) throw new Error(`getBoletosSummary: ${error.message}`);
 
-  const rows = (data ?? []) as unknown as Pick<Boleto, "status" | "amount" | "paid_amount">[];
+  const rows = (data ?? []) as Pick<Boleto, "status" | "amount" | "paid_amount">[];
 
   const summarize = (status: Boleto["status"]) => ({
     count: rows.filter((r) => r.status === status).length,
@@ -181,7 +181,7 @@ export async function markOverdueBoletos(
 ): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await supabase
-    .from(TABLE)
+    .from("finance_boletos")
     .update({ status: "vencido", updated_at: new Date().toISOString() } as never)
     .eq("tenant_id", tenantId)
     .eq("status", "emitido")

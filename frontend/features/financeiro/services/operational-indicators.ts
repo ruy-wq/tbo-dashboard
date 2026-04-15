@@ -30,7 +30,6 @@ export interface UpsertOperationalIndicatorInput {
   notes?: string | null;
 }
 
-const TABLE = "finance_operational_indicators";
 const SELECT_COLS =
   "id, tenant_id, month, headcount, folha_pagamento, custos_fixos, meta_receita, meta_margem, churn_clientes_perdidos, notes, created_by, created_at, updated_at";
 
@@ -44,7 +43,7 @@ export async function getOperationalIndicators(
   month: string,
 ): Promise<OperationalIndicator | null> {
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_operational_indicators")
     .select(SELECT_COLS)
     .eq("month", month)
     .maybeSingle();
@@ -62,7 +61,7 @@ export async function getOperationalIndicatorsRange(
   toMonth: string,
 ): Promise<OperationalIndicator[]> {
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_operational_indicators")
     .select(SELECT_COLS)
     .gte("month", fromMonth)
     .lte("month", toMonth)
@@ -96,7 +95,7 @@ export async function upsertOperationalIndicator(
   };
 
   const { data, error } = await supabase
-    .from(TABLE as never)
+    .from("finance_operational_indicators")
     .upsert(payload as never, { onConflict: "tenant_id,month" })
     .select(SELECT_COLS)
     .single();

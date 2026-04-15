@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -23,7 +24,7 @@ import {
 } from "@/features/financeiro/services/reconciliation-engine";
 import { getFinanceTransactions } from "@/features/financeiro/services/finance-transactions";
 
-type AnySupabase = SupabaseClient;
+type TypedSupabase = SupabaseClient<Database>;
 
 const logger = createLogger("use-reconciliation");
 
@@ -50,7 +51,7 @@ interface AuditEntry {
 }
 
 async function insertReconciliationLog(
-  supabase: AnySupabase,
+  supabase: TypedSupabase,
   entry: AuditEntry
 ): Promise<void> {
   const { error } = await supabase
@@ -63,7 +64,7 @@ async function insertReconciliationLog(
       method: entry.method,
       score: entry.score,
       created_at: new Date().toISOString(),
-    } as never);
+    });
   if (error) {
     logger.warn("Audit log insert failed", { error: error.message });
   }
@@ -112,7 +113,7 @@ export function useReconciliationCandidates(
           dateTo,
           pageSize: 500,
         }),
-        getFinanceTransactions(supabase as never, {
+        getFinanceTransactions(supabase, {
           statusIn: ["previsto", "provisionado", "pago", "liquidado", "atrasado"],
           dateFrom,
           dateTo,

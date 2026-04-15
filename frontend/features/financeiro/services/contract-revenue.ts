@@ -1,5 +1,8 @@
+import type { Database } from "@/lib/supabase/types";
 import type { FinanceSupabase } from "./finance-types";
 import { TABLE_TRANSACTIONS } from "./finance-types";
+
+type TransactionInsert = Database["public"]["Tables"]["finance_transactions"]["Insert"];
 
 /**
  * Result of generating revenue transactions from active contracts.
@@ -84,12 +87,12 @@ export async function generateContractRevenue(
   );
 
   // Build transactions to insert
-  const toInsert = validContracts
+  const toInsert: TransactionInsert[] = validContracts
     .filter((c) => !existingContractIds.has(c.id))
     .map((c) => ({
       tenant_id: tenantId,
-      type: "receita" as const,
-      status: "previsto" as const,
+      type: "receita",
+      status: "previsto",
       description: `Receita contrato: ${c.title}`,
       amount: c.monthly_value!,
       paid_amount: 0,
@@ -120,7 +123,7 @@ export async function generateContractRevenue(
     const batch = toInsert.slice(i, i + BATCH);
     const { error: insertErr, data: insertedRows } = await supabase
       .from(TABLE_TRANSACTIONS)
-      .insert(batch as never[])
+      .insert(batch)
       .select("id");
 
     if (insertErr) {

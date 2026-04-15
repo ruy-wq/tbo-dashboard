@@ -48,6 +48,9 @@ import type {
 import {
   batchAutoCategorize,
 } from "@/features/financeiro/services/auto-categorize";
+import type { Database } from "@/lib/supabase/types";
+
+type TransactionUpdate = Database["public"]["Tables"]["finance_transactions"]["Update"];
 
 // ── Transactions ──────────────────────────────────────────────────────────────
 
@@ -487,7 +490,69 @@ export function useCreateTransaction() {
       const supabase = createClient();
       return createFinanceTransaction(supabase, tenantId, userId, input);
     },
-    onSuccess: () => invalidateAllFinanceQueries(qc, tenantId),
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: ["finance-transactions", tenantId] });
+      await qc.cancelQueries({ queryKey: ["finance-chart-data", tenantId] });
+
+      // Snapshot all transaction list caches for rollback
+      const prevQueries = qc.getQueriesData<{ data: FinanceTransaction[]; count: number }>({
+        queryKey: ["finance-transactions", tenantId],
+      });
+
+      // Optimistically add to first matching cache with temp ID
+      const tempTx: FinanceTransaction = {
+        id: `temp-${Date.now()}`,
+        tenant_id: tenantId ?? "",
+        type: input.type,
+        status: input.status,
+        description: input.description,
+        amount: input.amount,
+        paid_amount: input.paid_amount ?? 0,
+        date: input.date,
+        due_date: input.due_date ?? null,
+        paid_date: input.paid_date ?? null,
+        category_id: input.category_id ?? null,
+        cost_center_id: input.cost_center_id ?? null,
+        project_id: input.project_id ?? null,
+        counterpart: input.counterpart ?? null,
+        counterpart_doc: input.counterpart_doc ?? null,
+        payment_method: input.payment_method ?? null,
+        bank_account: input.bank_account ?? null,
+        business_unit: input.business_unit ?? null,
+        tags: input.tags ?? [],
+        notes: input.notes ?? null,
+        contract_id: input.contract_id ?? null,
+        omie_id: null,
+        omie_synced_at: null,
+        omie_raw: null,
+        responsible_id: null,
+        recurring_rule_id: null,
+        created_by: userId ?? null,
+        updated_by: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      for (const [key, data] of prevQueries) {
+        if (data) {
+          qc.setQueryData(key, {
+            data: [tempTx, ...data.data],
+            count: data.count + 1,
+          });
+        }
+      }
+
+      return { prevQueries };
+    },
+    onError: (_err, _input, context) => {
+      // Rollback all caches to previous state
+      if (context?.prevQueries) {
+        for (const [key, data] of context.prevQueries) {
+          qc.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => invalidateAllFinanceQueries(qc, tenantId),
   });
 }
 
@@ -508,7 +573,38 @@ export function useUpdateTransaction() {
       const supabase = createClient();
       return updateFinanceTransaction(supabase, id, userId, updates);
     },
-    onSuccess: () => invalidateAllFinanceQueries(qc, tenantId),
+    onMutate: async ({ id, updates }) => {
+      await qc.cancelQueries({ queryKey: ["finance-transactions", tenantId] });
+      await qc.cancelQueries({ queryKey: ["finance-chart-data", tenantId] });
+
+      const prevQueries = qc.getQueriesData<{ data: FinanceTransaction[]; count: number }>({
+        queryKey: ["finance-transactions", tenantId],
+      });
+
+      // Optimistically apply updates in all cached lists
+      for (const [key, data] of prevQueries) {
+        if (data) {
+          qc.setQueryData(key, {
+            ...data,
+            data: data.data.map((tx) =>
+              tx.id === id
+                ? { ...tx, ...updates, updated_at: new Date().toISOString() }
+                : tx
+            ),
+          });
+        }
+      }
+
+      return { prevQueries };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevQueries) {
+        for (const [key, data] of context.prevQueries) {
+          qc.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => invalidateAllFinanceQueries(qc, tenantId),
   });
 }
 
@@ -521,7 +617,34 @@ export function useDeleteTransaction() {
       const supabase = createClient();
       return deleteFinanceTransaction(supabase, id);
     },
-    onSuccess: () => invalidateAllFinanceQueries(qc, tenantId),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["finance-transactions", tenantId] });
+      await qc.cancelQueries({ queryKey: ["finance-chart-data", tenantId] });
+
+      const prevQueries = qc.getQueriesData<{ data: FinanceTransaction[]; count: number }>({
+        queryKey: ["finance-transactions", tenantId],
+      });
+
+      // Optimistically remove from all cached lists
+      for (const [key, data] of prevQueries) {
+        if (data) {
+          qc.setQueryData(key, {
+            data: data.data.filter((tx) => tx.id !== id),
+            count: Math.max(0, data.count - 1),
+          });
+        }
+      }
+
+      return { prevQueries };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prevQueries) {
+        for (const [key, data] of context.prevQueries) {
+          qc.setQueryData(key, data);
+        }
+      }
+    },
+    onSettled: () => invalidateAllFinanceQueries(qc, tenantId),
   });
 }
 
@@ -559,15 +682,16 @@ export function useBulkAutoCategorize() {
 
       let updated = 0;
       for (const s of suggestions) {
-        const updates: Record<string, unknown> = {};
+        const updates: TransactionUpdate = {
+          updated_by: userId,
+          updated_at: new Date().toISOString(),
+        };
         if (s.category_id) updates.category_id = s.category_id;
         if (s.cost_center_id) updates.cost_center_id = s.cost_center_id;
-        updates.updated_by = userId;
-        updates.updated_at = new Date().toISOString();
 
         const { error } = await supabase
           .from("finance_transactions")
-          .update(updates as never)
+          .update(updates)
           .eq("id", s.id);
 
         if (!error) updated++;

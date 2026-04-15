@@ -4,7 +4,6 @@
 // React Query hooks para o agente AI de conciliação bancária.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { createClient } from "@/lib/supabase/client";
@@ -20,8 +19,6 @@ import type {
   AICategorySuggestion,
   AIAnomaly,
 } from "@/features/financeiro/services/ai-reconciliation";
-
-type AnySupabase = SupabaseClient;
 
 const logger = createLogger("use-ai-reconciliation");
 
@@ -178,7 +175,7 @@ export function useAISuggestions() {
     queryKey: aiReconciliationKeys.suggestions(tenantId),
     queryFn: async () => {
       if (!tenantId) return [];
-      const supabase: AnySupabase = createClient();
+      const supabase = createClient();
       const { data, error } = await supabase
         .from("finance_ai_suggestions")
         .select("id, type, suggestion_json, confidence, reasoning, status, created_at, model_used, tokens_used, latency_ms")
@@ -188,7 +185,7 @@ export function useAISuggestions() {
         .limit(50);
 
       if (error) throw new Error(error.message);
-      return (data ?? []) as unknown as AISuggestionRow[];
+      return (data ?? []) as AISuggestionRow[];
     },
     enabled: !!tenantId,
     staleTime: 1000 * 60, // 1 min
@@ -210,14 +207,14 @@ export function useResolveSuggestion() {
   return useMutation<void, Error, ResolveInput>({
     mutationFn: async ({ suggestionId, status }) => {
       if (!userId) throw new Error("Usuário não identificado");
-      const supabase: AnySupabase = createClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from("finance_ai_suggestions")
         .update({
           status,
           resolved_by: userId,
           resolved_at: new Date().toISOString(),
-        } as never)
+        })
         .eq("id", suggestionId);
 
       if (error) throw new Error(error.message);
