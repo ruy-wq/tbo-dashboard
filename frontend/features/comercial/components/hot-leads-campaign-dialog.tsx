@@ -25,9 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconFlame, IconMail, IconAlertTriangle } from "@tabler/icons-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { IconFlame, IconMail, IconAlertTriangle, IconUsers, IconEye } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useEmailTemplates } from "@/features/marketing/hooks/use-email-studio";
+import { EmailPreviewInline } from "@/features/marketing/components/email-studio/email-preview-inline";
 import { scoreDeals } from "../lib/lead-scoring";
 import type { Database } from "@/lib/supabase/types";
 
@@ -84,6 +86,16 @@ export function HotLeadsCampaignDialog({ open, onClose, deals }: Props) {
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
   const selectedCount = selectedIds.size;
+
+  // Primeiro lead selecionado — usado no preview pra mostrar dados reais
+  const firstSelectedDeal = hotDeals.find((h) => selectedIds.has(h.deal.id))?.deal;
+  const previewMergeVars = firstSelectedDeal
+    ? {
+        FNAME: (firstSelectedDeal.contact || "").trim().split(/\s+/)[0],
+        COMPANY: firstSelectedDeal.company || "",
+        EMAIL: firstSelectedDeal.contact_email || "",
+      }
+    : undefined;
 
   function toggleDeal(id: string) {
     setSelectedIds((prev) => {
@@ -211,13 +223,6 @@ export function HotLeadsCampaignDialog({ open, onClose, deals }: Props) {
             </div>
           </div>
 
-          {selectedTemplate && (
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-              <p className="font-medium mb-0.5">Assunto (após merge):</p>
-              <p className="text-muted-foreground font-mono">{selectedTemplate.subject}</p>
-            </div>
-          )}
-
           {/* Avisos */}
           {hotDeals.length === 0 && (
             <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-800">
@@ -236,63 +241,94 @@ export function HotLeadsCampaignDialog({ open, onClose, deals }: Props) {
             </div>
           )}
 
-          {/* Lista */}
+          {/* Tabs: Curadoria | Preview */}
           {hotDeals.length > 0 && (
-            <>
-              <div className="flex items-center justify-between text-xs">
-                <button
-                  type="button"
-                  onClick={toggleAll}
-                  className="text-primary hover:underline"
-                >
-                  {selectedIds.size === hotDeals.filter((h) => h.hasEmail).length
-                    ? "Desmarcar todos"
-                    : "Selecionar todos com e-mail"}
-                </button>
-                <span className="text-muted-foreground">
-                  {selectedCount} de {hotDeals.length} selecionado{selectedCount === 1 ? "" : "s"}
-                </span>
-              </div>
+            <Tabs defaultValue="curadoria" className="flex-1 flex flex-col overflow-hidden">
+              <TabsList className="self-start">
+                <TabsTrigger value="curadoria" className="gap-1.5">
+                  <IconUsers className="h-3.5 w-3.5" />
+                  Curadoria
+                  <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
+                    {selectedCount}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="preview" disabled={!selectedTemplate} className="gap-1.5">
+                  <IconEye className="h-3.5 w-3.5" />
+                  Preview
+                </TabsTrigger>
+              </TabsList>
 
-              <ScrollArea className="flex-1 min-h-[200px] max-h-[360px] border border-border rounded-md">
-                <div className="divide-y divide-border">
-                  {hotDeals.map(({ deal, score, hasEmail }) => (
-                    <label
-                      key={deal.id}
-                      className={`flex items-center gap-3 p-3 text-sm transition-colors ${
-                        hasEmail ? "hover:bg-muted/50 cursor-pointer" : "opacity-50 cursor-not-allowed"
-                      }`}
-                    >
-                      <Checkbox
-                        checked={selectedIds.has(deal.id)}
-                        disabled={!hasEmail}
-                        onCheckedChange={() => hasEmail && toggleDeal(deal.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium truncate">{deal.name}</p>
-                          <Badge variant="secondary" className="text-[10px] h-4 px-1.5 shrink-0">
-                            score {score}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {deal.company || "—"}
-                          {deal.contact ? ` · ${deal.contact}` : ""}
-                          {hasEmail ? (
-                            <>
-                              {" · "}
-                              <span className="font-mono">{deal.contact_email}</span>
-                            </>
-                          ) : (
-                            <span className="text-amber-600"> · sem e-mail</span>
-                          )}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
+              <TabsContent value="curadoria" className="flex-1 flex flex-col gap-2 overflow-hidden mt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    onClick={toggleAll}
+                    className="text-primary hover:underline"
+                  >
+                    {selectedIds.size === hotDeals.filter((h) => h.hasEmail).length
+                      ? "Desmarcar todos"
+                      : "Selecionar todos com e-mail"}
+                  </button>
+                  <span className="text-muted-foreground">
+                    {selectedCount} de {hotDeals.length} selecionado{selectedCount === 1 ? "" : "s"}
+                  </span>
                 </div>
-              </ScrollArea>
-            </>
+
+                <ScrollArea className="flex-1 min-h-[200px] max-h-[360px] border border-border rounded-md">
+                  <div className="divide-y divide-border">
+                    {hotDeals.map(({ deal, score, hasEmail }) => (
+                      <label
+                        key={deal.id}
+                        className={`flex items-center gap-3 p-3 text-sm transition-colors ${
+                          hasEmail ? "hover:bg-muted/50 cursor-pointer" : "opacity-50 cursor-not-allowed"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={selectedIds.has(deal.id)}
+                          disabled={!hasEmail}
+                          onCheckedChange={() => hasEmail && toggleDeal(deal.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">{deal.name}</p>
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1.5 shrink-0">
+                              score {score}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {deal.company || "—"}
+                            {deal.contact ? ` · ${deal.contact}` : ""}
+                            {hasEmail ? (
+                              <>
+                                {" · "}
+                                <span className="font-mono">{deal.contact_email}</span>
+                              </>
+                            ) : (
+                              <span className="text-amber-600"> · sem e-mail</span>
+                            )}
+                          </p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="preview" className="flex-1 overflow-auto mt-2">
+                {selectedTemplate ? (
+                  <EmailPreviewInline
+                    htmlContent={selectedTemplate.html_content}
+                    subject={selectedTemplate.subject}
+                    mergeVars={previewMergeVars}
+                    maxHeight={420}
+                  />
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-8">
+                    Selecione um template para pré-visualizar.
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </div>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -15,6 +16,8 @@ import {
   IconCalendar,
   IconEdit,
   IconPercentage,
+  IconSparkles,
+  IconTrash,
 } from "@tabler/icons-react";
 import { DEAL_STAGES, type DealStageKey } from "@/lib/constants";
 import type { Database } from "@/lib/supabase/types";
@@ -26,6 +29,8 @@ import {
   getTemperature,
 } from "./deal-detail-helpers";
 import { DealDetailBody } from "./deal-detail-sections";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { AiEmailDraftsDrawer } from "./ai-email-drafts-drawer";
 
 type DealRow = Database["public"]["Tables"]["crm_deals"]["Row"];
 
@@ -34,6 +39,7 @@ interface DealDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (deal: DealRow) => void;
+  onDelete?: (deal: DealRow) => void;
 }
 
 // ── Main Component ───────────────────────────────────────
@@ -43,7 +49,10 @@ export function DealDetailDialog({
   open,
   onOpenChange,
   onEdit,
+  onDelete,
 }: DealDetailDialogProps) {
+  const [aiDraftsOpen, setAiDraftsOpen] = useState(false);
+
   if (!deal) return null;
 
   const stageConfig =
@@ -162,18 +171,46 @@ export function DealDetailDialog({
         </ScrollArea>
 
         {/* ── Footer ──────────────────────────────────── */}
-        {onEdit && (
-          <div className="border-t px-6 py-4">
+        <div className="border-t px-6 py-4 flex gap-2">
+          {onDelete && (
+            <ConfirmDialog
+              title="Excluir deal?"
+              description={`O deal "${deal.name}" e todo seu histórico de atividades serão excluídos permanentemente. Esta ação não pode ser desfeita.`}
+              confirmLabel="Excluir"
+              variant="destructive"
+              onConfirm={() => onDelete(deal)}
+              trigger={
+                <Button variant="outline" size="icon" className="shrink-0 text-destructive hover:text-destructive">
+                  <IconTrash className="h-4 w-4" strokeWidth={1.5} />
+                </Button>
+              }
+            />
+          )}
+          <Button
+            variant="outline"
+            className="flex-1 font-medium gap-1.5"
+            onClick={() => setAiDraftsOpen(true)}
+          >
+            <IconSparkles className="h-4 w-4 text-violet-500" />
+            Rascunhos IA
+          </Button>
+          {onEdit && (
             <Button
-              className="w-full font-semibold"
+              className="flex-1 font-semibold"
               onClick={() => onEdit(deal)}
             >
               <IconEdit className="mr-2 h-4 w-4" strokeWidth={1.5} />
-              Editar Deal
+              Editar
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </SheetContent>
+
+      <AiEmailDraftsDrawer
+        deal={deal}
+        open={aiDraftsOpen}
+        onOpenChange={setAiDraftsOpen}
+      />
     </Sheet>
   );
 }

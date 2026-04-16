@@ -11,6 +11,7 @@ import {
   IconPlayerStop,
   IconX,
   IconSend,
+  IconEye,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +28,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { EmptyState, ErrorState } from "@/components/shared";
 import { RequireRole } from "@/features/auth/components/require-role";
-import { useEmailCampaigns, useUpdateEmailCampaign, useSendEmailCampaign } from "@/features/marketing/hooks/use-email-studio";
+import {
+  useEmailCampaigns,
+  useUpdateEmailCampaign,
+  useSendEmailCampaign,
+  useEmailTemplates,
+} from "@/features/marketing/hooks/use-email-studio";
 import { EmailCampaignFormModal } from "@/features/marketing/components/email-studio/email-campaign-form-modal";
+import { EmailPreviewInline } from "@/features/marketing/components/email-studio/email-preview-inline";
 import { EMAIL_CAMPAIGN_STATUS } from "@/lib/constants";
 import type { EmailCampaign, EmailCampaignStatus } from "@/features/marketing/types/marketing";
 
@@ -42,10 +55,16 @@ function CampanhasContent() {
   const [statusFilter, setStatusFilter] = useState<EmailCampaignStatus | "all">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [actionTarget, setActionTarget] = useState<{ campaign: EmailCampaign; type: ActionType } | null>(null);
+  const [previewCampaign, setPreviewCampaign] = useState<EmailCampaign | null>(null);
 
   const { data: campaigns, isLoading, error, refetch } = useEmailCampaigns();
+  const { data: templates = [] } = useEmailTemplates();
   const updateMutation = useUpdateEmailCampaign();
   const sendMutation = useSendEmailCampaign();
+
+  const previewTemplate = previewCampaign?.template_id
+    ? templates.find((t) => t.id === previewCampaign.template_id)
+    : null;
 
   const filtered = (campaigns ?? []).filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
@@ -197,6 +216,14 @@ function CampanhasContent() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => setPreviewCampaign(campaign)}
+                        >
+                          <IconEye size={12} className="mr-1" /> Preview
+                        </Button>
                         {canSend && (
                           <Button
                             size="sm"
@@ -243,6 +270,32 @@ function CampanhasContent() {
       {/* Modal criar campanha — Feature #19 */}
       <EmailCampaignFormModal open={modalOpen} onClose={() => setModalOpen(false)} />
 
+      {/* Preview da campanha */}
+      <Dialog open={!!previewCampaign} onOpenChange={(v) => !v && setPreviewCampaign(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-sm">
+              Preview: {previewCampaign?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            {previewTemplate ? (
+              <EmailPreviewInline
+                htmlContent={previewTemplate.html_content}
+                subject={previewCampaign?.subject ?? previewTemplate.subject}
+                maxHeight={520}
+              />
+            ) : (
+              <div className="text-sm text-muted-foreground text-center py-12">
+                {previewCampaign?.template_id
+                  ? "Carregando template..."
+                  : "Esta campanha não tem template associado."}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirmação pausar/cancelar */}
       <AlertDialog open={!!actionTarget} onOpenChange={(v) => !v && setActionTarget(null)}>
         <AlertDialogContent>
@@ -256,7 +309,7 @@ function CampanhasContent() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {actionTarget?.type === "send"
-                ? `Confirma o envio de "${actionTarget.campaign.name}" para todos os contatos do segmento? Os emails serão disparados imediatamente via Resend.`
+                ? `Confirma o envio de "${actionTarget.campaign.name}" para todos os contatos do segmento? Os emails serão disparados imediatamente via Mailchimp.`
                 : actionTarget?.type === "cancel"
                   ? `Tem certeza que deseja cancelar "${actionTarget.campaign.name}"? Esta ação não pode ser desfeita.`
                   : `Deseja pausar o envio de "${actionTarget?.campaign.name}"? Você poderá retomar depois.`}

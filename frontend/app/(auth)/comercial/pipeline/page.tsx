@@ -23,12 +23,13 @@ import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconGitBranch, IconCheckbox, IconFlame } from "@tabler/icons-react";
+import { IconPlus, IconGitBranch, IconCheckbox, IconFlame, IconSparkles } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { DEAL_STAGES, type DealStageKey, type LossReasonValue } from "@/lib/constants";
 import { LossReasonDialog } from "@/features/comercial/components/loss-reason-dialog";
 import { ProposalConfirmDialog } from "@/features/comercial/components/proposal-confirm-dialog";
 import { HotLeadsCampaignDialog } from "@/features/comercial/components/hot-leads-campaign-dialog";
+import { StageBatchEmailsDialog } from "@/features/comercial/components/stage-batch-emails-dialog";
 import {
   CommercialPeriodFilter,
   filterByPeriod,
@@ -57,6 +58,7 @@ export default function PipelinePage() {
   const [lossDialogOpen, setLossDialogOpen] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const [hotLeadsDialogOpen, setHotLeadsDialogOpen] = useState(false);
+  const [batchEmailsOpen, setBatchEmailsOpen] = useState(false);
   const [pendingStageDeal, setPendingStageDeal] = useState<{ id: string; name: string; newStage: string } | null>(null);
 
   const handleBulkToggle = useCallback((dealId: string, checked: boolean) => {
@@ -238,6 +240,10 @@ export default function PipelinePage() {
               <IconCheckbox className="h-4 w-4" />
               {bulkMode ? "Cancelar seleção" : "Selecionar"}
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setBatchEmailsOpen(true)} className="gap-1.5">
+              <IconSparkles className="h-4 w-4 text-violet-500" />
+              Gerar emails IA
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setHotLeadsDialogOpen(true)} className="gap-1.5">
               <IconFlame className="h-4 w-4 text-orange-500" />
               Campanha p/ leads quentes
@@ -292,6 +298,11 @@ export default function PipelinePage() {
           open={hotLeadsDialogOpen}
           onClose={() => setHotLeadsDialogOpen(false)}
           deals={allDeals}
+        />
+        <StageBatchEmailsDialog
+          open={batchEmailsOpen}
+          onClose={() => setBatchEmailsOpen(false)}
+          allDeals={allDeals}
         />
       </div>
     </RequireRole>
