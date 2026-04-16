@@ -188,7 +188,7 @@ describe("listBankTransactions", () => {
 
   it("handles null data gracefully (returns empty array)", async () => {
     const supabase = createMockSupabase({
-      finance_bank_transactions: { data: null, error: null, count: null },
+      finance_bank_transactions: { data: null, error: null, count: 0 },
     });
 
     const result = await listBankTransactions(supabase, "t-1");

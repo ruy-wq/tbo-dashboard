@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { IconInfoCircle } from "@tabler/icons-react";
 import {
   BarChart,
@@ -9,8 +8,10 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { UnitRevenue } from "@/features/founder-dashboard/services/founder-dashboard";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,62 +124,71 @@ function UnitLegend() {
 interface UnitRevenueTableProps {
   data: UnitRevenue[];
   isLoading?: boolean;
+  onAdjustPeriod?: () => void;
 }
 
-export function UnitRevenueTable({ data, isLoading }: UnitRevenueTableProps) {
+export function UnitRevenueTable({ data, isLoading, onAdjustPeriod }: UnitRevenueTableProps) {
   const chartData = toChartData(data);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!tooltipOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
-        setTooltipOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [tooltipOpen]);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-semibold">Receita por Unidade (MTD)</h2>
-        <div ref={tooltipRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setTooltipOpen((v) => !v)}
-            className="flex h-5 w-5 items-center justify-center rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            aria-label="Informações do bloco"
-          >
-            <IconInfoCircle className="h-3.5 w-3.5" />
-          </button>
-          {tooltipOpen && (
-            <div className="absolute right-0 bottom-full mb-2 z-50 w-72 rounded-xl border border-gray-200 bg-white shadow-lg p-3 space-y-1">
-              <p className="text-sm font-medium text-gray-900">Receita por Unidade de Negócio</p>
-              <p className="text-xs text-gray-500">
-                Receita e custos agrupados por centro de custo/unidade.
-              </p>
-              <p className="text-xs text-gray-500">
-                Se um projeto cruzar unidades, a regra é a do centro de custo da
-                transação no Omie.
-              </p>
-            </div>
-          )}
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5" aria-label="Informações do bloco">
+              <IconInfoCircle className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="top" className="w-72 space-y-1">
+            <p className="text-sm font-medium text-gray-900">Receita por Unidade de Negócio</p>
+            <p className="text-xs text-gray-500">
+              Receita e custos agrupados por centro de custo/unidade.
+            </p>
+            <p className="text-xs text-gray-500">
+              Se um projeto cruzar unidades, a regra é a do centro de custo da
+              transação no Omie.
+            </p>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-gray-100 rounded-lg h-8 w-full" />
-          ))}
+          {/* Chart skeleton */}
+          <Skeleton className="h-52 w-full rounded-lg" />
+          {/* Legend skeleton */}
+          <div className="flex items-center justify-center gap-4">
+            <Skeleton className="h-3 w-16 rounded" />
+            <Skeleton className="h-3 w-16 rounded" />
+          </div>
+          {/* Table rows skeleton */}
+          <div className="space-y-1.5 pt-3 border-t border-gray-200">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <Skeleton className="h-4 w-24 rounded" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-4 w-16 rounded" />
+                  <Skeleton className="h-4 w-10 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : data.length === 0 ? (
-        <p className="text-sm text-gray-500 py-4 text-center">
-          Nenhum dado disponível no período.
-        </p>
+        <div className="flex flex-col items-center py-6 gap-3">
+          <p className="text-sm text-muted-foreground">
+            Nenhum dado disponível no período.
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            Ajuste o período ou aguarde a sincronização do OMIE
+          </p>
+          {onAdjustPeriod && (
+            <Button variant="outline" size="sm" onClick={onAdjustPeriod}>
+              Ajustar período
+            </Button>
+          )}
+        </div>
       ) : (
         <>
           {/* Stacked Bar Chart — receita vs custos per unit */}

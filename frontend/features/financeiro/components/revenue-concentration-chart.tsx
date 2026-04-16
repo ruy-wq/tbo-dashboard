@@ -10,6 +10,8 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { IconChartBar } from "@tabler/icons-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { RevenueConcentrationData, ClientConcentration } from "@/features/financeiro/services";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -41,14 +43,14 @@ function ConcentrationTooltip({
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-md space-y-1">
-      <p className="text-xs font-semibold text-gray-900 truncate max-w-[200px]">{d.client}</p>
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md space-y-1">
+      <p className="text-xs font-semibold text-foreground truncate max-w-[200px]">{d.client}</p>
       <div className="flex gap-3 text-xs">
-        <span className="text-gray-500">Receita:</span>
+        <span className="text-muted-foreground">Receita:</span>
         <span className="font-medium">{fmt(d.revenue)}</span>
       </div>
       <div className="flex gap-3 text-xs">
-        <span className="text-gray-500">Participação:</span>
+        <span className="text-muted-foreground">Participação:</span>
         <span
           className={
             d.alertLevel === "critico"
@@ -62,7 +64,7 @@ function ConcentrationTooltip({
         </span>
       </div>
       <div className="flex gap-3 text-xs">
-        <span className="text-gray-500">Transações:</span>
+        <span className="text-muted-foreground">Transações:</span>
         <span className="font-medium">{d.txCount}</span>
       </div>
     </div>
@@ -90,13 +92,13 @@ function AlertBadge({ level }: { level: ClientConcentration["alertLevel"] }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-4 animate-pulse">
-      <div className="h-4 w-48 bg-gray-100 rounded" />
-      <div className="h-48 bg-gray-100 rounded-lg" />
+    <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+      <Skeleton className="h-4 w-48" />
+      <Skeleton className="h-48 w-full rounded-lg" />
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="flex justify-between">
-          <div className="h-3 w-32 bg-gray-100 rounded" />
-          <div className="h-3 w-16 bg-gray-100 rounded" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-16" />
         </div>
       ))}
     </div>
@@ -126,17 +128,17 @@ export function RevenueConcentrationChart({
   const chartData = data?.clients.slice(0, topN) ?? [];
 
   return (
-    <div className={`rounded-lg border border-gray-200 bg-white p-4 space-y-4 ${className}`}>
+    <div className={`rounded-lg border border-border bg-card p-4 space-y-4 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-foreground">
             Concentração de Receita — Top Clientes
           </h3>
           {!isEmpty && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Top 5 clientes representam{" "}
-              <span className="font-medium text-gray-900">
+              <span className="font-medium text-foreground">
                 {data!.top5Pct.toFixed(1)}%
               </span>{" "}
               da receita total
@@ -149,9 +151,11 @@ export function RevenueConcentrationChart({
       </div>
 
       {isEmpty ? (
-        <p className="text-sm text-gray-500 text-center py-8">
-          Nenhuma receita paga registrada no período.
-        </p>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <IconChartBar className="size-8 text-muted-foreground/50 mb-2" />
+          <p className="text-sm text-muted-foreground">Nenhuma receita paga registrada no período</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Ajuste o período ou aguarde o próximo ciclo de sincronização</p>
+        </div>
       ) : (
         <>
           {/* Horizontal bar chart */}
@@ -187,7 +191,7 @@ export function RevenueConcentrationChart({
           </div>
 
           {/* Client list with alert badges */}
-          <div className="space-y-1.5 border-t border-gray-200 pt-3">
+          <div className="space-y-1.5 border-t border-border pt-3">
             {chartData.map((c, i) => (
               <div key={c.client} className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
@@ -195,12 +199,12 @@ export function RevenueConcentrationChart({
                     className="h-2.5 w-2.5 rounded-sm shrink-0"
                     style={{ backgroundColor: alertColor(c.alertLevel) }}
                   />
-                  <span className="text-xs text-gray-900 truncate" title={c.client}>
+                  <span className="text-xs text-foreground truncate" title={c.client}>
                     {i + 1}. {c.client}
                   </span>
                   <AlertBadge level={c.alertLevel} />
                 </div>
-                <span className="text-xs text-gray-500 shrink-0 tabular-nums">
+                <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
                   {fmt(c.revenue)} · {c.pct.toFixed(1)}%
                 </span>
               </div>
@@ -208,7 +212,7 @@ export function RevenueConcentrationChart({
           </div>
 
           {/* Footer */}
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             {data!.totalClients} cliente{data!.totalClients !== 1 ? "s" : ""} com receita paga no
             período · Total: {fmt(data!.totalRevenue)}
           </p>
