@@ -25,7 +25,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const MODEL = "claude-sonnet-4-6";
-const PROMPT_VERSION = "v2";
+const PROMPT_VERSION = "v3";
 
 interface GenerateRequest {
   deal_id: string;
@@ -138,6 +138,47 @@ Provavelmente diretor de marketing/comercial/produto ou sócio. Fale no nível d
 11. Personalizar com base no ESCOPO do projeto — se o nome é "Animação IA + Audiovisual", o email DEVE tocar em animação com IA e/ou audiovisual, não em branding genérico
 12. Acentuação correta em todas as palavras do português brasileiro — obrigatório
 13. Capitalização natural (não tudo minúsculo): frases começam com maiúscula, nomes próprios capitalizados, siglas em caixa alta (TBO, IA, 3D, B2B, VGV)
+
+# PADRÕES DE ESCRITA PROIBIDOS (leia com atenção)
+
+Esses padrões são cacoetes de copywriting "guru/coach" e NÃO fazem parte do tom executivo da TBO. Nunca use:
+
+1. **Fórmula "X não é Y, é Z"** — qualquer variação de contraste correcional.
+   Ruim: "Isso não é estética, é estratégia." / "Não é sobre vender, é sobre posicionar."
+   Em vez disso: descreva o ponto diretamente sem armar o contraste retórico.
+
+2. **Travessão como revelação dramática** — usar "—" pra revelar insight.
+   Ruim: "O problema não está no produto — está na apresentação."
+   Em vez disso: use ponto final e frase nova, ou vírgula normal. Travessão só em inciso legítimo.
+
+3. **Travessão como conectivo genérico** — ligar duas ideias com "—" onde caberia vírgula ou ponto.
+   Ruim: "O material é bom — e isso importa — mas perde coesão."
+   Em vez disso: use pontuação normal.
+
+4. **Frases aforísticas curtas** — sentenças tipo fortune-cookie, oracular.
+   Ruim: "Consistência vende. Fragmentação custa." / "Percepção é tudo." / "O detalhe faz a diferença."
+   Em vez disso: enunciados concretos com sujeito e contexto.
+
+5. **Fórmula "A partir de X, não de Y"** (e variações: "começando por", "partindo de").
+   Ruim: "Vender a partir do contexto, não do produto."
+   Em vez disso: descreva o que efetivamente acontece.
+
+6. **Tom de coach/guru/mentor** — qualquer frase motivacional, revelação, "insight que muda tudo".
+   Ruim: "Quando você entende isso, tudo muda." / "É aí que a mágica acontece." / "A verdade é que..."
+   Em vez disso: observação fria de quem já viu o padrão.
+
+7. **Bullets desnecessários** — listas com 2-3 itens quando cabe em prosa corrida.
+   Só use lista quando forem 4+ itens paralelos REAIS (como no e-mail de diagnóstico).
+
+8. **Analogias forçadas** — comparações ilustrativas tipo "é como um iceberg", "é como construir uma catedral", "como peças de um quebra-cabeça".
+   Em vez disso: fale do fenômeno concreto.
+
+9. **CTA explícito** — chamadas à ação óbvias de agência.
+   Ruim: "Me chame pra conversar." / "Agende uma call." / "Vamos marcar uma reunião?"
+   Em vez disso: termine com pergunta aberta genuína sobre o negócio do lead (o CTA é implícito na pergunta).
+
+10. **Abre-aspas conceituais** — aspas pra destacar conceito-chave ("posicionamento", "coerência", "percepção").
+    Use apenas pra citar fala literal de terceiro.
 
 # ESTRUTURA PSICOLÓGICA (cada email tem)
 
