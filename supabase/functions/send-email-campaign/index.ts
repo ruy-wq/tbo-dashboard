@@ -1,63 +1,98 @@
 // ============================================================================
-// TBO OS — Edge Function: Send Email Campaign
-// Feature #90 — Resolve segmento → deals com email → envia via Resend
-// Trigger: chamada do frontend via useSupabase.functions.invoke()
+// TBO OS — Edge Function: Send Email Campaign (via Mailchimp)
+// Resolve segmento → deals → upsert em audience → cria segment + campaign → envia
+// Trigger: chamada do frontend via supabase.functions.invoke("send-email-campaign")
+//
+// Env vars obrigatórias:
+//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//   MAILCHIMP_API_KEY              (ex: 6d4c88d...-us21)
+//   MAILCHIMP_SERVER_PREFIX        (ex: us21)
+//   MAILCHIMP_OUTBOUND_LIST_ID     (ex: 3b6d78581f)
 // ============================================================================
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Md5 } from "https://deno.land/std@0.160.0/hash/md5.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
-const APP_URL = Deno.env.get("APP_URL") || "https://os.wearetbo.com.br";
+const MC_API_KEY = Deno.env.get("MAILCHIMP_API_KEY") || "";
+const MC_SERVER = Deno.env.get("MAILCHIMP_SERVER_PREFIX") || "us21";
+const MC_LIST_ID = Deno.env.get("MAILCHIMP_OUTBOUND_LIST_ID") || "3b6d78581f"; // "TBO - Prospeccao Outbound"
+const MC_BASE = `https://${MC_SERVER}.api.mailchimp.com/3.0`;
+const MC_AUTH = "Basic " + btoa(`anystring:${MC_API_KEY}`);
 
 interface SendRequest {
   campaign_id: string;
 }
 
+interface DealRow {
+  contact_email: string;
+  contact: string | null;
+  company: string | null;
+}
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
+};
+
+function firstName(fullName: string | null): string {
+  const trimmed = (fullName || "").trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/)[0];
+}
+
+function md5Lower(email: string): string {
+  const md5 = new Md5();
+  md5.update(email.trim().toLowerCase());
+  return md5.toString();
+}
+
+async function mcFetch(method: string, path: string, body?: unknown): Promise<Response> {
+  return fetch(`${MC_BASE}${path}`, {
+    method,
+    headers: {
+      Authorization: MC_AUTH,
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS });
+  }
+
   try {
-    if (req.method === "OPTIONS") {
-      return new Response("ok", {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST",
-          "Access-Control-Allow-Headers": "authorization, content-type, x-client-info, apikey",
-        },
-      });
-    }
-
     const { campaign_id } = (await req.json()) as SendRequest;
-    if (!campaign_id) {
-      return new Response(JSON.stringify({ error: "campaign_id obrigatório" }), { status: 400 });
-    }
-
-    if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: "RESEND_API_KEY não configurada" }), { status: 500 });
-    }
+    if (!campaign_id) return jsonResponse({ error: "campaign_id obrigatório" }, 400);
+    if (!MC_API_KEY) return jsonResponse({ error: "MAILCHIMP_API_KEY não configurada" }, 500);
+    if (!MC_LIST_ID) return jsonResponse({ error: "MAILCHIMP_OUTBOUND_LIST_ID não configurada" }, 500);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    // 1. Buscar campanha
-    const { data: campaign, error: campaignError } = await supabase
+    // 1. Campanha
+    const { data: campaign, error: cErr } = await supabase
       .from("email_campaigns")
       .select("*")
       .eq("id", campaign_id)
       .single();
-
-    if (campaignError || !campaign) {
-      return new Response(JSON.stringify({ error: "Campanha não encontrada" }), { status: 404 });
-    }
-
+    if (cErr || !campaign) return jsonResponse({ error: "Campanha não encontrada" }, 404);
     if (campaign.status !== "draft" && campaign.status !== "scheduled") {
-      return new Response(
-        JSON.stringify({ error: `Campanha com status '${campaign.status}' não pode ser enviada` }),
-        { status: 400 },
-      );
+      return jsonResponse({ error: `Status '${campaign.status}' não pode ser enviado` }, 400);
     }
 
-    // 2. Buscar template
+    // 2. Template
     let htmlContent = "";
     if (campaign.template_id) {
       const { data: template } = await supabase
@@ -67,243 +102,186 @@ serve(async (req: Request) => {
         .single();
       htmlContent = template?.html_content || "";
     }
-
     if (!htmlContent) {
       htmlContent = `<html><body><h1>${campaign.subject}</h1><p>Conteúdo da campanha</p></body></html>`;
     }
 
-    // 3. Resolver lista de destinatários via segmento
-    let recipients: { email: string; name: string }[] = [];
-
+    // 3. Destinatários via segmento Supabase
+    let deals: DealRow[] = [];
     if (campaign.segment_id) {
       const { data: segment } = await supabase
         .from("email_segments")
-        .select("rules, segment_type, static_deal_ids")
+        .select("segment_type, static_deal_ids")
         .eq("id", campaign.segment_id)
         .single();
 
-      if (segment) {
-        if (segment.segment_type === "static" && segment.static_deal_ids?.length > 0) {
-          const { data: deals } = await supabase
-            .from("crm_deals")
-            .select("contact_email, contact_name")
-            .in("id", segment.static_deal_ids)
-            .not("contact_email", "is", null)
-            .neq("contact_email", "");
-          recipients = (deals || []).map((d: Record<string, string>) => ({
-            email: d.contact_email,
-            name: d.contact_name || "",
-          }));
-        } else {
-          // Segmento dinâmico — aplicar regras
-          recipients = await resolveSegmentRecipients(supabase, segment.rules);
-        }
+      if (segment?.segment_type === "static" && segment.static_deal_ids?.length > 0) {
+        const { data: rows } = await supabase
+          .from("crm_deals")
+          .select("contact_email, contact, company")
+          .in("id", segment.static_deal_ids)
+          .not("contact_email", "is", null)
+          .neq("contact_email", "");
+        deals = (rows || []) as unknown as DealRow[];
       }
     }
+    if (deals.length === 0) return jsonResponse({ error: "Nenhum destinatário no segmento" }, 400);
 
-    if (recipients.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Nenhum destinatário encontrado no segmento" }),
-        { status: 400 },
-      );
+    // Dedup por email
+    const seen = new Set<string>();
+    const recipients = deals.filter((d) => {
+      const e = d.contact_email.toLowerCase().trim();
+      if (seen.has(e)) return false;
+      seen.add(e);
+      return true;
+    });
+
+    // 4. Upsert cada membro na audience (PUT é idempotente)
+    let upserted = 0;
+    let upsertFailed = 0;
+    for (const r of recipients) {
+      const hash = md5Lower(r.contact_email);
+      const res = await mcFetch("PUT", `/lists/${MC_LIST_ID}/members/${hash}`, {
+        email_address: r.contact_email.trim().toLowerCase(),
+        status_if_new: "subscribed",
+        status: "subscribed",
+        merge_fields: {
+          FNAME: firstName(r.contact) || "",
+          COMPANY: r.company || "",
+        },
+      });
+      if (res.ok) upserted++;
+      else {
+        upsertFailed++;
+        const err = await res.text();
+        console.error(`Upsert failed ${r.contact_email}:`, res.status, err);
+      }
+    }
+    if (upserted === 0) {
+      return jsonResponse({ error: "Falha ao sincronizar leads no Mailchimp", upsertFailed }, 502);
     }
 
-    // 4. Filtrar descadastrados
-    const { data: unsubscribed } = await supabase
-      .from("email_unsubscribes")
-      .select("email")
-      .eq("tenant_id", campaign.tenant_id);
+    // 5. Static segment com esses emails
+    const emails = recipients.map((r) => r.contact_email.trim().toLowerCase());
+    const segRes = await mcFetch("POST", `/lists/${MC_LIST_ID}/segments`, {
+      name: `${campaign.name} — ${campaign.id.slice(0, 8)}`,
+      static_segment: emails,
+    });
+    if (!segRes.ok) {
+      const err = await segRes.text();
+      return jsonResponse({ error: "Falha ao criar segment no Mailchimp", detail: err }, 502);
+    }
+    const segJson = await segRes.json();
+    const mcSegmentId: number = segJson.id;
 
-    const unsubEmails = new Set((unsubscribed || []).map((u: { email: string }) => u.email.toLowerCase()));
-    recipients = recipients.filter((r) => !unsubEmails.has(r.email.toLowerCase()));
+    // 6. Criar campanha
+    const campRes = await mcFetch("POST", `/campaigns`, {
+      type: "regular",
+      recipients: {
+        list_id: MC_LIST_ID,
+        segment_opts: { saved_segment_id: mcSegmentId },
+      },
+      settings: {
+        subject_line: campaign.subject,
+        preview_text: "",
+        title: campaign.name,
+        from_name: "TBO",
+        reply_to: "contato@agenciatbo.com.br",
+        to_name: "*|FNAME|*",
+        auto_footer: false,
+        inline_css: true,
+        authenticate: true,
+      },
+    });
+    if (!campRes.ok) {
+      const err = await campRes.text();
+      return jsonResponse({ error: "Falha ao criar campaign no Mailchimp", detail: err }, 502);
+    }
+    const campJson = await campRes.json();
+    const mcCampaignId: string = campJson.id;
+    const mcWebId: number = campJson.web_id;
 
-    if (recipients.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Todos os destinatários estão descadastrados" }),
-        { status: 400 },
-      );
+    // 7. Set content HTML
+    const contentRes = await mcFetch("PUT", `/campaigns/${mcCampaignId}/content`, {
+      html: htmlContent,
+    });
+    if (!contentRes.ok) {
+      const err = await contentRes.text();
+      return jsonResponse({ error: "Falha ao setar conteúdo no Mailchimp", detail: err }, 502);
     }
 
-    // 5. Marcar campanha como "sending"
+    // 8. Marcar campanha como "sending" no Supabase
     await supabase
       .from("email_campaigns")
-      .update({ status: "sending" })
+      .update({
+        status: "sending",
+        mailchimp_campaign_id: mcCampaignId,
+        mailchimp_segment_id: mcSegmentId,
+        mailchimp_list_id: MC_LIST_ID,
+        mailchimp_web_id: mcWebId,
+      })
       .eq("id", campaign_id);
 
-    // 6. Criar registro de envio
-    const { data: sendRecord } = await supabase
+    // 9. Registrar envio no Supabase
+    const { data: sendRow } = await supabase
       .from("email_sends")
       .insert({
         campaign_id,
         campaign_name: campaign.name,
         recipient_count: recipients.length,
-        delivered: 0,
-        opened: 0,
-        clicked: 0,
-        bounced: 0,
-        unsubscribed: 0,
         status: "sending",
         sent_at: new Date().toISOString(),
+        mailchimp_campaign_id: mcCampaignId,
       })
       .select()
       .single();
 
-    const sendId = sendRecord?.id;
-
-    // 7. Enviar emails em batches via Resend
-    let delivered = 0;
-    let bounced = 0;
-    const BATCH_SIZE = 50;
-
-    for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
-      const batch = recipients.slice(i, i + BATCH_SIZE);
-
-      const promises = batch.map(async (recipient) => {
-        try {
-          // Injetar tracking pixel e link de unsubscribe no HTML
-          const trackingPixel = `<img src="${APP_URL}/api/email/track/open?sid=${sendId}&e=${encodeURIComponent(recipient.email)}&cid=${campaign_id}" width="1" height="1" style="display:none" alt="" />`;
-          const unsubLink = `${APP_URL}/unsubscribe?e=${encodeURIComponent(recipient.email)}&cid=${campaign_id}&tid=${campaign.tenant_id}`;
-          const finalHtml = htmlContent
-            .replace("</body>", `${trackingPixel}<p style="text-align:center;font-size:11px;color:#999;margin-top:32px;"><a href="${unsubLink}" style="color:#999;">Descadastrar deste email</a></p></body>`);
-
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${RESEND_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "TBO OS <noreply@agenciatbo.com.br>",
-              to: recipient.email,
-              subject: campaign.subject,
-              html: finalHtml,
-            }),
-          });
-
-          if (res.ok) {
-            delivered++;
-          } else {
-            bounced++;
-          }
-        } catch {
-          bounced++;
-        }
-      });
-
-      await Promise.all(promises);
-
-      // Atualizar progresso parcial
-      if (sendId) {
+    // 10. Enviar!
+    const sendRes = await mcFetch("POST", `/campaigns/${mcCampaignId}/actions/send`);
+    if (!sendRes.ok) {
+      const err = await sendRes.text();
+      // Reverte status
+      await supabase.from("email_campaigns").update({ status: "draft" }).eq("id", campaign_id);
+      if (sendRow?.id) {
         await supabase
           .from("email_sends")
-          .update({ delivered, bounced })
-          .eq("id", sendId);
+          .update({ status: "failed", completed_at: new Date().toISOString() })
+          .eq("id", sendRow.id);
       }
+      return jsonResponse({ error: "Falha ao disparar campanha no Mailchimp", detail: err }, 502);
     }
 
-    // 8. Finalizar
-    const finalStatus = bounced === recipients.length ? "failed" : "completed";
-
-    if (sendId) {
-      await supabase
-        .from("email_sends")
-        .update({
-          delivered,
-          bounced,
-          status: finalStatus,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", sendId);
-    }
-
+    // 11. Sucesso — Mailchimp aceitou. O envio em si é assíncrono no lado deles.
     await supabase
       .from("email_campaigns")
       .update({ status: "sent", sent_at: new Date().toISOString() })
       .eq("id", campaign_id);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        recipients: recipients.length,
-        delivered,
-        bounced,
-        status: finalStatus,
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
+    if (sendRow?.id) {
+      await supabase
+        .from("email_sends")
+        .update({
+          status: "completed",
+          delivered: recipients.length,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", sendRow.id);
+    }
+
+    return jsonResponse({
+      success: true,
+      recipients: recipients.length,
+      upserted,
+      upsertFailed,
+      mailchimp_campaign_id: mcCampaignId,
+      mailchimp_web_id: mcWebId,
+      mailchimp_dashboard_url: `https://${MC_SERVER}.admin.mailchimp.com/campaigns/show/?id=${mcWebId}`,
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Erro interno" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+    console.error(err);
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : "Erro interno" },
+      500,
     );
   }
 });
-
-// ── Resolver recipients de segmento dinâmico ──────────────────────────
-
-async function resolveSegmentRecipients(
-  supabase: ReturnType<typeof createClient>,
-  rules: { rules: Array<{ field: string; operator: string; value: unknown }>; match: string },
-): Promise<{ email: string; name: string }[]> {
-  let query = supabase
-    .from("crm_deals")
-    .select("contact_email, contact_name")
-    .not("contact_email", "is", null)
-    .neq("contact_email", "");
-
-  for (const rule of rules.rules) {
-    switch (rule.field) {
-      case "funnel_stage":
-        if (rule.operator === "equals" && typeof rule.value === "string") {
-          query = query.eq("stage", rule.value);
-        } else if (rule.operator === "in" && Array.isArray(rule.value)) {
-          query = query.in("stage", rule.value);
-        } else if (rule.operator === "not_equals" && typeof rule.value === "string") {
-          query = query.neq("stage", rule.value);
-        } else if (rule.operator === "not_in" && Array.isArray(rule.value)) {
-          query = query.not("stage", "in", `(${(rule.value as string[]).join(",")})`);
-        }
-        break;
-      case "deal_source":
-        if (rule.operator === "equals" && typeof rule.value === "string") {
-          query = query.eq("source", rule.value);
-        } else if (rule.operator === "in" && Array.isArray(rule.value)) {
-          query = query.in("source", rule.value);
-        }
-        break;
-      case "deal_value_min":
-        if (typeof rule.value === "number") query = query.gte("value", rule.value);
-        break;
-      case "deal_value_max":
-        if (typeof rule.value === "number") query = query.lte("value", rule.value);
-        break;
-      case "created_after":
-        if (typeof rule.value === "string") query = query.gte("created_at", rule.value);
-        break;
-      case "created_before":
-        if (typeof rule.value === "string") query = query.lte("created_at", rule.value);
-        break;
-      case "bu":
-        if (rule.operator === "equals" && typeof rule.value === "string") {
-          query = query.eq("bu", rule.value);
-        } else if (rule.operator === "in" && Array.isArray(rule.value)) {
-          query = query.in("bu", rule.value);
-        }
-        break;
-    }
-  }
-
-  const { data } = await query;
-  // Deduplicar por email
-  const seen = new Set<string>();
-  const result: { email: string; name: string }[] = [];
-  for (const deal of data || []) {
-    const d = deal as Record<string, string>;
-    const email = d.contact_email?.toLowerCase();
-    if (email && !seen.has(email)) {
-      seen.add(email);
-      result.push({ email: d.contact_email, name: d.contact_name || "" });
-    }
-  }
-  return result;
-}

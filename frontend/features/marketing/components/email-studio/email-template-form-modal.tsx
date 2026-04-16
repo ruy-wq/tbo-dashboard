@@ -2,7 +2,7 @@
 
 // Feature #17 — Modal criar/editar template com editor HTML básico
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,8 +36,18 @@ const TEMPLATE_CATEGORIES = [
   "Boas-vindas",
   "Reativação",
   "Evento",
+  "Prospecção",
   "Outro",
 ] as const;
+
+const AVAILABLE_VARIABLES: Array<{ token: string; label: string; hint: string }> = [
+  { token: "{{primeiro_nome}}", label: "Primeiro nome", hint: "João" },
+  { token: "{{nome}}", label: "Nome completo", hint: "João da Silva" },
+  { token: "{{empresa}}", label: "Empresa", hint: "Richter Empreendimentos" },
+  { token: "{{email}}", label: "E-mail", hint: "joao@richter.com" },
+];
+
+type TargetField = "subject" | "html_content";
 
 const schema = z.object({
   name: z.string().min(2, "Nome obrigatório (mín. 2 caracteres)"),
@@ -71,6 +81,26 @@ export function EmailTemplateFormModal({ open, onClose, template }: Props) {
       html_content: "",
     },
   });
+
+  const subjectRef = useRef<HTMLInputElement | null>(null);
+  const htmlRef = useRef<HTMLTextAreaElement | null>(null);
+  const [focusedField, setFocusedField] = useState<TargetField>("html_content");
+
+  function insertVariable(token: string) {
+    const target = focusedField === "subject" ? subjectRef.current : htmlRef.current;
+    if (!target) return;
+    const start = target.selectionStart ?? target.value.length;
+    const end = target.selectionEnd ?? target.value.length;
+    const current = target.value;
+    const next = current.slice(0, start) + token + current.slice(end);
+    form.setValue(focusedField, next, { shouldDirty: true, shouldValidate: true });
+    // Reposiciona cursor depois da variável inserida
+    requestAnimationFrame(() => {
+      target.focus();
+      const pos = start + token.length;
+      target.setSelectionRange(pos, pos);
+    });
+  }
 
   useEffect(() => {
     if (open) {
@@ -154,7 +184,15 @@ export function EmailTemplateFormModal({ open, onClose, template }: Props) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Assunto do Email</FormLabel>
-                  <Input placeholder="Ex: [TBO] Novidades de {{mes}}" {...field} />
+                  <Input
+                    placeholder="Ex: {{primeiro_nome}}, uma leitura sobre o lançamento"
+                    {...field}
+                    ref={(el) => {
+                      field.ref(el);
+                      subjectRef.current = el;
+                    }}
+                    onFocus={() => setFocusedField("subject")}
+                  />
                   <FormMessage />
                 </FormItem>
               )}
@@ -225,6 +263,37 @@ export function EmailTemplateFormModal({ open, onClose, template }: Props) {
               )}
             />
 
+            {/* Variáveis dinâmicas */}
+            <div className="rounded-md border border-dashed border-border bg-muted/30 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-medium">Variáveis dinâmicas</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Clique para inserir em{" "}
+                  <span className="font-medium">
+                    {focusedField === "subject" ? "Assunto" : "Conteúdo HTML"}
+                  </span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {AVAILABLE_VARIABLES.map((v) => (
+                  <button
+                    key={v.token}
+                    type="button"
+                    onClick={() => insertVariable(v.token)}
+                    className="group inline-flex items-center gap-1.5 rounded border border-border bg-background px-2 py-1 text-xs transition hover:border-primary hover:bg-primary/5"
+                    title={`Exemplo: ${v.hint}`}
+                  >
+                    <code className="text-[11px] text-primary">{v.token}</code>
+                    <span className="text-muted-foreground">{v.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                São substituídas por destinatário no momento do envio. Se o campo estiver vazio no CRM,
+                usa fallback (ex: &ldquo;time&rdquo; para nome, &ldquo;sua equipe&rdquo; para empresa).
+              </p>
+            </div>
+
             {/* HTML Content */}
             <FormField
               control={form.control}
@@ -236,10 +305,12 @@ export function EmailTemplateFormModal({ open, onClose, template }: Props) {
                     placeholder="<html><body><!-- Seu template aqui --></body></html>"
                     className="font-mono text-xs min-h-[200px] resize-y"
                     {...field}
+                    ref={(el) => {
+                      field.ref(el);
+                      htmlRef.current = el;
+                    }}
+                    onFocus={() => setFocusedField("html_content")}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Editor HTML. Variáveis dinâmicas: {"{{"} nome {"}}"}, {"{{"} email {"}}"}, etc.
-                  </p>
                   <FormMessage />
                 </FormItem>
               )}

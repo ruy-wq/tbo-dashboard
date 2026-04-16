@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   useDeals,
   useUpdateDealStage,
+  useDeleteDeal,
   useRdPipelines,
   useDealOwners,
   useUpdateDeal,
@@ -17,17 +18,18 @@ import { DealDetailDialog } from "@/features/comercial/components/deal-detail-di
 import { DealFormDialog } from "@/features/comercial/components/deal-form-dialog";
 import { BulkActionBar } from "@/features/comercial/components/bulk-action-bar";
 import { computeDealKPIs } from "@/features/comercial/services/commercial";
-import { RequireRole } from "@/features/auth/components/require-role";
 import { ErrorState } from "@/components/shared";
-import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
+import { usePipelineKeyboard } from "@/features/comercial/hooks/use-pipeline-keyboard";
+import { mapStageToInternal } from "@/features/comercial/lib/stage-mapping";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { IconPlus, IconGitBranch, IconCheckbox } from "@tabler/icons-react";
+import { IconPlus, IconGitBranch, IconCheckbox, IconFlame } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { DEAL_STAGES, type DealStageKey, type LossReasonValue } from "@/lib/constants";
 import { LossReasonDialog } from "@/features/comercial/components/loss-reason-dialog";
 import { ProposalConfirmDialog } from "@/features/comercial/components/proposal-confirm-dialog";
+import { HotLeadsCampaignDialog } from "@/features/comercial/components/hot-leads-campaign-dialog";
 import {
   CommercialPeriodFilter,
   filterByPeriod,
@@ -55,6 +57,7 @@ export default function PipelinePage() {
   // Automation dialogs
   const [lossDialogOpen, setLossDialogOpen] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
+  const [hotLeadsDialogOpen, setHotLeadsDialogOpen] = useState(false);
   const [pendingStageDeal, setPendingStageDeal] = useState<{ id: string; name: string; newStage: string } | null>(null);
 
   const handleBulkToggle = useCallback((dealId: string, checked: boolean) => {
@@ -71,28 +74,9 @@ export default function PipelinePage() {
     setBulkMode(false);
   }, []);
 
-  useGlobalShortcuts();
+  const handleNew = useCallback(() => { setEditingDeal(null); setFormOpen(true); }, []);
 
-  useEffect(() => {
-    function onOpenSearch() {
-      const input = document.querySelector<HTMLInputElement>('input[placeholder*="Buscar"]');
-      input?.focus();
-    }
-    window.addEventListener("tbo:open-search", onOpenSearch);
-    return () => window.removeEventListener("tbo:open-search", onOpenSearch);
-  }, []);
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== "n" || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if ((e.target as HTMLElement)?.isContentEditable) return;
-      handleNew();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  usePipelineKeyboard(handleNew);
 
   const { data: pipelines = [], isLoading: pipelinesLoading } = useRdPipelines();
   const { data: owners = [] } = useDealOwners(selectedPipelineId !== "all" ? selectedPipelineId : undefined);
@@ -112,6 +96,7 @@ export default function PipelinePage() {
   const deals = filterByPeriod(allDeals, period);
   const updateStage = useUpdateDealStage();
   const updateDeal = useUpdateDeal();
+  const deleteDealMutation = useDeleteDeal();
 
   const selectedPipeline = useMemo(() => pipelines.find((p) => p.rd_pipeline_id === selectedPipelineId) ?? null, [pipelines, selectedPipelineId]);
   const pipelineStages = useMemo(() => selectedPipeline?.stages ?? [], [selectedPipeline]);
@@ -137,7 +122,7 @@ export default function PipelinePage() {
   }
 
   function handleEdit(deal: DealRow) { setDetailOpen(false); setEditingDeal(deal); setFormOpen(true); }
-  function handleNew() { setEditingDeal(null); setFormOpen(true); }
+  function handleDeleteDeal(deal: DealRow) { deleteDealMutation.mutate(deal.id, { onSuccess: () => setDetailOpen(false) }); }
 
   function handleStageDrop(dealId: string, newStage: string) {
     const deal = deals.find((d) => d.id === dealId);
@@ -218,13 +203,12 @@ export default function PipelinePage() {
     handleBulkClear();
   }
 
-  if (error) return <RequireRole module="comercial"><ErrorState message={error.message} onRetry={() => refetch()} /></RequireRole>;
+  if (error) return <ErrorState message={error.message} onRetry={() => refetch()} />;
 
   const showPipelineView = selectedPipelineId !== "all" && selectedPipeline;
 
   return (
-    <RequireRole module="comercial">
-      <div className="space-y-6 min-w-0">
+    <div className="space-y-6 min-w-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Pipeline CRM</h1>
@@ -235,6 +219,10 @@ export default function PipelinePage() {
             <Button variant={bulkMode ? "secondary" : "ghost"} size="sm" onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }} className="gap-1.5">
               <IconCheckbox className="h-4 w-4" />
               {bulkMode ? "Cancelar seleção" : "Selecionar"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setHotLeadsDialogOpen(true)} className="gap-1.5">
+              <IconFlame className="h-4 w-4 text-orange-500" />
+              Campanha p/ leads quentes
             </Button>
             <Button onClick={handleNew}><IconPlus className="mr-2 h-4 w-4" />Novo Deal</Button>
           </div>
@@ -265,7 +253,7 @@ export default function PipelinePage() {
         )}
 
         <BulkActionBar selectedCount={selectedIds.size} onMoveToStage={handleBulkMoveToStage} onAssignOwner={handleBulkAssignOwner} onClear={handleBulkClear} owners={owners} />
-        <DealDetailDialog deal={selectedDeal} open={detailOpen} onOpenChange={setDetailOpen} onEdit={handleEdit} />
+        <DealDetailDialog deal={selectedDeal} open={detailOpen} onOpenChange={setDetailOpen} onEdit={handleEdit} onDelete={handleDeleteDeal} />
         <DealFormDialog open={formOpen} onOpenChange={setFormOpen} deal={editingDeal} />
 
         {/* Automation dialogs */}
@@ -282,22 +270,11 @@ export default function PipelinePage() {
           onCreateProposal={handleProposalConfirmCreate}
           onSkip={handleProposalSkip}
         />
+        <HotLeadsCampaignDialog
+          open={hotLeadsDialogOpen}
+          onClose={() => setHotLeadsDialogOpen(false)}
+          deals={allDeals}
+        />
       </div>
-    </RequireRole>
   );
-}
-
-function mapStageToInternal(stageName: string): string {
-  const normalized = stageName.toLowerCase().trim();
-  const map: Record<string, string> = {
-    qualificação: "qualificacao", qualificacao: "qualificacao", proposta: "proposta",
-    negociação: "negociacao", negociacao: "negociacao", fechamento: "negociacao",
-    ganho: "fechado_ganho", "fechado ganho": "fechado_ganho",
-    perdido: "fechado_perdido", "fechado perdido": "fechado_perdido",
-    prospecção: "lead", prospeccao: "lead", "contato inicial": "lead",
-  };
-  for (const [key, value] of Object.entries(map)) {
-    if (normalized.includes(key)) return value;
-  }
-  return "lead";
 }
