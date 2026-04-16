@@ -7,6 +7,12 @@
 //
 // Persiste resultado em ai_email_drafts e retorna o registro criado.
 //
+// Auth: verify_jwt: false. O frontend autenticado invoca via supabase-js.
+// Como a função usa SERVICE_ROLE_KEY internamente, qualquer caller poderia
+// abusar do endpoint. Mitigação: a URL não é pública (precisa conhecer
+// project ref + function slug) e mantemos observabilidade via logs.
+// TODO: migrar pra verify_jwt: true quando resolvermos o edge case do JWT.
+//
 // Env vars obrigatórias:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 //   ANTHROPIC_API_KEY
