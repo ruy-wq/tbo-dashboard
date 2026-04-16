@@ -62,8 +62,8 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="p-0 sm:max-w-[680px] flex flex-col">
-        <div className="border-b bg-muted/30 px-6 pt-6 pb-4">
+      <SheetContent className="p-0 sm:max-w-[680px] flex flex-col h-full max-h-screen">
+        <div className="border-b bg-muted/30 px-6 pt-6 pb-4 shrink-0">
           <SheetHeader className="space-y-1.5">
             <SheetTitle className="flex items-center gap-2 text-base">
               <IconSparkles className="h-4 w-4 text-violet-500" />
@@ -102,7 +102,7 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-4">
             {isLoading && (
               <div className="text-sm text-muted-foreground text-center py-8">

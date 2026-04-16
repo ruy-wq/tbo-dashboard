@@ -75,9 +75,9 @@ export function DealDetailDialog({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="p-0 sm:max-w-[480px] flex flex-col">
+      <SheetContent className="p-0 sm:max-w-[480px] flex flex-col h-full max-h-screen">
         {/* ── Header ──────────────────────────────────── */}
-        <div className="border-b bg-muted/30 px-6 pt-6 pb-5">
+        <div className="border-b bg-muted/30 px-6 pt-6 pb-5 shrink-0">
           <SheetHeader className="space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -166,12 +166,12 @@ export function DealDetailDialog({
         </div>
 
         {/* ── Scrollable body ─────────────────────────── */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <DealDetailBody deal={deal} />
         </ScrollArea>
 
         {/* ── Footer ──────────────────────────────────── */}
-        <div className="border-t px-6 py-4 flex gap-2">
+        <div className="border-t px-6 py-4 flex gap-2 shrink-0">
           {onDelete && (
             <ConfirmDialog
               title="Excluir deal?"
