@@ -711,7 +711,7 @@ export type EmailCampaignStatusKey = keyof typeof EMAIL_CAMPAIGN_STATUS;
 export const MARKETING_NAV_ITEMS: readonly SubNavItem[] = [
   { href: "/marketing/campanhas", label: "Campanhas", icon: "speakerphone" },
   { href: "/marketing/conteudo", label: "Conteúdo", icon: "pencil" },
-  { href: "/marketing/email-studio", label: "Email Studio", icon: "mail" },
+  { href: "/marketing/newsletter", label: "Newsletter", icon: "mail" },
   { href: "/marketing/redes-sociais", label: "Redes Sociais", icon: "brand-instagram" },
   { href: "/marketing/analytics", label: "Analytics", icon: "chart-bar", min_role: "admin" },
 ] as const;

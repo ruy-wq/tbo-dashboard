@@ -22,12 +22,18 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { SYSTEM_PROMPT } from "./prompt.ts";
+import {
+  STAGE_PLAYBOOKS,
+  resolvePlaybookKey,
+  buildPlaybookSection,
+  type StagePlaybook,
+} from "./stage-playbooks.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const MODEL = "claude-sonnet-4-6";
-const PROMPT_VERSION = "v6";
+const PROMPT_VERSION = "v8";
 const BLOG_BASE_URL = "https://wearetbo.com.br/pt/blog/";
 
 interface GenerateRequest {
@@ -58,27 +64,80 @@ function jsonResponse(body: unknown, status = 200): Response {
 // Sanitização defensiva — remove padrões proibidos que a IA possa ter
 // deixado passar mesmo com o prompt reforçado.
 // ──────────────────────────────────────────────────────────────────────
+/**
+ * Sanitização defensiva que remove travessões em USO ESTILÍSTICO DE COPYWRITER
+ * no corpo argumentativo, mas preserva travessões em contextos legítimos:
+ *
+ * - Saudação do primeiro parágrafo (ex: "Oi, **João** — tudo bem?")
+ * - Bullets de listas (linhas começando com "- " ou "* ")
+ * - Cabeçalhos (linhas começando com "#")
+ * - Blockquotes (linhas começando com "> ")
+ * - Dentro de links markdown "[...](...)"
+ * - Dentro de tokens placeholder "{{...}}"
+ */
 function sanitizeText(text: string): string {
   if (!text) return text;
-  let out = text;
 
-  // 1. Remove TODOS os travessões (— U+2014, – U+2013).
-  //    Substitui por ". " quando separa frases, vírgula quando está entre palavras.
-  //    Heurística: se o travessão tem espaços de ambos os lados, assume separador de frase.
-  out = out.replace(/\s+[—–]\s+/g, ". ");
-  out = out.replace(/[—–]/g, ",");
+  // 1. Preserva tokens de placeholder {{...}} e links [texto](url) durante a
+  //    remoção de travessões — eles podem conter "—" legítimo.
+  const placeholders: string[] = [];
+  let out = text.replace(/\{\{[^}]*\}\}/g, (m) => {
+    placeholders.push(m);
+    return `\u0001PH${placeholders.length - 1}\u0001`;
+  });
+  out = out.replace(/\[[^\]]*\]\([^)]+\)/g, (m) => {
+    placeholders.push(m);
+    return `\u0001PH${placeholders.length - 1}\u0001`;
+  });
 
-  // 2. Normaliza ponto final duplicado (caso "x. . y")
+  // 2. Processa linha por linha, aplicando sanitização de travessão apenas em
+  //    linhas que NÃO são saudação/bullet/header/blockquote.
+  const lines = out.split("\n");
+  const paragraphsSeen = { count: 0 }; // conta parágrafos não-vazios pra identificar o primeiro (saudação)
+  let hitNonEmpty = false;
+  const cleanedLines = lines.map((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      // linha em branco = separa parágrafos
+      if (hitNonEmpty) {
+        paragraphsSeen.count += 1;
+        hitNonEmpty = false;
+      }
+      return line;
+    }
+    hitNonEmpty = true;
+
+    const isBullet = /^(\s*[-*]\s)/.test(line);
+    const isHeader = /^\s*#{1,6}\s/.test(line);
+    const isBlockquote = /^\s*>\s/.test(line);
+    const isGreetingParagraph = paragraphsSeen.count === 0; // primeiro parágrafo
+
+    // Preserva travessão nesses contextos
+    if (isBullet || isHeader || isBlockquote || isGreetingParagraph) {
+      return line;
+    }
+
+    // Caso geral: remove travessão (— U+2014, – U+2013) no corpo argumentativo
+    let cleaned = line.replace(/\s+[—–]\s+/g, ". ");
+    cleaned = cleaned.replace(/[—–]/g, ",");
+    return cleaned;
+  });
+  out = cleanedLines.join("\n");
+
+  // 3. Normaliza ponto final duplicado (caso "x. . y")
   out = out.replace(/\.\s*\./g, ".");
 
-  // 3. Normaliza espaços múltiplos
+  // 4. Normaliza espaços múltiplos (sem tocar em \n)
   out = out.replace(/[ \t]+/g, " ");
 
-  // 4. Normaliza quebras de linha triplas
+  // 5. Normaliza quebras de linha triplas
   out = out.replace(/\n{3,}/g, "\n\n");
 
-  // 5. Capitaliza primeira letra após ". " se virou minúscula
+  // 6. Capitaliza primeira letra após ". " se virou minúscula
   out = out.replace(/(\. )([a-záéíóúâêôàãõç])/g, (_m, p1, p2) => p1 + p2.toUpperCase());
+
+  // Restaura placeholders/links
+  out = out.replace(/\u0001PH(\d+)\u0001/g, (_m, i) => placeholders[Number(i)] ?? "");
 
   return out.trim();
 }
@@ -154,6 +213,7 @@ function buildUserMessage(
   deal: Record<string, unknown>,
   activities: Array<Record<string, unknown>>,
   stageLabel: string,
+  playbook: StagePlaybook,
   priorDrafts: PriorDraftSummary[],
   inferredBu: string | null,
   themes: Theme[],
@@ -162,6 +222,12 @@ function buildUserMessage(
   portfolioItems: PortfolioRef[],
 ): string {
   const parts: string[] = [];
+
+  // Playbook da etapa — vem ANTES do contexto do lead pra estabelecer a
+  // estrutura das 3 variações que o modelo deve produzir.
+  parts.push(buildPlaybookSection(playbook));
+  parts.push(``);
+
   parts.push(`# Contexto do Lead`);
   parts.push(`**Nome do deal:** ${deal.name ?? "—"}`);
   parts.push(`**Empresa (incorporadora):** ${deal.company ?? "—"}`);
@@ -429,8 +495,10 @@ serve(async (req: Request) => {
       }),
     );
 
-    // 3. Resolver stage label legível
+    // 3. Resolver stage label legível + playbook da etapa
     const stageLabel = await resolveStageLabel(supabase, deal.stage as string);
+    const playbookKey = resolvePlaybookKey(deal.stage as string, stageLabel);
+    const playbook = STAGE_PLAYBOOKS[playbookKey];
 
     // 3b. Inferir BU + buscar temas, links, blog e portfolio
     const inferredBu = inferBu(deal.name as string);
@@ -483,6 +551,7 @@ serve(async (req: Request) => {
       deal as Record<string, unknown>,
       (activities ?? []) as Array<Record<string, unknown>>,
       stageLabel,
+      playbook,
       priorDrafts,
       inferredBu,
       themes,

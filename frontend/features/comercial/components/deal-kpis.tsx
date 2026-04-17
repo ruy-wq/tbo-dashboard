@@ -1,8 +1,22 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { IconTrendingUp, IconCurrencyDollar, IconTarget, IconChartBar } from "@tabler/icons-react";
+import {
+  IconTrendingUp,
+  IconCurrencyDollar,
+  IconTarget,
+  IconChartBar,
+  IconInfoCircle,
+} from "@tabler/icons-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DEAL_STAGES, type DealStageKey } from "@/lib/constants";
+import { staggerContainer, fadeSlideUp } from "@/features/comercial/lib/motion";
 
 interface DealKPIs {
   total: number;
@@ -99,6 +113,7 @@ export function DealKPICards({
       icon: IconCurrencyDollar,
       color: "text-blue-600",
       visual: distribution ? <StageBar distribution={distribution} /> : null,
+      info: "Soma do valor de todos os deals em aberto (Lead, Qualificação, Proposta e Negociação). Deals encerrados (Ganho/Perdido) não entram nesse cálculo.",
     },
     {
       label: "Forecast Ponderado",
@@ -107,6 +122,7 @@ export function DealKPICards({
       icon: IconTrendingUp,
       color: "text-purple-600",
       visual: distribution ? <FunnelMini distribution={distribution} /> : null,
+      info: "Estimativa realista de receita futura. Cada deal em aberto é multiplicado pela probabilidade de fechamento da sua etapa (Lead 10%, Qualificação 25%, Proposta 50%, Negociação 75%).",
     },
     {
       label: "Ganhos",
@@ -115,6 +131,7 @@ export function DealKPICards({
       icon: IconTarget,
       color: "text-green-600",
       visual: null,
+      info: "Valor total de deals marcados como Fechado (Ganho) no período filtrado. Considera o valor real fechado, não o estimado inicialmente.",
     },
     {
       label: "Conversão",
@@ -130,30 +147,58 @@ export function DealKPICards({
           />
         </div>
       ) : null,
+      info: "Taxa de eficiência do funil: ganhos ÷ (ganhos + perdidos) × 100. Benchmark B2B imobiliário de alto padrão gira em torno de 20-30%.",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {items.map((item) => (
-        <Card key={item.label}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 ${item.color}`}
-              >
-                <item.icon className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-bold leading-none tabular-nums">{item.value}</p>
-                <p className="text-xs text-gray-500">{item.label}</p>
-              </div>
-            </div>
-            {item.visual}
-            <p className="text-[10px] text-gray-400 mt-1">{item.sub}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <TooltipProvider delayDuration={200}>
+      <motion.div
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+      >
+        {items.map((item) => (
+          <motion.div key={item.label} variants={fadeSlideUp}>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 ${item.color}`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-lg font-bold leading-none tabular-nums">{item.value}</p>
+                    <p className="text-xs text-gray-500">{item.label}</p>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-gray-300 hover:text-gray-500 transition-colors shrink-0 -mr-1 -mt-1 p-0.5"
+                        aria-label={`O que é ${item.label}?`}
+                      >
+                        <IconInfoCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      align="end"
+                      className="max-w-xs text-xs leading-relaxed"
+                    >
+                      {item.info}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {item.visual}
+                <p className="text-[10px] text-gray-400 mt-1">{item.sub}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </motion.div>
+    </TooltipProvider>
   );
 }

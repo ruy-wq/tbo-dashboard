@@ -28,8 +28,26 @@ import {
   IconEye,
   IconCode,
   IconLoader2,
+  IconLayoutGridAdd,
 } from "@tabler/icons-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { buildTboEmailHtml } from "@/lib/email-templates/tbo-outbound";
+
+/**
+ * Retorna o eyebrow de saudação baseado na hora atual.
+ * "BOM DIA" até 12h, "BOA TARDE" entre 12 e 18h, "BOA NOITE" depois.
+ */
+function getGreetingEyebrow(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "BOM DIA";
+  if (h < 18) return "BOA TARDE";
+  return "BOA NOITE";
+}
 import { InsertMediaDialog } from "./insert-media-dialog";
 import { uploadEmailAsset } from "../hooks/use-upload-email-asset";
 import { toast } from "sonner";
@@ -250,7 +268,7 @@ function DraftCard({ draft, onUpdate, onDiscard, isSaving }: DraftCardProps) {
     // Por enquanto, só marca como sent manualmente + mostra toast
     toast.info("Envio 1-a-1 via Mailchimp em breve", {
       description:
-        "Por ora, copie o conteúdo e envie manualmente pela sua caixa ou dispare campanha no Email Studio.",
+        "Por ora, copie o conteúdo e envie manualmente pela sua caixa ou dispare campanha no módulo Newsletter.",
     });
   }
 
@@ -409,6 +427,7 @@ function VariantEditor({
         .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
         .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
       preheader: currentSubject,
+      eyebrow: getGreetingEyebrow(),
     });
     return rendered;
   }, [currentSubject, currentBody]);
@@ -434,8 +453,57 @@ function VariantEditor({
     });
   }
 
+  /**
+   * Insere markdown de mídia no body. Se houver um placeholder do tipo
+   * correspondente ({{imagem}}, {{video}}, {{gif}}), SUBSTITUI ele pelo
+   * markdown. Caso contrário, insere no cursor.
+   */
+  function insertMediaMarkdown(
+    kind: "image" | "gif" | "video",
+    markdown: string,
+  ) {
+    const re =
+      kind === "video"
+        ? /\{\{\s*(?:video|vídeo)(?:\s*:\s*[^}]+)?\s*\}\}/i
+        : kind === "gif"
+          ? /\{\{\s*gif(?:\s*:\s*[^}]+)?\s*\}\}/i
+          : /\{\{\s*(?:imagem|image)(?:\s*:\s*[^}]+)?\s*\}\}/i;
+
+    const match = re.exec(body);
+    if (match && match.index !== undefined) {
+      const start = match.index;
+      const end = start + match[0].length;
+      const next = body.slice(0, start) + markdown + body.slice(end);
+      onBodyChange(next);
+      requestAnimationFrame(() => {
+        const ta = bodyRef.current;
+        if (!ta) return;
+        ta.focus();
+        const pos = start + markdown.length;
+        ta.setSelectionRange(pos, pos);
+      });
+      return;
+    }
+    insertAtCursor(markdown);
+  }
+
+  function insertPlaceholderToken(kind: "image" | "gif" | "video") {
+    const token =
+      kind === "video"
+        ? "{{video}}"
+        : kind === "gif"
+          ? "{{gif}}"
+          : "{{imagem}}";
+    insertAtCursor(token);
+    toast.info("Placeholder inserido", {
+      description:
+        "Arraste uma mídia sobre o editor ou clique na toolbar — o token será substituído.",
+    });
+  }
+
   // Drag-and-drop direto no textarea: aceita arquivo de imagem/vídeo,
-  // faz upload pro Supabase Storage e insere o markdown no cursor.
+  // faz upload pro Supabase Storage e substitui placeholder correspondente
+  // ou insere o markdown no cursor.
   async function handleDropFile(file: File) {
     try {
       setUploadingInline(true);
@@ -446,7 +514,7 @@ function VariantEditor({
           : uploaded.kind === "gif"
             ? "GIF"
             : file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
-      insertAtCursor(`![${alt}](${uploaded.url})`);
+      insertMediaMarkdown(uploaded.kind, `![${alt}](${uploaded.url})`);
       toast.success("Mídia inserida no corpo do e-mail");
     } catch (err) {
       toast.error("Falha no upload", {
@@ -487,9 +555,46 @@ function VariantEditor({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-[11px] font-medium text-muted-foreground">
-              Corpo · arraste imagens ou vídeos aqui, ou use os botões
+              Corpo · arraste uma mídia sobre o editor pra substituir placeholders
             </label>
             <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-1.5 text-[11px] gap-1"
+                    title="Adicionar placeholder (será substituído depois)"
+                  >
+                    <IconLayoutGridAdd className="h-3 w-3" />
+                    Placeholder
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="text-xs">
+                  <DropdownMenuItem
+                    onClick={() => insertPlaceholderToken("image")}
+                    className="gap-2 text-xs"
+                  >
+                    <IconPhoto className="h-3.5 w-3.5" />
+                    {"{{imagem}}"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => insertPlaceholderToken("gif")}
+                    className="gap-2 text-xs"
+                  >
+                    <IconGif className="h-3.5 w-3.5" />
+                    {"{{gif}}"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => insertPlaceholderToken("video")}
+                    className="gap-2 text-xs"
+                  >
+                    <IconVideo className="h-3.5 w-3.5" />
+                    {"{{video}}"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 type="button"
                 size="sm"
@@ -583,7 +688,12 @@ function VariantEditor({
           open={mediaDialog !== null}
           onClose={() => setMediaDialog(null)}
           kind={mediaDialog ?? "image"}
-          onInsert={(markdown) => insertAtCursor(markdown)}
+          onInsert={(markdown) => {
+            // Se foi aberto pra um tipo específico, tenta substituir placeholder
+            // correspondente antes de cair pro insert no cursor.
+            const k = mediaDialog ?? "image";
+            insertMediaMarkdown(k === "gif" ? "gif" : k === "video" ? "video" : "image", markdown);
+          }}
         />
       </div>
     );

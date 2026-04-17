@@ -166,7 +166,7 @@ export function HotLeadsCampaignDialog({ open, onClose, deals }: Props) {
         description: "Revise o conteúdo antes de disparar.",
       });
       onClose();
-      router.push(`/marketing/email-studio/campanhas`);
+      router.push(`/marketing/newsletter/campanhas`);
       void campaign;
     },
     onError: (err) => {
@@ -188,7 +188,7 @@ export function HotLeadsCampaignDialog({ open, onClose, deals }: Props) {
           </DialogTitle>
           <DialogDescription>
             Curadoria manual dos leads com maior score. A campanha é criada como rascunho —
-            você revisa e dispara no Email Studio.
+            você revisa e dispara no módulo Newsletter.
           </DialogDescription>
         </DialogHeader>
 

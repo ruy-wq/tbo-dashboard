@@ -6,6 +6,8 @@
 // Uso: buildTboEmailHtml({ subject, body, label, preheader, unsubscribeUrl })
 // ============================================================================
 
+export type PlaceholderMode = "render" | "strip";
+
 export interface TboEmailOptions {
   /** Assunto do e-mail (também usado como H1 se main_headline não for passado) */
   subject: string;
@@ -19,6 +21,38 @@ export interface TboEmailOptions {
   preferencesUrl?: string;
   /** Se true, não renderiza footer completo (útil pra previews inline mais curtos). Default: false */
   compact?: boolean;
+  /**
+   * Como tratar tokens `{{imagem}}`, `{{video}}`, `{{gif}}` no body:
+   * - "render" (default): mostra bloco placeholder visual — usar no preview do editor
+   * - "strip": remove tokens não preenchidos — usar no envio real pra Mailchimp
+   */
+  placeholderMode?: PlaceholderMode;
+  /**
+   * Eyebrow opcional renderizado em caps acima do H1 (ex: "BOA TARDE", "OLÁ",
+   * "TRENDING NOW"). Usa laranja TBO.
+   */
+  eyebrow?: string;
+}
+
+/**
+ * Regex que casa os tokens de placeholder de mídia.
+ * Aceita: {{imagem}}, {{imagem:legenda}}, {{video}}, {{video:legenda}}, {{gif}}, {{gif:legenda}}
+ * Case-insensitive no tipo; legenda é qualquer texto até "}}".
+ */
+const PLACEHOLDER_RE = /\{\{\s*(imagem|image|video|vídeo|gif)\s*(?::\s*([^}]+?))?\s*\}\}/gi;
+
+/**
+ * Remove todos os tokens `{{imagem}}`, `{{video}}`, `{{gif}}` do texto.
+ * Usado antes de enviar o email real (quando o usuário não preencheu o placeholder
+ * com uma mídia de verdade).
+ *
+ * Também colapsa linhas em branco que sobrem depois da remoção.
+ */
+export function stripPlaceholderTokens(body: string): string {
+  if (!body) return body;
+  const withoutTokens = body.replace(PLACEHOLDER_RE, "");
+  // Colapsa 3+ quebras de linha em 2 (uma linha em branco)
+  return withoutTokens.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /**
@@ -43,25 +77,65 @@ function escapeHtml(s: string): string {
  * - Links: [texto](url) → <a>
  * - Vídeos (thumbnail clicável): ![[videoUrl]](thumbnailUrl) → wrap em <a>
  * - Divisor: linha só com "---" → <hr>
+ * - Placeholders: {{imagem}}, {{video}}, {{gif}} (com ou sem legenda) →
+ *     render: bloco visual "insira sua mídia aqui" (default)
+ *     strip: removido completamente
  *
  * HTML puro no body é escapado (segurança). Só merge tags *|TAG|* são preservadas.
  */
-export function parseBodyMarkdown(raw: string): string {
+export function parseBodyMarkdown(
+  raw: string,
+  placeholderMode: PlaceholderMode = "render",
+): string {
   if (!raw) return "";
 
+  // Se modo strip, remove tokens ANTES de dividir em parágrafos pra não deixar
+  // parágrafos inteiros vazios sobrando.
+  const source =
+    placeholderMode === "strip" ? stripPlaceholderTokens(raw) : raw;
+
   // Divide em parágrafos por linhas em branco duplas
-  const paragraphs = raw.split(/\n{2,}/g);
+  const paragraphs = source.split(/\n{2,}/g);
 
   const htmlParagraphs = paragraphs.map((para) => {
     const trimmed = para.trim();
     if (!trimmed) return "";
 
-    // Divisor
+    // Divisor decorativo tipo newsletter editorial: linha com 4 pontos
+    // (".   .   .   ." ou "...." ou ". . . .")
+    if (/^\.(\s*\.){2,}$/.test(trimmed)) {
+      return renderDecorativeSeparator();
+    }
+
+    // Divisor simples (---)
     if (/^[-—]{3,}$/.test(trimmed)) {
       return `<hr style="border:0;border-top:1px solid #eaeaea;margin:24px 0;" />`;
     }
 
-    // Parágrafo que é só uma imagem/vídeo — renderiza standalone sem <p>
+    // Seção Trending: "### Trending now" (ou variações) seguido de bullets
+    const trendingMatch = matchTrendingSection(trimmed);
+    if (trendingMatch) {
+      return renderTrendingSection(trendingMatch);
+    }
+
+    // Blockquote: parágrafo cujas linhas começam com "> "
+    if (/^>\s+/.test(trimmed) && trimmed.split("\n").every((l) => /^>\s+/.test(l) || l.trim() === "")) {
+      const inner = trimmed
+        .split("\n")
+        .map((l) => l.replace(/^>\s?/, ""))
+        .join(" ")
+        .trim();
+      return renderBlockquote(inner);
+    }
+
+    // Parágrafo que é só um placeholder de mídia → renderiza bloco visual
+    // (só acontece em placeholderMode === "render"; em "strip" o token já saiu)
+    const singlePlaceholderMatch = matchSinglePlaceholder(trimmed);
+    if (singlePlaceholderMatch) {
+      return renderPlaceholderBlock(singlePlaceholderMatch);
+    }
+
+    // Parágrafo que é só uma imagem/vídeo real — renderiza standalone sem <p>
     const singleMediaMatch = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(trimmed);
     if (singleMediaMatch) {
       return renderMedia(singleMediaMatch[1], singleMediaMatch[2]);
@@ -79,13 +153,151 @@ export function parseBodyMarkdown(raw: string): string {
   return htmlParagraphs.filter(Boolean).join("\n");
 }
 
+function renderDecorativeSeparator(): string {
+  // 4 pontos laranja centralizados, espaçados, estilo newsletter editorial
+  return `<div style="text-align:center;margin:32px 0;letter-spacing:0.8em;color:#e85102;font-size:14px;line-height:1;font-weight:700;">
+  &bull;&nbsp;&bull;&nbsp;&bull;&nbsp;&bull;
+</div>`;
+}
+
+function renderBlockquote(innerText: string): string {
+  const inline = processInline(innerText);
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;border-collapse:collapse;">
+  <tr>
+    <td style="width:3px;background-color:#e85102;padding:0;" bgcolor="#e85102">&nbsp;</td>
+    <td style="padding:4px 0 4px 16px;">
+      <p style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#262626;">${inline}</p>
+    </td>
+  </tr>
+</table>`;
+}
+
+interface TrendingItem {
+  emoji: string | null;
+  label: string | null;
+  text: string;
+}
+
+interface TrendingSection {
+  title: string;
+  items: TrendingItem[];
+}
+
 /**
- * Processa elementos inline (imagens, links) dentro de um parágrafo.
- * Escapa HTML do resto do texto.
+ * Detecta uma seção Trending no formato:
+ *
+ * ### Trending now
+ * - 🔍 **PARA LER:** texto do item com [link](url)
+ * - 👀 **PARA DESCOBRIR:** outro item
+ *
+ * O título aceita variações: "Trending now", "Trending", "Giro", "Quick takes".
+ */
+function matchTrendingSection(text: string): TrendingSection | null {
+  const lines = text.split("\n").map((l) => l.trimEnd());
+  if (lines.length < 2) return null;
+  const headerMatch = /^#{2,3}\s+(trending\s*now|trending|giro|quick\s*takes|em\s*alta)\s*$/i.exec(
+    lines[0].trim(),
+  );
+  if (!headerMatch) return null;
+
+  const items: TrendingItem[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const bulletMatch = /^[-*]\s+(.*)$/.exec(line);
+    if (!bulletMatch) return null; // se aparecer linha não-bullet, não é trending
+    const content = bulletMatch[1];
+    // Extrai emoji inicial (se houver) + label em bold + resto
+    const parts = /^(\p{Emoji_Presentation}|\p{Extended_Pictographic})?\s*(?:\*\*([^*]+?):\*\*\s*)?(.+)$/u.exec(
+      content,
+    );
+    if (parts) {
+      items.push({
+        emoji: parts[1] ?? null,
+        label: parts[2] ?? null,
+        text: parts[3],
+      });
+    } else {
+      items.push({ emoji: null, label: null, text: content });
+    }
+  }
+
+  if (items.length === 0) return null;
+  return { title: headerMatch[1], items };
+}
+
+function renderTrendingSection(section: TrendingSection): string {
+  const titleDisplay = section.title.toUpperCase();
+  const itemsHtml = section.items
+    .map((it) => {
+      const emoji = it.emoji
+        ? `<span style="display:inline-block;margin-right:8px;font-size:16px;vertical-align:middle;">${it.emoji}</span>`
+        : "";
+      const label = it.label
+        ? `<strong style="color:#0a0a0a;font-weight:700;letter-spacing:0.01em;">${escapeHtml(it.label.toUpperCase())}:</strong> `
+        : "";
+      const body = processInline(it.text);
+      return `<tr>
+  <td style="padding:10px 0;border-bottom:1px solid #f0f0f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#262626;">
+    ${emoji}${label}${body}
+  </td>
+</tr>`;
+    })
+    .join("\n");
+  return `<div style="margin:28px 0;">
+  <div style="font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#e85102;font-weight:700;margin-bottom:12px;">${escapeHtml(titleDisplay)}</div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border-top:1px solid #f0f0f0;">
+    ${itemsHtml}
+  </table>
+</div>`;
+}
+
+interface PlaceholderInfo {
+  kind: "image" | "video" | "gif";
+  caption: string | null;
+}
+
+function matchSinglePlaceholder(text: string): PlaceholderInfo | null {
+  // Só casa se o parágrafo INTEIRO é um único placeholder (ignorando espaços)
+  const m = /^\{\{\s*(imagem|image|video|vídeo|gif)\s*(?::\s*([^}]+?))?\s*\}\}$/i.exec(
+    text.trim(),
+  );
+  if (!m) return null;
+  const raw = m[1].toLowerCase();
+  const kind: PlaceholderInfo["kind"] =
+    raw === "video" || raw === "vídeo" ? "video" : raw === "gif" ? "gif" : "image";
+  return { kind, caption: m[2]?.trim() || null };
+}
+
+function renderPlaceholderBlock(info: PlaceholderInfo): string {
+  const label =
+    info.kind === "video"
+      ? "Arraste um vídeo aqui"
+      : info.kind === "gif"
+        ? "Arraste um GIF aqui"
+        : "Arraste uma imagem aqui";
+  const icon = info.kind === "video" ? "▶" : info.kind === "gif" ? "◉" : "▣";
+  const captionHtml = info.caption
+    ? `<div style="margin-top:8px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#737373;font-style:italic;">${escapeHtml(info.caption)}</div>`
+    : "";
+  return `<div data-tbo-placeholder="${info.kind}" style="margin:20px 0;padding:36px 24px;border:2px dashed #d4d4d4;border-radius:8px;background-color:#fafafa;text-align:center;">
+  <div style="font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:22px;color:#a3a3a3;line-height:1;">${icon}</div>
+  <div style="margin-top:12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.4;color:#525252;font-weight:500;letter-spacing:0.02em;">${label}</div>
+  <div style="margin-top:4px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;line-height:1.4;color:#a3a3a3;">ou clique em ${info.kind === "video" ? "Vídeo" : info.kind === "gif" ? "GIF" : "Imagem"} na toolbar</div>
+  ${captionHtml}
+</div>`;
+}
+
+/**
+ * Processa elementos inline dentro de um parágrafo: imagens, links,
+ * **bold**, *italic*. Escapa HTML do resto do texto.
+ *
+ * Estratégia: extrai primeiro os tokens ricos (mídia, link, bold, italic)
+ * e substitui por sentinelas. Escapa o texto puro restante. Restaura os
+ * tokens. Isso garante que o texto do usuário nunca vira HTML injetado,
+ * mas a formatação intencional é preservada.
  */
 function processInline(text: string): string {
-  // Primeiro processa mídia inline ![alt](url) e links [text](url), preservando
-  // os tokens markdown. Depois escapa o resto e substitui os tokens pelo HTML.
   const tokens: string[] = [];
   const placeholder = (i: number) => `\u0000TOKEN${i}\u0000`;
 
@@ -97,11 +309,28 @@ function processInline(text: string): string {
 
   // [text](url) — link
   work = work.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, t, url) => {
-    const safeText = escapeHtml(String(t));
+    const safeText = escapeInline(String(t));
     const safeUrl = escapeUrl(String(url));
     tokens.push(
       `<a href="${safeUrl}" target="_blank" rel="noopener" style="color:#e85102;text-decoration:underline;">${safeText}</a>`,
     );
+    return placeholder(tokens.length - 1);
+  });
+
+  // **bold** — peso semântico. Usa regex não-greedy com limite de 200 chars
+  // pra não atravessar parágrafos quebrados.
+  work = work.replace(/\*\*([^*\n]{1,200}?)\*\*/g, (_m, inner) => {
+    const safe = escapeInline(String(inner));
+    tokens.push(
+      `<strong style="font-weight:700;color:#0a0a0a;">${safe}</strong>`,
+    );
+    return placeholder(tokens.length - 1);
+  });
+
+  // *italic* ou _italic_ — ênfase leve. Evita casar com ** (já processado).
+  work = work.replace(/(?<![*\w])\*([^*\n]{1,200}?)\*(?![*\w])/g, (_m, inner) => {
+    const safe = escapeInline(String(inner));
+    tokens.push(`<em style="font-style:italic;color:#171717;">${safe}</em>`);
     return placeholder(tokens.length - 1);
   });
 
@@ -112,6 +341,20 @@ function processInline(text: string): string {
   work = work.replace(/\u0000TOKEN(\d+)\u0000/g, (_m, i) => tokens[Number(i)] ?? "");
 
   return work;
+}
+
+/**
+ * Escape mais leve que escapeHtml — preserva caracteres que escapeHtml
+ * transforma mas que são seguros dentro de um contexto já controlado
+ * (texto dentro de bold/italic/link). Ainda bloqueia < > " ' &.
+ */
+function escapeInline(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderMedia(alt: string, url: string): string {
@@ -165,9 +408,13 @@ function firstSentence(text: string, maxLen = 140): string {
 export function buildTboEmailHtml(opts: TboEmailOptions): string {
   const subject = escapeHtml(opts.subject || "");
   const preheader = escapeHtml(opts.preheader || firstSentence(opts.body));
-  const bodyHtml = parseBodyMarkdown(opts.body);
+  const bodyHtml = parseBodyMarkdown(opts.body, opts.placeholderMode ?? "render");
   const unsubUrl = escapeUrl(opts.unsubscribeUrl || "#");
   const prefsUrl = escapeUrl(opts.preferencesUrl || "#");
+
+  const eyebrowHtml = opts.eyebrow
+    ? `<div style="font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.2em;color:#e85102;font-weight:700;text-transform:uppercase;margin-bottom:12px;">${escapeHtml(opts.eyebrow)}</div>`
+    : "";
 
   const footer = opts.compact ? "" : buildFooter(unsubUrl, prefsUrl);
 
@@ -202,8 +449,8 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-container" style="width:600px;max-width:600px;background-color:#ffffff;" bgcolor="#ffffff">
           <tr>
             <td class="px-40" style="padding:32px 40px 24px 40px;background-color:#ffffff;" bgcolor="#ffffff">
-              <a href="https://wearetbo.com.br/pt" target="_blank" style="text-decoration:none;">
-                <img src="https://wearetbo.com.br/assets/logo-dark.svg" alt="TBO" width="56" height="24" style="display:block;height:24px;width:auto;border:0;" />
+              <a href="https://wearetbo.com.br/pt" target="_blank" style="text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+                <span style="display:inline-block;width:10px;height:10px;background-color:#e85102;vertical-align:middle;margin-right:8px;margin-bottom:2px;"></span><span style="font-weight:700;font-size:18px;color:#0a0a0a;letter-spacing:-0.02em;vertical-align:middle;">tbo</span>
               </a>
             </td>
           </tr>
@@ -214,6 +461,7 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
           </tr>
           <tr>
             <td class="px-40" style="padding:48px 40px 20px 40px;background-color:#ffffff;" bgcolor="#ffffff">
+              ${eyebrowHtml}
               <h1 class="h1" style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:32px;line-height:1.15;font-weight:500;letter-spacing:-0.02em;color:#0a0a0a;">${subject}</h1>
             </td>
           </tr>
@@ -234,7 +482,9 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
 function buildFooter(unsubUrl: string, prefsUrl: string): string {
   return `<tr>
     <td class="px-40" style="padding:48px 40px 40px 40px;background-color:#fafafa;border-top:1px solid #eaeaea;" bgcolor="#fafafa">
-      <img src="https://wearetbo.com.br/assets/logo-dark.svg" alt="TBO" width="56" height="24" style="display:block;height:24px;width:auto;border:0;margin-bottom:32px;" />
+      <div style="margin-bottom:32px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <span style="display:inline-block;width:10px;height:10px;background-color:#e85102;vertical-align:middle;margin-right:8px;margin-bottom:2px;"></span><span style="font-weight:700;font-size:18px;color:#0a0a0a;letter-spacing:-0.02em;vertical-align:middle;">tbo</span>
+      </div>
       <p style="margin:0 0 32px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#525252;">
         Ecossistema de soluções para lançamentos imobiliários.<br />
         Direção criativa, Digital 3D, Branding, Marketing, Audiovisual e Plataforma Interativa.

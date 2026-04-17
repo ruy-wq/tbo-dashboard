@@ -85,12 +85,12 @@ function MarketingHeaderBar({
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex gap-2">
           <Link
-            href="/marketing/email-studio"
+            href="/marketing/newsletter"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white/80 hover:text-white transition-colors"
             style={{ background: "rgba(255,255,255,0.10)" }}
           >
             <IconMail className="size-3.5" style={{ color: "#3b82f6" }} />
-            Email Studio
+            Newsletter
           </Link>
           <Link
             href="/marketing/conteudo"
@@ -184,7 +184,7 @@ function KPIsWidget({
 
 function QuickLinksWidget() {
   const links = [
-    { href: "/marketing/email-studio/templates", label: "Templates de Email", icon: IconTemplate, color: "#3b82f6" },
+    { href: "/marketing/newsletter/templates", label: "Templates de Email", icon: IconTemplate, color: "#3b82f6" },
     { href: "/marketing/conteudo/calendario", label: "Calendario Editorial", icon: IconCalendarEvent, color: "#8b5cf6" },
     { href: "/marketing/conteudo/assets", label: "Biblioteca de Assets", icon: IconPhoto, color: "#ec4899" },
     { href: "/marketing/analytics", label: "Analytics", icon: IconChartBar, color: "#22c55e" },
@@ -253,7 +253,7 @@ type ModuleDef = {
 };
 
 const MODULES: ModuleDef[] = [
-  { href: "/marketing/email-studio", label: "Email Studio", description: "Templates, campanhas e envios", icon: IconMail, color: "#3b82f6" },
+  { href: "/marketing/newsletter", label: "Newsletter", description: "Gerar newsletters, campanhas e envios pra base", icon: IconMail, color: "#3b82f6" },
   { href: "/marketing/conteudo", label: "Conteudo", description: "Calendario editorial, briefs e assets", icon: IconPencil, color: "#8b5cf6" },
   { href: "/marketing/redes-sociais", label: "Redes Sociais", description: "Contas, agendamento e performance", icon: IconBrandInstagram, color: "#ec4899" },
   { href: "/marketing/campanhas", label: "Campanhas", description: "Timeline, briefings e budget", icon: IconSpeakerphone, color: "#f59e0b" },

@@ -209,7 +209,7 @@ export function EmailCampaignFormModal({ open, onClose }: Props) {
                     {(!segments || segments.length === 0) && (
                       <p className="text-xs text-muted-foreground">
                         Nenhum segmento criado.{" "}
-                        <a href="/marketing/email-studio/segmentos" className="text-primary hover:underline">
+                        <a href="/marketing/newsletter/segmentos" className="text-primary hover:underline">
                           Criar segmento
                         </a>
                       </p>
