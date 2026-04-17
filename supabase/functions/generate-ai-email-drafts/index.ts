@@ -25,7 +25,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const MODEL = "claude-sonnet-4-6";
-const PROMPT_VERSION = "v3";
+const PROMPT_VERSION = "v4";
 
 interface GenerateRequest {
   deal_id: string;
@@ -49,6 +49,44 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   });
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Sanitização defensiva — remove padrões proibidos que a IA possa ter
+// deixado passar mesmo com o prompt reforçado.
+// ──────────────────────────────────────────────────────────────────────
+function sanitizeText(text: string): string {
+  if (!text) return text;
+  let out = text;
+
+  // 1. Remove TODOS os travessões (— U+2014, – U+2013).
+  //    Substitui por ". " quando separa frases, vírgula quando está entre palavras.
+  //    Heurística: se o travessão tem espaços de ambos os lados, assume separador de frase.
+  out = out.replace(/\s+[—–]\s+/g, ". ");
+  out = out.replace(/[—–]/g, ",");
+
+  // 2. Normaliza ponto final duplicado (caso "x. . y")
+  out = out.replace(/\.\s*\./g, ".");
+
+  // 3. Normaliza espaços múltiplos
+  out = out.replace(/[ \t]+/g, " ");
+
+  // 4. Normaliza quebras de linha triplas
+  out = out.replace(/\n{3,}/g, "\n\n");
+
+  // 5. Capitaliza primeira letra após ". " se virou minúscula
+  out = out.replace(/(\. )([a-záéíóúâêôàãõç])/g, (_m, p1, p2) => p1 + p2.toUpperCase());
+
+  return out.trim();
+}
+
+function sanitizeVariant(v: Variant): Variant {
+  return {
+    label: v.label,
+    tone: v.tone,
+    subject: sanitizeText(v.subject),
+    body: sanitizeText(v.body),
+  };
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -139,46 +177,97 @@ Provavelmente diretor de marketing/comercial/produto ou sócio. Fale no nível d
 12. Acentuação correta em todas as palavras do português brasileiro — obrigatório
 13. Capitalização natural (não tudo minúsculo): frases começam com maiúscula, nomes próprios capitalizados, siglas em caixa alta (TBO, IA, 3D, B2B, VGV)
 
-# PADRÕES DE ESCRITA PROIBIDOS (leia com atenção)
+# PADRÕES DE ESCRITA PROIBIDOS (leia com atenção máxima)
 
-Esses padrões são cacoetes de copywriting "guru/coach" e NÃO fazem parte do tom executivo da TBO. Nunca use:
+Esses padrões são cacoetes de copywriter guru/coach. São proibidos em TODAS as circunstâncias, INCLUSIVE se você só mudar a pontuação.
 
-1. **Fórmula "X não é Y, é Z"** — qualquer variação de contraste correcional.
-   Ruim: "Isso não é estética, é estratégia." / "Não é sobre vender, é sobre posicionar."
-   Em vez disso: descreva o ponto diretamente sem armar o contraste retórico.
+## P1 — FÓRMULA DE CONTRASTE CORRECIONAL (a mais importante)
 
-2. **Travessão como revelação dramática** — usar "—" pra revelar insight.
-   Ruim: "O problema não está no produto — está na apresentação."
-   Em vez disso: use ponto final e frase nova, ou vírgula normal. Travessão só em inciso legítimo.
+Qualquer estrutura onde você NEGA algo pra em seguida REVELAR o "verdadeiro" ponto. Proibido em todas as variações, independente de pontuação:
 
-3. **Travessão como conectivo genérico** — ligar duas ideias com "—" onde caberia vírgula ou ponto.
-   Ruim: "O material é bom — e isso importa — mas perde coesão."
-   Em vez disso: use pontuação normal.
+- "Isso não é estética, é estratégia."
+- "Isso não é estética. É estratégia."
+- "O problema não está no produto, está na apresentação."
+- "O problema não está no produto. Está na apresentação."
+- "O maior risco não está na execução. Está na falta de X."
+- "O maior risco não está na execução — está na falta de X."
+- "A questão não é X. É Y."
+- "Não se trata de X. Trata-se de Y."
+- "Não vem de X. Vem de Y."
+- "X não, Y sim."
 
-4. **Frases aforísticas curtas** — sentenças tipo fortune-cookie, oracular.
-   Ruim: "Consistência vende. Fragmentação custa." / "Percepção é tudo." / "O detalhe faz a diferença."
-   Em vez disso: enunciados concretos com sujeito e contexto.
+Todas essas construções são a MESMA fórmula proibida. Não importa se você usa vírgula, ponto, travessão ou parágrafo novo pra fazer a "revelação". Continua proibido.
 
-5. **Fórmula "A partir de X, não de Y"** (e variações: "começando por", "partindo de").
-   Ruim: "Vender a partir do contexto, não do produto."
-   Em vez disso: descreva o que efetivamente acontece.
+Por quê: é retórica de copywriter vendendo curso. Executivo reconhece de longe e ignora.
 
-6. **Tom de coach/guru/mentor** — qualquer frase motivacional, revelação, "insight que muda tudo".
-   Ruim: "Quando você entende isso, tudo muda." / "É aí que a mágica acontece." / "A verdade é que..."
-   Em vez disso: observação fria de quem já viu o padrão.
+Como escrever em vez disso: enuncie o ponto afirmativamente, direto, sem armar o contraste. Se o ponto é "o risco real é a falta de fio condutor", escreva "o risco real é a falta de fio condutor". Nada de negar outra coisa antes.
 
-7. **Bullets desnecessários** — listas com 2-3 itens quando cabe em prosa corrida.
-   Só use lista quando forem 4+ itens paralelos REAIS (como no e-mail de diagnóstico).
+Exemplos de reescrita:
+- Ruim: "O problema não está na qualidade. Está na coerência."
+- Bom: "A coerência entre as peças é onde o projeto perde força hoje."
+- Ruim: "Não é sobre vender mais. É sobre vender com mais segurança."
+- Bom: "A segurança na decisão do comprador é o que muda no volume."
 
-8. **Analogias forçadas** — comparações ilustrativas tipo "é como um iceberg", "é como construir uma catedral", "como peças de um quebra-cabeça".
-   Em vez disso: fale do fenômeno concreto.
+## P2 — TRAVESSÃO (proibido em uso estilístico)
 
-9. **CTA explícito** — chamadas à ação óbvias de agência.
-   Ruim: "Me chame pra conversar." / "Agende uma call." / "Vamos marcar uma reunião?"
-   Em vez disso: termine com pergunta aberta genuína sobre o negócio do lead (o CTA é implícito na pergunta).
+Você NÃO deve usar o caractere "—" em nenhum email gerado. Proibido em:
 
-10. **Abre-aspas conceituais** — aspas pra destacar conceito-chave ("posicionamento", "coerência", "percepção").
-    Use apenas pra citar fala literal de terceiro.
+- Revelação: "O problema está no produto — está na apresentação."
+- Ênfase: "X — e isso é crítico — Y."
+- Reformulação: "fazer A — ou seja, B."
+- Conclusão: "A, B, C — tudo isso importa."
+- Conectivo: "O material é bom — mas perde coesão."
+
+A única exceção teórica seria aposto legítimo, mas mesmo nesse caso use VÍRGULAS:
+- Bom: "A construtora, em seu último projeto, observou X."
+- Ruim: "A construtora — em seu último projeto — observou X."
+
+Regra prática: NENHUM travessão em NENHUM dos 3 emails. Se estiver tentado, substitua por ponto final e frase nova.
+
+## P3 — FRASES AFORÍSTICAS
+
+Sentenças oraculares tipo fortune-cookie.
+- Ruim: "Consistência vende. Fragmentação custa." / "Percepção é tudo."
+- Bom: enunciados concretos com sujeito e complemento.
+
+## P4 — FÓRMULA "A PARTIR DE X, NÃO DE Y"
+
+E variações ("começando por", "partindo de", "baseado em X, não em Y").
+- Ruim: "Vender a partir do contexto, não do produto."
+- Bom: descreva o que efetivamente acontece.
+
+## P5 — TOM DE COACH/GURU/MENTOR
+
+Frases motivacionais, revelações, "insights que mudam tudo".
+- Ruim: "Quando você entende isso, tudo muda." / "É aí que a mágica acontece." / "A verdade é que..."
+- Bom: observação fria de quem já viu o padrão dezenas de vezes.
+
+## P6 — BULLETS DESNECESSÁRIOS
+
+Listas com 2-3 itens que caberiam em prosa. Só use lista quando forem 4+ itens paralelos reais (como no email de Diagnóstico).
+
+## P7 — ANALOGIAS FORÇADAS
+
+"É como um iceberg", "é como construir uma catedral", "como peças de um quebra-cabeça". Fale do fenômeno concreto.
+
+## P8 — CTA EXPLÍCITO
+
+"Me chame pra conversar." / "Agende uma call." / "Vamos marcar uma reunião?" / "Bora conversar?" — tudo proibido. Termine com pergunta aberta genuína sobre o negócio do lead.
+
+## P9 — ABRE-ASPAS CONCEITUAIS
+
+Aspas pra destacar palavra-chave ("posicionamento", "coerência", "percepção"). Use aspas só pra citar fala literal de terceiro.
+
+# CHECKLIST FINAL ANTES DE ENTREGAR
+
+Antes de devolver o JSON, releia cada um dos 3 bodies e VERIFIQUE:
+1. Algum travessão "—"? Se sim, REESCREVA a frase sem ele.
+2. Alguma estrutura "X não A, é/está B" (com qualquer pontuação)? Se sim, REESCREVA enunciando B direto.
+3. Alguma frase aforística curta? Se sim, expanda pra enunciado concreto.
+4. Algum CTA explícito? Se sim, substitua por pergunta sobre o negócio.
+5. Alguma analogia forçada? Se sim, fale do fenômeno direto.
+
+Só entregue o JSON quando tiver passado nos 5 checks.
 
 # ESTRUTURA PSICOLÓGICA (cada email tem)
 
@@ -403,8 +492,11 @@ serve(async (req: Request) => {
       stageLabel,
     );
 
-    const { variants, inputTokens, outputTokens } = await callClaude(SYSTEM_PROMPT, userMessage);
+    const { variants: rawVariants, inputTokens, outputTokens } = await callClaude(SYSTEM_PROMPT, userMessage);
     const generationMs = Date.now() - startedAt;
+
+    // Sanitização defensiva: remove travessões e cacoetes que escaparam do prompt
+    const variants = rawVariants.map(sanitizeVariant);
 
     // 5. Persistir draft
     // IMPORTANTE: passar tenant_id explicitamente — a Edge Function roda
