@@ -107,19 +107,19 @@ NÃO inclua "abraços", "cordialmente", assinatura formal. É newsletter, não e
 
 # FORMATO DE SAÍDA
 
-Responda APENAS com JSON válido (sem markdown, sem \`\`\`), no formato:
-{
-  "title": "título interno curto pra identificar a edição (ex: 'Walmart + Allbirds + Brasil no euro')",
-  "subject": "assunto do email em minúscula, editorial, curiosidade aberta, sem pontuação final",
-  "preheader": "preview de ~80-120 chars que complementa o subject sem repetir",
-  "eyebrow": "BOM DIA | BOA TARDE | BOA NOITE (conforme briefing.send_time)",
-  "body": "corpo markdown completo seguindo a estrutura acima"
-}
+Você tem UMA ferramenta: \`emit_newsletter\`. Chame-a com a edição completa e NÃO escreva nada fora da chamada de ferramenta.
+
+Campos:
+- \`title\`: título interno curto (ex: "Walmart + Allbirds + Brasil no euro")
+- \`subject\`: assunto do email em minúscula, editorial, sem pontuação final
+- \`preheader\`: preview de ~80-120 chars que complementa o subject sem repetir
+- \`eyebrow\`: BOM DIA | BOA TARDE | BOA NOITE (conforme briefing.send_time)
+- \`body\`: corpo markdown completo seguindo a estrutura acima
 
 No body:
-- Use quebras de linha reais (\\n) entre parágrafos
-- Use a marcação markdown descrita — ela é renderizada pelo template TBO
+- Quebras de linha reais entre parágrafos (a ferramenta aceita strings multilinhas)
+- Marcação markdown descrita — renderizada pelo template TBO
 - Máximo 600 palavras no total
-- Abra com HOOK (não saudação "olá")
-- Feche com assinatura editorial leve
+- Abre com HOOK (não saudação "olá")
+- Fecha com assinatura editorial leve
 `;

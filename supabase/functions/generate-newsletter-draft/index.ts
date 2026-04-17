@@ -117,7 +117,8 @@ interface BlogPostRef {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// Chama Anthropic Messages API
+// Chama Anthropic Messages API com tool_use (forçado — evita parse
+// frágil de JSON-em-texto com markdown/newlines no body).
 // ──────────────────────────────────────────────────────────────────────
 async function callClaude(
   systemPrompt: string,
@@ -136,9 +137,46 @@ async function callClaude(
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 4000,
-      temperature: 0.85,  // mais editorial, menos "fórmula"
+      max_tokens: 6000,
+      temperature: 0.85,
       system: systemPrompt,
+      tools: [
+        {
+          name: "emit_newsletter",
+          description: "Emite a edição completa da newsletter TBO.",
+          input_schema: {
+            type: "object",
+            properties: {
+              title: {
+                type: "string",
+                description:
+                  "Título interno curto pra identificar a edição (não vai pro email).",
+              },
+              subject: {
+                type: "string",
+                description:
+                  "Assunto do email em minúscula, editorial, sem pontuação final.",
+              },
+              preheader: {
+                type: "string",
+                description: "Preview de ~80-120 chars que complementa o subject.",
+              },
+              eyebrow: {
+                type: "string",
+                enum: ["BOM DIA", "BOA TARDE", "BOA NOITE"],
+                description: "Saudação de acordo com briefing.send_time.",
+              },
+              body: {
+                type: "string",
+                description:
+                  "Corpo markdown completo da edição. Usa quebras de linha reais, **bold**, *itálico*, blockquotes, separadores '.  .  .  .', headings ###. Máximo 600 palavras.",
+              },
+            },
+            required: ["title", "subject", "preheader", "eyebrow", "body"],
+          },
+        },
+      ],
+      tool_choice: { type: "tool", name: "emit_newsletter" },
       messages: [{ role: "user", content: userMessage }],
     }),
   });
@@ -149,21 +187,32 @@ async function callClaude(
   }
 
   const data = await res.json();
-  const text = data.content?.[0]?.text ?? "";
 
-  const cleaned = text
-    .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
+  interface ToolUseBlock {
+    type: "tool_use";
+    name: string;
+    input: GeneratedDraft;
+  }
+  interface TextBlock {
+    type: "text";
+    text: string;
+  }
+  type ContentBlock = ToolUseBlock | TextBlock;
 
-  let parsed: GeneratedDraft;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error(`Falha ao parsear resposta da Claude como JSON. Raw: ${text.slice(0, 400)}`);
+  const blocks: ContentBlock[] = data.content ?? [];
+  const toolBlock = blocks.find(
+    (b): b is ToolUseBlock => b.type === "tool_use" && b.name === "emit_newsletter",
+  );
+
+  if (!toolBlock) {
+    const textDump = blocks
+      .map((b) => (b.type === "text" ? b.text : JSON.stringify(b)))
+      .join("\n")
+      .slice(0, 400);
+    throw new Error(`Claude não retornou tool_use. Raw: ${textDump}`);
   }
 
+  const parsed = toolBlock.input;
   if (!parsed.title || !parsed.subject || !parsed.body) {
     throw new Error(`Resposta incompleta: ${JSON.stringify(parsed).slice(0, 300)}`);
   }
