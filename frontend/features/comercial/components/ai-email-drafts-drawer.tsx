@@ -408,11 +408,10 @@ function VariantEditor({
       body: currentBody
         .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
         .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
-      label: variant.label,
       preheader: currentSubject,
     });
     return rendered;
-  }, [currentSubject, currentBody, variant.label]);
+  }, [currentSubject, currentBody]);
 
   function insertAtCursor(text: string) {
     const ta = bodyRef.current;

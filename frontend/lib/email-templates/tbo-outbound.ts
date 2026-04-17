@@ -11,8 +11,6 @@ export interface TboEmailOptions {
   subject: string;
   /** Corpo do e-mail. Aceita markdown básico (ver parseBodyMarkdown) */
   body: string;
-  /** Texto do eyebrow (acima do H1). Default: "TBO" */
-  label?: string;
   /** Texto do preheader (visível em inbox preview). Default: primeira frase do body */
   preheader?: string;
   /** URL de unsubscribe. Default: "#" */
@@ -166,7 +164,6 @@ function firstSentence(text: string, maxLen = 140): string {
  */
 export function buildTboEmailHtml(opts: TboEmailOptions): string {
   const subject = escapeHtml(opts.subject || "");
-  const label = escapeHtml((opts.label || "TBO").toUpperCase());
   const preheader = escapeHtml(opts.preheader || firstSentence(opts.body));
   const bodyHtml = parseBodyMarkdown(opts.body);
   const unsubUrl = escapeUrl(opts.unsubscribeUrl || "#");
@@ -216,12 +213,7 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
             </td>
           </tr>
           <tr>
-            <td class="px-40" style="padding:48px 40px 12px 40px;background-color:#ffffff;" bgcolor="#ffffff">
-              <p style="margin:0;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;line-height:1.4;letter-spacing:0.12em;color:#e85102;text-transform:uppercase;font-weight:500;">${label}</p>
-            </td>
-          </tr>
-          <tr>
-            <td class="px-40" style="padding:0 40px 20px 40px;background-color:#ffffff;" bgcolor="#ffffff">
+            <td class="px-40" style="padding:48px 40px 20px 40px;background-color:#ffffff;" bgcolor="#ffffff">
               <h1 class="h1" style="margin:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:32px;line-height:1.15;font-weight:500;letter-spacing:-0.02em;color:#0a0a0a;">${subject}</h1>
             </td>
           </tr>
