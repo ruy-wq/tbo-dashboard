@@ -188,6 +188,7 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
               <DraftCard
                 key={draft.id}
                 draft={draft}
+                deal={deal}
                 onUpdate={(updates) =>
                   updateMutation.mutate({ id: draft.id, updates })
                 }
@@ -242,6 +243,7 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
 
 interface DraftCardProps {
   draft: AiEmailDraft;
+  deal: DealRow;
   onUpdate: (
     updates: Partial<
       Pick<
@@ -254,7 +256,7 @@ interface DraftCardProps {
   isSaving: boolean;
 }
 
-function DraftCard({ draft, onUpdate, onDiscard, isSaving }: DraftCardProps) {
+function DraftCard({ draft, deal, onUpdate, onDiscard, isSaving }: DraftCardProps) {
   const [activeVariant, setActiveVariant] = useState<number>(
     draft.selected_variant_index ?? 0,
   );
@@ -353,6 +355,7 @@ function DraftCard({ draft, onUpdate, onDiscard, isSaving }: DraftCardProps) {
           <TabsContent key={idx} value={String(idx)} className="mt-0 p-3 space-y-3">
             <VariantEditor
               variant={variant}
+              deal={deal}
               editing={editing}
               subject={subject}
               body={body}
@@ -419,6 +422,7 @@ function DraftCard({ draft, onUpdate, onDiscard, isSaving }: DraftCardProps) {
 
 interface VariantEditorProps {
   variant: AiEmailDraftVariant;
+  deal: DealRow;
   editing: boolean;
   subject: string;
   body: string;
@@ -428,6 +432,7 @@ interface VariantEditorProps {
 
 function VariantEditor({
   variant,
+  deal,
   editing,
   subject,
   body,
@@ -445,20 +450,24 @@ function VariantEditor({
   const currentSubject = subject || variant.subject;
   const currentBody = body || variant.body;
 
-  // Preview renderizado com o template TBO (merge tags substituídas por valores de exemplo)
+  // Primeiro nome do contato real do deal (fallback pro token literal se vazio)
+  const firstName = (deal.contact ?? "").trim().split(/\s+/)[0] || "{{primeiro_nome}}";
+  const companyName = (deal.company ?? "").trim() || "{{empresa}}";
+
+  // Preview renderizado com o template TBO (merge tags substituídas pelos dados reais do deal)
   const html = useMemo(() => {
     const rendered = buildTboEmailHtml({
       subject: currentSubject
-        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
-        .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
+        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, firstName)
+        .replace(/\{\{\s*empresa\s*\}\}/g, companyName),
       body: currentBody
-        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
-        .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
+        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, firstName)
+        .replace(/\{\{\s*empresa\s*\}\}/g, companyName),
       preheader: currentSubject,
       eyebrow: getGreetingEyebrow(),
     });
     return rendered;
-  }, [currentSubject, currentBody]);
+  }, [currentSubject, currentBody, firstName, companyName]);
 
   function insertAtCursor(text: string) {
     const ta = bodyRef.current;

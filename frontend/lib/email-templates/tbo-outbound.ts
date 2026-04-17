@@ -449,8 +449,8 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" class="email-container" style="width:600px;max-width:600px;background-color:#ffffff;" bgcolor="#ffffff">
           <tr>
             <td class="px-40" style="padding:32px 40px 24px 40px;background-color:#ffffff;" bgcolor="#ffffff">
-              <a href="https://wearetbo.com.br/pt" target="_blank" style="text-decoration:none;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-                <span style="display:inline-block;width:10px;height:10px;background-color:#e85102;vertical-align:middle;margin-right:8px;margin-bottom:2px;"></span><span style="font-weight:700;font-size:18px;color:#0a0a0a;letter-spacing:-0.02em;vertical-align:middle;">tbo</span>
+              <a href="https://wearetbo.com.br/pt" target="_blank" style="text-decoration:none;">
+                <img src="https://os.wearetbo.com.br/logo-tbo.png" alt="TBO" width="72" height="28" style="display:block;width:72px;height:28px;border:0;outline:none;text-decoration:none;" />
               </a>
             </td>
           </tr>
@@ -482,8 +482,8 @@ export function buildTboEmailHtml(opts: TboEmailOptions): string {
 function buildFooter(unsubUrl: string, prefsUrl: string): string {
   return `<tr>
     <td class="px-40" style="padding:48px 40px 40px 40px;background-color:#fafafa;border-top:1px solid #eaeaea;" bgcolor="#fafafa">
-      <div style="margin-bottom:32px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-        <span style="display:inline-block;width:10px;height:10px;background-color:#e85102;vertical-align:middle;margin-right:8px;margin-bottom:2px;"></span><span style="font-weight:700;font-size:18px;color:#0a0a0a;letter-spacing:-0.02em;vertical-align:middle;">tbo</span>
+      <div style="margin-bottom:32px;">
+        <img src="https://os.wearetbo.com.br/logo-tbo.png" alt="TBO" width="72" height="28" style="display:block;width:72px;height:28px;border:0;outline:none;text-decoration:none;" />
       </div>
       <p style="margin:0 0 32px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#525252;">
         Ecossistema de soluções para lançamentos imobiliários.<br />
