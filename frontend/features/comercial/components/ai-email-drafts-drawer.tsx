@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -21,7 +21,14 @@ import {
   IconCheck,
   IconTrash,
   IconClock,
+  IconPhoto,
+  IconGif,
+  IconVideo,
+  IconLink,
+  IconEye,
+  IconCode,
 } from "@tabler/icons-react";
+import { buildTboEmailHtml } from "@/lib/email-templates/tbo-outbound";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -378,13 +385,80 @@ function VariantEditor({
   onSubjectChange,
   onBodyChange,
 }: VariantEditorProps) {
+  const [viewMode, setViewMode] = useState<"preview" | "source">("preview");
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const currentSubject = subject || variant.subject;
+  const currentBody = body || variant.body;
+
+  // Preview renderizado com o template TBO (merge tags substituídas por valores de exemplo)
+  const html = useMemo(() => {
+    const rendered = buildTboEmailHtml({
+      subject: currentSubject
+        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
+        .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
+      body: currentBody
+        .replace(/\{\{\s*primeiro_nome\s*\}\}/g, "Marco")
+        .replace(/\{\{\s*empresa\s*\}\}/g, "Construtora Horizonte"),
+      label: variant.label,
+      preheader: currentSubject,
+    });
+    return rendered;
+  }, [currentSubject, currentBody, variant.label]);
+
+  function insertAtCursor(text: string) {
+    const ta = bodyRef.current;
+    if (!ta) {
+      onBodyChange(body + "\n\n" + text);
+      return;
+    }
+    const start = ta.selectionStart ?? body.length;
+    const end = ta.selectionEnd ?? body.length;
+    const before = body.slice(0, start);
+    const after = body.slice(end);
+    const needsLeadingBreak = before && !before.endsWith("\n\n");
+    const prefix = needsLeadingBreak ? "\n\n" : "";
+    const next = before + prefix + text + "\n\n" + after;
+    onBodyChange(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = start + prefix.length + text.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  }
+
+  function insertImage() {
+    const url = window.prompt("URL da imagem (jpg, png, gif):");
+    if (!url) return;
+    const alt = window.prompt("Descrição curta (alt):") ?? "";
+    insertAtCursor(`![${alt}](${url.trim()})`);
+  }
+
+  function insertGif() {
+    const url = window.prompt("URL do GIF:");
+    if (!url) return;
+    insertAtCursor(`![GIF](${url.trim()})`);
+  }
+
+  function insertVideo() {
+    const url = window.prompt("URL do vídeo (YouTube, Vimeo ou .mp4):");
+    if (!url) return;
+    const alt = window.prompt("Chamada curta do vídeo:") ?? "";
+    insertAtCursor(`![${alt}](${url.trim()})`);
+  }
+
+  function insertLink() {
+    const url = window.prompt("URL:");
+    if (!url) return;
+    const text = window.prompt("Texto do link:") ?? url;
+    insertAtCursor(`[${text}](${url.trim()})`);
+  }
+
   if (editing) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            Assunto
-          </label>
+          <label className="text-[11px] font-medium text-muted-foreground">Assunto</label>
           <Input
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
@@ -392,10 +466,59 @@ function VariantEditor({
           />
         </div>
         <div>
-          <label className="text-[11px] font-medium text-muted-foreground">
-            Corpo
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-medium text-muted-foreground">
+              Corpo (markdown simples: ![alt](url) p/ imagens, [texto](url) p/ links)
+            </label>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 text-[11px] gap-1"
+                onClick={insertImage}
+                title="Inserir imagem"
+              >
+                <IconPhoto className="h-3 w-3" />
+                Imagem
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 text-[11px] gap-1"
+                onClick={insertGif}
+                title="Inserir GIF"
+              >
+                <IconGif className="h-3 w-3" />
+                GIF
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 text-[11px] gap-1"
+                onClick={insertVideo}
+                title="Inserir vídeo (thumbnail clicável)"
+              >
+                <IconVideo className="h-3 w-3" />
+                Vídeo
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 text-[11px] gap-1"
+                onClick={insertLink}
+                title="Inserir link"
+              >
+                <IconLink className="h-3 w-3" />
+                Link
+              </Button>
+            </div>
+          </div>
           <Textarea
+            ref={bodyRef}
             value={body}
             onChange={(e) => onBodyChange(e.target.value)}
             className="mt-0.5 text-xs min-h-[220px] font-mono resize-y"
@@ -407,18 +530,52 @@ function VariantEditor({
 
   return (
     <div className="space-y-2">
-      <div>
-        <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-          Assunto · tom: {variant.tone}
-        </p>
-        <p className="text-sm font-medium">{subject || variant.subject}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
+            Assunto · tom: {variant.tone}
+          </p>
+          <p className="text-sm font-medium">{currentSubject}</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant={viewMode === "preview" ? "secondary" : "ghost"}
+            className="h-6 px-2 text-[11px] gap-1"
+            onClick={() => setViewMode("preview")}
+          >
+            <IconEye className="h-3 w-3" />
+            Preview
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={viewMode === "source" ? "secondary" : "ghost"}
+            className="h-6 px-2 text-[11px] gap-1"
+            onClick={() => setViewMode("source")}
+          >
+            <IconCode className="h-3 w-3" />
+            Texto
+          </Button>
+        </div>
       </div>
-      <div>
-        <p className="text-[11px] font-medium text-muted-foreground mb-0.5">Corpo</p>
-        <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed text-foreground bg-muted/30 p-3 rounded-md max-h-[300px] overflow-auto">
-          {body || variant.body}
+
+      {viewMode === "preview" ? (
+        <div className="rounded-md border border-border overflow-hidden bg-zinc-100 dark:bg-zinc-950 p-2">
+          <iframe
+            srcDoc={html}
+            sandbox=""
+            title={`Preview: ${currentSubject}`}
+            className="w-full border-0 bg-white rounded"
+            style={{ minHeight: "420px", maxHeight: "620px" }}
+          />
+        </div>
+      ) : (
+        <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed text-foreground bg-muted/30 p-3 rounded-md max-h-[420px] overflow-auto">
+          {currentBody}
         </pre>
-      </div>
+      )}
     </div>
   );
 }
