@@ -23,21 +23,12 @@ import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { IconPlus, IconGitBranch, IconCheckbox, IconSparkles, IconInfoCircle } from "@tabler/icons-react";
+import { IconPlus, IconGitBranch, IconCheckbox, IconSparkles } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { DEAL_STAGES, type DealStageKey, type LossReasonValue } from "@/lib/constants";
 import { LossReasonDialog } from "@/features/comercial/components/loss-reason-dialog";
 import { ProposalConfirmDialog } from "@/features/comercial/components/proposal-confirm-dialog";
 import { StageBatchEmailsDialog } from "@/features/comercial/components/stage-batch-emails-dialog";
-import { WinCelebrationDialog } from "@/features/comercial/components/win-celebration-dialog";
-import { ForecastChart } from "@/features/comercial/components/forecast-chart";
-import { computeForecast } from "@/features/comercial/lib/forecast";
-import { useCreateProject } from "@/features/projects/hooks/use-projects";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { IconChevronDown, IconTrendingUp } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
 import {
   CommercialPeriodFilter,
   filterByPeriod,
@@ -66,12 +57,7 @@ export default function PipelinePage() {
   const [lossDialogOpen, setLossDialogOpen] = useState(false);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
   const [batchEmailsOpen, setBatchEmailsOpen] = useState(false);
-  const [winDialogOpen, setWinDialogOpen] = useState(false);
-  const [forecastOpen, setForecastOpen] = useState(false);
   const [pendingStageDeal, setPendingStageDeal] = useState<{ id: string; name: string; newStage: string } | null>(null);
-
-  const router = useRouter();
-  const createProject = useCreateProject();
 
   const handleBulkToggle = useCallback((dealId: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -132,11 +118,6 @@ export default function PipelinePage() {
   const selectedPipeline = useMemo(() => pipelines.find((p) => p.rd_pipeline_id === selectedPipelineId) ?? null, [pipelines, selectedPipelineId]);
   const pipelineStages = useMemo(() => selectedPipeline?.stages ?? [], [selectedPipeline]);
   const kpis = useMemo(() => computeDealKPIs(deals), [deals]);
-  const forecast = useMemo(() => computeForecast(deals), [deals]);
-  const pendingDealFull = useMemo(
-    () => (pendingStageDeal ? deals.find((d) => d.id === pendingStageDeal.id) ?? null : null),
-    [pendingStageDeal, deals],
-  );
 
   const stageDistribution = useMemo(() => {
     const stages = Object.keys(DEAL_STAGES) as DealStageKey[];
@@ -178,54 +159,8 @@ export default function PipelinePage() {
       return;
     }
 
-    // Celebration: won!
-    if (newStage === "fechado_ganho" && deal?.stage !== "fechado_ganho") {
-      updateStage.mutate({ id: dealId, stage: newStage });
-      setPendingStageDeal({ id: dealId, name: dealName, newStage });
-      setWinDialogOpen(true);
-      return;
-    }
-
     updateStage.mutate({ id: dealId, stage: newStage });
     toast("Deal movido", { description: "Ctrl+Z para desfazer", duration: 3000 });
-  }
-
-  function handleWinCreateProject() {
-    if (!pendingDealFull) return;
-    createProject.mutate(
-      {
-        name: pendingDealFull.name,
-        client: pendingDealFull.contact ?? undefined,
-        client_company: pendingDealFull.company ?? undefined,
-        construtora: pendingDealFull.company ?? undefined,
-        value: pendingDealFull.value ?? undefined,
-        services: pendingDealFull.services ?? undefined,
-        owner_name: pendingDealFull.owner_name ?? undefined,
-        source: "comercial",
-        status: "backlog",
-        notes: `Gerado a partir do deal "${pendingDealFull.name}"${pendingDealFull.notes ? `\n\n${pendingDealFull.notes}` : ""}`,
-      } as never,
-      {
-        onSuccess: (project) => {
-          setWinDialogOpen(false);
-          setPendingStageDeal(null);
-          toast.success("Projeto criado", {
-            description: `${(project as { code?: string })?.code ?? "Sem código"} · redirecionando...`,
-          });
-          const projectId = (project as { id?: string })?.id;
-          if (projectId) router.push(`/projetos/${projectId}`);
-        },
-        onError: (err) => {
-          toast.error("Erro ao criar projeto", { description: err.message });
-        },
-      },
-    );
-  }
-
-  function handleWinSkip() {
-    setWinDialogOpen(false);
-    setPendingStageDeal(null);
-    toast("Deal marcado como ganho", { description: "Ctrl+Z para desfazer", duration: 3000 });
   }
 
   function handleLossConfirm(reason: LossReasonValue, details: string) {
@@ -265,14 +200,7 @@ export default function PipelinePage() {
 
   function handlePipelineStageDrop(dealId: string, newStageId: string, newStageName: string) {
     const mappedStage = mapStageToInternal(newStageName);
-    const deal = deals.find((d) => d.id === dealId);
     updateDeal.mutate({ id: dealId, updates: { rd_stage_id: newStageId, rd_stage_name: newStageName, stage: mappedStage } as never });
-
-    if (mappedStage === "fechado_ganho" && deal?.stage !== "fechado_ganho") {
-      setPendingStageDeal({ id: dealId, name: deal?.name ?? "Deal", newStage: mappedStage });
-      setWinDialogOpen(true);
-      return;
-    }
     toast("Deal movido", { description: "Ctrl+Z para desfazer", duration: 3000 });
   }
 
@@ -320,51 +248,6 @@ export default function PipelinePage() {
 
         <DealKPICards kpis={kpis} distribution={stageDistribution} />
 
-        <TooltipProvider delayDuration={200}>
-          <Collapsible open={forecastOpen} onOpenChange={setForecastOpen}>
-            <Card>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer select-none pb-3 hover:bg-muted/40 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <IconTrendingUp className="h-4 w-4 text-blue-500" />
-                      Forecast ponderado
-                      {forecast.currentMonth && (
-                        <Badge variant="secondary" className="ml-1 font-normal">
-                          Mês: R$ {Math.round(forecast.currentMonth.realista).toLocaleString("pt-BR")}
-                        </Badge>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-gray-300 hover:text-gray-500 transition-colors shrink-0"
-                            aria-label="O que é forecast ponderado?"
-                          >
-                            <IconInfoCircle className="h-3.5 w-3.5" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" align="start" className="max-w-xs text-xs leading-relaxed">
-                          Projeção de receita nos próximos meses. Cada deal em aberto é distribuído pela data prevista de fechamento e multiplicado pela probabilidade da sua etapa. Gráfico mostra 3 cenários (pessimista, realista, otimista) pra ancorar planejamento de caixa.
-                        </TooltipContent>
-                      </Tooltip>
-                    </CardTitle>
-                    <IconChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${forecastOpen ? "rotate-180" : ""}`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <ForecastChart data={forecast} />
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-        </TooltipProvider>
-
         {pipelines.length > 0 && (
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1"><IconGitBranch className="h-3.5 w-3.5" /><span>Funis</span></div>
@@ -409,18 +292,6 @@ export default function PipelinePage() {
           open={batchEmailsOpen}
           onClose={() => setBatchEmailsOpen(false)}
           allDeals={allDeals}
-          groupBy={showPipelineView ? "rd" : "internal"}
-          pipelineStages={pipelineStages}
-        />
-        <WinCelebrationDialog
-          open={winDialogOpen}
-          onOpenChange={(open) => { setWinDialogOpen(open); if (!open) setPendingStageDeal(null); }}
-          dealName={pendingDealFull?.name ?? pendingStageDeal?.name ?? ""}
-          dealValue={pendingDealFull?.value ?? null}
-          dealCompany={pendingDealFull?.company ?? null}
-          onCreateProject={handleWinCreateProject}
-          onSkip={handleWinSkip}
-          isCreatingProject={createProject.isPending}
         />
       </div>
     </RequireRole>
