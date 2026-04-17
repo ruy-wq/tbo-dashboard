@@ -32,12 +32,13 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
-const MODEL = "claude-sonnet-4-6";
-const PROMPT_VERSION = "v8";
+const MODEL = "claude-opus-4-7";
+const PROMPT_VERSION = "v9-opus-guided";
 const BLOG_BASE_URL = "https://wearetbo.com.br/pt/blog/";
 
 interface GenerateRequest {
   deal_id: string;
+  user_guidance?: string;
 }
 
 interface Variant {
@@ -220,8 +221,25 @@ function buildUserMessage(
   links: LinkRef[],
   blogPosts: BlogPostRef[],
   portfolioItems: PortfolioRef[],
+  userGuidance: string | null,
 ): string {
   const parts: string[] = [];
+
+  // Briefing do próprio usuário — tem PRIORIDADE MÁXIMA sobre temas/playbook.
+  // Se o Marco descreveu o que quer comunicar, essa mensagem dita o ângulo.
+  if (userGuidance) {
+    parts.push(`# BRIEFING DO USUÁRIO (PRIORIDADE MÁXIMA)`);
+    parts.push(
+      `O usuário descreveu explicitamente o que quer comunicar neste e-mail. Esta instrução tem PRIORIDADE sobre os temas editoriais, playbook da etapa e ângulos sugeridos. Use-a como o NORTE EDITORIAL das 3 variações — cada uma explora um recorte diferente deste briefing, mas todas respeitam a intenção central abaixo:`,
+    );
+    parts.push(``);
+    parts.push(`> ${userGuidance.replace(/\n+/g, " ").trim()}`);
+    parts.push(``);
+    parts.push(
+      `Os temas editoriais, blog posts e links listados depois são MATERIAL DE APOIO — use quando servirem ao briefing, ignore quando não servirem.`,
+    );
+    parts.push(``);
+  }
 
   // Playbook da etapa — vem ANTES do contexto do lead pra estabelecer a
   // estrutura das 3 variações que o modelo deve produzir.
@@ -400,10 +418,9 @@ async function callClaude(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4000,
-      // Temperature levemente alta pra garantir variação entre gerações.
-      // Com o prompt rígido de regras proibidas, baixa temperatura tende a
-      // convergir pros mesmos ângulos a cada rodada.
-      temperature: 0.95,
+      // Opus 4.7 não aceita temperature (deprecated pro modelo). A variação
+      // entre gerações vem do histórico de ângulos usados + instrução explícita
+      // no user message.
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -455,9 +472,13 @@ serve(async (req: Request) => {
   const startedAt = Date.now();
 
   try {
-    const { deal_id } = (await req.json()) as GenerateRequest;
+    const { deal_id, user_guidance } = (await req.json()) as GenerateRequest;
     if (!deal_id) return jsonResponse({ error: "deal_id obrigatório" }, 400);
     if (!ANTHROPIC_API_KEY) return jsonResponse({ error: "ANTHROPIC_API_KEY não configurada" }, 500);
+    const trimmedGuidance =
+      typeof user_guidance === "string" && user_guidance.trim()
+        ? user_guidance.trim().slice(0, 2000)
+        : null;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
@@ -558,6 +579,7 @@ serve(async (req: Request) => {
       links,
       blogPosts,
       portfolioItems,
+      trimmedGuidance,
     );
 
     const { variants: rawVariants, inputTokens, outputTokens } = await callClaude(SYSTEM_PROMPT, userMessage);

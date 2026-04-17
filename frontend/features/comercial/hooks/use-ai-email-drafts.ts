@@ -25,8 +25,18 @@ export function useAiEmailDrafts(dealId: string | null) {
 export function useGenerateAiEmailDrafts() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (dealId: string) =>
-      generateAiEmailDrafts(createClient() as unknown as SupabaseClient, dealId),
+    mutationFn: ({
+      dealId,
+      userGuidance,
+    }: {
+      dealId: string;
+      userGuidance?: string;
+    }) =>
+      generateAiEmailDrafts(
+        createClient() as unknown as SupabaseClient,
+        dealId,
+        userGuidance,
+      ),
     onSuccess: (draft) => {
       qc.invalidateQueries({ queryKey: ["ai-email-drafts", draft.deal_id] });
       toast.success("3 rascunhos gerados", {

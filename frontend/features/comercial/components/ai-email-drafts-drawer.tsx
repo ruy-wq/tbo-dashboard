@@ -79,12 +79,24 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
   const updateMutation = useUpdateAiEmailDraft();
   const discardMutation = useDiscardAiEmailDraft();
 
+  const [userGuidance, setUserGuidance] = useState("");
+
   // Rascunhos ativos (não descartados/enviados)
   const activeDrafts = useMemo(
     () => drafts.filter((d) => d.status !== "discarded" && d.status !== "sent"),
     [drafts],
   );
   const lastDraft = activeDrafts[0] ?? null;
+
+  function handleGenerate() {
+    if (!deal) return;
+    generateMutation.mutate(
+      { dealId: deal.id, userGuidance: userGuidance.trim() || undefined },
+      {
+        onSuccess: () => setUserGuidance(""),
+      },
+    );
+  }
 
   if (!deal) return null;
 
@@ -103,30 +115,46 @@ export function AiEmailDraftsDrawer({ deal, open, onOpenChange }: Props) {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-4 flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => generateMutation.mutate(deal.id)}
-              disabled={generateMutation.isPending}
-              className="gap-1.5"
+          <div className="mt-4 space-y-2">
+            <label
+              htmlFor="ai-drafts-guidance"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
-              {generateMutation.isPending ? (
-                <>
-                  <IconRefresh className="h-3.5 w-3.5 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <IconSparkles className="h-3.5 w-3.5" />
-                  {lastDraft ? "Gerar novos" : "Gerar rascunhos"}
-                </>
+              Briefing pra IA
+            </label>
+            <Textarea
+              id="ai-drafts-guidance"
+              value={userGuidance}
+              onChange={(e) => setUserGuidance(e.target.value)}
+              placeholder="O que você quer comunicar com a pessoa/incorporadora neste e-mail marketing? (opcional — deixe em branco pra usar só o contexto do deal)"
+              className="min-h-[72px] text-sm resize-none"
+              disabled={generateMutation.isPending}
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleGenerate}
+                disabled={generateMutation.isPending}
+                className="gap-1.5"
+              >
+                {generateMutation.isPending ? (
+                  <>
+                    <IconRefresh className="h-3.5 w-3.5 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <IconSparkles className="h-3.5 w-3.5" />
+                    {lastDraft ? "Gerar novos" : "Gerar rascunhos"}
+                  </>
+                )}
+              </Button>
+              {drafts.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {activeDrafts.length} ativo{activeDrafts.length === 1 ? "" : "s"} · {drafts.length} total
+                </span>
               )}
-            </Button>
-            {drafts.length > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {activeDrafts.length} ativo{activeDrafts.length === 1 ? "" : "s"} · {drafts.length} total
-              </span>
-            )}
+            </div>
           </div>
         </div>
 

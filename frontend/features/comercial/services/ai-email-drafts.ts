@@ -47,9 +47,10 @@ export async function getAiEmailDraftsByDeal(
 export async function generateAiEmailDrafts(
   supabase: SupabaseClient,
   dealId: string,
+  userGuidance?: string,
 ): Promise<AiEmailDraft> {
   const { data, error } = await supabase.functions.invoke("generate-ai-email-drafts", {
-    body: { deal_id: dealId },
+    body: { deal_id: dealId, user_guidance: userGuidance?.trim() || undefined },
   });
   if (error) throw error;
   if (!data?.success || !data.draft) {
