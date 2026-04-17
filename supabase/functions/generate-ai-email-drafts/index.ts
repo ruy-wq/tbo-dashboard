@@ -407,9 +407,13 @@ serve(async (req: Request) => {
     const generationMs = Date.now() - startedAt;
 
     // 5. Persistir draft
+    // IMPORTANTE: passar tenant_id explicitamente — a Edge Function roda
+    // com SERVICE_ROLE_KEY, então auth.uid() é null dentro do trigger e
+    // a RLS filtra o registro fora do SELECT do frontend.
     const { data: draft, error: insertErr } = await supabase
       .from("ai_email_drafts")
       .insert({
+        tenant_id: deal.tenant_id,
         deal_id,
         stage_at_generation: deal.stage,
         variants,
