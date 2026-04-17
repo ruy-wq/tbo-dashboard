@@ -31,6 +31,7 @@ import {
 import { DealDetailBody } from "./deal-detail-sections";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { AiEmailDraftsDrawer } from "./ai-email-drafts-drawer";
+import { CadenceSection } from "./cadence-section";
 
 type DealRow = Database["public"]["Tables"]["crm_deals"]["Row"];
 
@@ -168,6 +169,9 @@ export function DealDetailDialog({
         {/* ── Scrollable body ─────────────────────────── */}
         <ScrollArea className="flex-1 min-h-0">
           <DealDetailBody deal={deal} />
+          <div className="px-6 pb-6">
+            <CadenceSection deal={deal} />
+          </div>
         </ScrollArea>
 
         {/* ── Footer ──────────────────────────────────── */}
