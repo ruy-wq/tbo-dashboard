@@ -25,7 +25,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const MODEL = "claude-sonnet-4-6";
-const PROMPT_VERSION = "v4";
+const PROMPT_VERSION = "v5";
 
 interface GenerateRequest {
   deal_id: string;
@@ -278,16 +278,54 @@ Só entregue o JSON quando tiver passado nos 5 checks.
 
 # VARIAÇÕES OBRIGATÓRIAS
 
-Você deve gerar EXATAMENTE 3 variações com tons distintos, TODAS personalizadas pro escopo específico do projeto/deal:
+Você deve gerar EXATAMENTE 3 variações com tons distintos, TODAS personalizadas pro escopo específico do projeto/deal.
 
-**Variação 1 — CONSULTIVO (abertura de visão)**
-Tom reflexivo. Parte de uma observação sobre o mercado / padrão que o autor viu, conectada ao escopo específico do deal. Abre percepção. Referência de estrutura: "tem um ponto que observo com frequência em [contexto específico ao escopo do deal]" → observação → consequência → pergunta.
+Cada tipo (Consultivo, Case/Prova, Diagnóstico) tem um POOL DE ÂNGULOS. Escolha 1 ângulo de cada pool, priorizando ângulos NOVOS (que não foram usados em gerações anteriores desse mesmo lead). Se o usuário clicou "Gerar novos" várias vezes, use ângulos diferentes a cada rodada. A monotonia entre gerações é o maior defeito possível.
 
-**Variação 2 — CASE/PROVA (tangibilização)**
-Tom de quem já passou por isso. Parte de um caso/projeto recente (pode ser hipotético mas concreto) onde o ponto era RELEVANTE PARA O MESMO TIPO DE ESCOPO do deal atual. Descreve problema, intervenção, resultado — sem nome de cliente real. Termina com pergunta.
+## Variação 1 — CONSULTIVO (tom reflexivo, abertura de visão)
 
-**Variação 3 — DIAGNÓSTICO (autoavaliação)**
-Tom analítico. Enumera 3-5 sinais/pontos específicos que costumam aparecer no tipo de projeto do deal quando algo está abaixo do potencial. Convida o lead a se auto-observar. Termina com pergunta.
+Escolha UM dos ângulos abaixo (ou crie um novo na mesma família):
+
+- **Padrão de mercado** — "tem um ponto que observo com frequência em [contexto]"
+- **Comportamento do comprador** — como o decisor final percebe/compara/decide
+- **Evolução do setor** — o que mudou recentemente em lançamentos desse perfil
+- **Momento do projeto** — o que fica em jogo na fase específica em que o deal está
+- **Fricção invisível** — a parte do processo que ninguém mede mas impacta venda
+- **Decisão sob pressão** — como incorporadoras tomam decisão rápida quando o timing aperta
+- **Percepção vs. realidade** — o gap entre o que o produto é e como ele chega no comprador
+
+## Variação 2 — CASE/PROVA (tangibilização)
+
+Escolha UM dos ângulos abaixo:
+
+- **Projeto em cidade do sul** (Joinville, Curitiba, Porto Alegre, Blumenau, Florianópolis)
+- **Projeto em cidade do sudeste** (São Paulo interior, Campinas, Ribeirão, Belo Horizonte)
+- **Lançamento com revisão de material no meio** — reestruturaram apresentação antes de abrir VSO
+- **Projeto que ajustou só um dos pilares** (só 3D, ou só narrativa audiovisual) e mudou leitura
+- **Incorporadora que centralizou fornecedores** após ter fragmentação
+- **Projeto premium com percepção mediana** — como a intervenção elevou percepção
+- **Lançamento que começou forte no digital** (antes do estande físico)
+- **Caso em que o corretor precisava explicar demais** — como material passou a "vender sozinho"
+
+Descreva PROBLEMA → INTERVENÇÃO → RESULTADO sem citar nome real.
+
+## Variação 3 — DIAGNÓSTICO (autoavaliação)
+
+Escolha UM dos ângulos abaixo:
+
+- **Sinais de fragmentação entre peças** (5 pontos)
+- **Sinais de percepção aquém do produto** (4 pontos)
+- **Sinais de que o comercial compensa por falta de apresentação** (5 pontos)
+- **Sinais de que o conceito se dilui ao longo do funil** (4 pontos)
+- **Sinais de que o comprador compara demais** (5 pontos)
+- **Sinais de que o timing tá apertado pro material atual** (4 pontos)
+- **Sinais específicos pro tipo de projeto do deal** (criar a partir do escopo)
+
+Formato: 3-5 bullets curtos e concretos, SEM a fórmula X-não-é-Y. Termina com pergunta sobre quais sinais ressoam.
+
+## REGRA ANTI-REPETIÇÃO
+
+Se o user message incluir uma seção "# ÂNGULOS JÁ USADOS EM GERAÇÕES ANTERIORES", você DEVE escolher ângulos diferentes dos listados. Essa é a diferença entre parecer um assistente automatizado e parecer um executivo que pensa em cada abordagem individualmente.
 
 # FORMATO DE SAÍDA
 
@@ -326,10 +364,16 @@ No body:
 // ──────────────────────────────────────────────────────────────────────
 // Monta o USER MESSAGE com contexto do deal
 // ──────────────────────────────────────────────────────────────────────
+interface PriorDraftSummary {
+  created_at: string;
+  variants: Array<{ label: string; subject: string; body: string }>;
+}
+
 function buildUserMessage(
   deal: Record<string, unknown>,
   activities: Array<Record<string, unknown>>,
   stageLabel: string,
+  priorDrafts: PriorDraftSummary[],
 ): string {
   const parts: string[] = [];
   parts.push(`# Contexto do Lead`);
@@ -352,11 +396,38 @@ function buildUserMessage(
     }
   }
 
+  // Passa ângulos já usados em gerações anteriores pra forçar variação
+  if (priorDrafts.length > 0) {
+    parts.push(``);
+    parts.push(`# ÂNGULOS JÁ USADOS EM GERAÇÕES ANTERIORES`);
+    parts.push(
+      `Este lead já teve ${priorDrafts.length} geração(ões) anterior(es). NÃO repita os mesmos ângulos. Escolha abordagens DIFERENTES dentro de cada tipo.`,
+    );
+    parts.push(``);
+    priorDrafts.forEach((draft, i) => {
+      const dateStr = new Date(draft.created_at).toLocaleDateString("pt-BR");
+      parts.push(`## Geração ${i + 1} (${dateStr})`);
+      draft.variants.forEach((v) => {
+        const firstLine = (v.body || "").split("\n").find((l) => l.trim().length > 20) || "";
+        parts.push(
+          `- **${v.label}**: subject "${v.subject}" · abertura: "${firstLine.slice(0, 140)}${firstLine.length > 140 ? "..." : ""}"`,
+        );
+      });
+    });
+    parts.push(``);
+  }
+
   parts.push(``);
   parts.push(`# Tarefa`);
-  parts.push(
-    `Gere 3 variações de e-mail contextualizadas pra este lead específico na etapa "${stageLabel}" do funil. Use o nome da empresa e o contexto do deal pra personalizar. As 3 variações devem ter tons distintos conforme as instruções do system prompt.`,
-  );
+  if (priorDrafts.length > 0) {
+    parts.push(
+      `Gere 3 variações NOVAS de e-mail pra este lead. As variações anteriores estão listadas acima — é ESSENCIAL que esta geração use ângulos distintos dos já tentados. Varie cidade do case, tipo de sinais do diagnóstico, ângulo do consultivo. Mesmo lead, abordagem diferente.`,
+    );
+  } else {
+    parts.push(
+      `Gere 3 variações de e-mail contextualizadas pra este lead específico na etapa "${stageLabel}" do funil. Use o nome da empresa e o contexto do deal pra personalizar.`,
+    );
+  }
 
   return parts.join("\n");
 }
@@ -409,6 +480,10 @@ async function callClaude(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 4000,
+      // Temperature levemente alta pra garantir variação entre gerações.
+      // Com o prompt rígido de regras proibidas, baixa temperatura tende a
+      // convergir pros mesmos ângulos a cada rodada.
+      temperature: 0.95,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
     }),
@@ -482,6 +557,24 @@ serve(async (req: Request) => {
       .order("created_at", { ascending: false })
       .limit(10);
 
+    // 2b. Buscar gerações anteriores pra forçar variação de ângulos
+    const { data: priorDraftsRaw } = await supabase
+      .from("ai_email_drafts")
+      .select("created_at, variants")
+      .eq("deal_id", deal_id)
+      .neq("status", "discarded")
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    const priorDrafts: PriorDraftSummary[] = (priorDraftsRaw ?? []).map(
+      (d: { created_at: string; variants: unknown }) => ({
+        created_at: d.created_at,
+        variants: Array.isArray(d.variants)
+          ? (d.variants as Array<{ label: string; subject: string; body: string }>)
+          : [],
+      }),
+    );
+
     // 3. Resolver stage label legível
     const stageLabel = await resolveStageLabel(supabase, deal.stage as string);
 
@@ -490,6 +583,7 @@ serve(async (req: Request) => {
       deal as Record<string, unknown>,
       (activities ?? []) as Array<Record<string, unknown>>,
       stageLabel,
+      priorDrafts,
     );
 
     const { variants: rawVariants, inputTokens, outputTokens } = await callClaude(SYSTEM_PROMPT, userMessage);
