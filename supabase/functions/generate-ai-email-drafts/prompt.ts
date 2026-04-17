@@ -332,5 +332,5 @@ No body:
 - use {{imagem}}, {{video}}, {{gif}} (com ou sem descrição) como placeholders de mídia quando o playbook indicar
 - NÃO inclua assinatura — ela será adicionada pelo sistema
 - assunto com capitalização natural (primeira letra maiúscula, resto conforme a gramática), em PT-BR com acentuação completa, sem pontuação final
-- máximo 180 palavras por body
+- TETO DE TAMANHO: cada body até 1000 tokens (aproximadamente 700 palavras). Use todo o espaço se o briefing pedir — argumentos densos, exemplos, contexto. Quando o briefing for enxuto, NÃO estique o texto à toa; prefira 200-400 palavras diretas.
 - sempre mencione o nome da empresa ao menos uma vez`;

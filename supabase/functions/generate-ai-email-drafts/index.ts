@@ -33,7 +33,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") || "";
 const MODEL = "claude-opus-4-7";
-const PROMPT_VERSION = "v9-opus-guided";
+const PROMPT_VERSION = "v10-opus-1000tk";
 const BLOG_BASE_URL = "https://wearetbo.com.br/pt/blog/";
 
 interface GenerateRequest {
@@ -417,7 +417,10 @@ async function callClaude(
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 4000,
+      // Teto do body = 1000 tokens por variação (regra no prompt). 3 variações
+      // × 1000 + subjects/labels/JSON overhead → ~3500-3800. Deixo 5000 de
+      // folga pra não cortar no meio quando o briefing pede texto mais denso.
+      max_tokens: 5000,
       // Opus 4.7 não aceita temperature (deprecated pro modelo). A variação
       // entre gerações vem do histórico de ângulos usados + instrução explícita
       // no user message.
