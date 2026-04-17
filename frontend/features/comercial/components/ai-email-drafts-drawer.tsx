@@ -27,8 +27,11 @@ import {
   IconLink,
   IconEye,
   IconCode,
+  IconLoader2,
 } from "@tabler/icons-react";
 import { buildTboEmailHtml } from "@/lib/email-templates/tbo-outbound";
+import { InsertMediaDialog } from "./insert-media-dialog";
+import { uploadEmailAsset } from "../hooks/use-upload-email-asset";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -386,6 +389,11 @@ function VariantEditor({
   onBodyChange,
 }: VariantEditorProps) {
   const [viewMode, setViewMode] = useState<"preview" | "source">("preview");
+  const [mediaDialog, setMediaDialog] = useState<
+    "image" | "gif" | "video" | null
+  >(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadingInline, setUploadingInline] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement | null>(null);
 
   const currentSubject = subject || variant.subject;
@@ -427,24 +435,36 @@ function VariantEditor({
     });
   }
 
-  function insertImage() {
-    const url = window.prompt("URL da imagem (jpg, png, gif):");
-    if (!url) return;
-    const alt = window.prompt("Descrição curta (alt):") ?? "";
-    insertAtCursor(`![${alt}](${url.trim()})`);
+  // Drag-and-drop direto no textarea: aceita arquivo de imagem/vídeo,
+  // faz upload pro Supabase Storage e insere o markdown no cursor.
+  async function handleDropFile(file: File) {
+    try {
+      setUploadingInline(true);
+      const uploaded = await uploadEmailAsset(file);
+      const alt =
+        uploaded.kind === "video"
+          ? "Assistir vídeo"
+          : uploaded.kind === "gif"
+            ? "GIF"
+            : file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+      insertAtCursor(`![${alt}](${uploaded.url})`);
+      toast.success("Mídia inserida no corpo do e-mail");
+    } catch (err) {
+      toast.error("Falha no upload", {
+        description: err instanceof Error ? err.message : "Tente novamente.",
+      });
+    } finally {
+      setUploadingInline(false);
+    }
   }
 
-  function insertGif() {
-    const url = window.prompt("URL do GIF:");
-    if (!url) return;
-    insertAtCursor(`![GIF](${url.trim()})`);
-  }
-
-  function insertVideo() {
-    const url = window.prompt("URL do vídeo (YouTube, Vimeo ou .mp4):");
-    if (!url) return;
-    const alt = window.prompt("Chamada curta do vídeo:") ?? "";
-    insertAtCursor(`![${alt}](${url.trim()})`);
+  function onTextareaDrop(e: React.DragEvent<HTMLTextAreaElement>) {
+    const file = e.dataTransfer.files?.[0];
+    if (file && (file.type.startsWith("image/") || file.type.startsWith("video/"))) {
+      e.preventDefault();
+      setDragOver(false);
+      void handleDropFile(file);
+    }
   }
 
   function insertLink() {
@@ -468,7 +488,7 @@ function VariantEditor({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-[11px] font-medium text-muted-foreground">
-              Corpo (markdown simples: ![alt](url) p/ imagens, [texto](url) p/ links)
+              Corpo · arraste imagens ou vídeos aqui, ou use os botões
             </label>
             <div className="flex items-center gap-1">
               <Button
@@ -476,7 +496,7 @@ function VariantEditor({
                 size="sm"
                 variant="ghost"
                 className="h-6 px-1.5 text-[11px] gap-1"
-                onClick={insertImage}
+                onClick={() => setMediaDialog("image")}
                 title="Inserir imagem"
               >
                 <IconPhoto className="h-3 w-3" />
@@ -487,7 +507,7 @@ function VariantEditor({
                 size="sm"
                 variant="ghost"
                 className="h-6 px-1.5 text-[11px] gap-1"
-                onClick={insertGif}
+                onClick={() => setMediaDialog("gif")}
                 title="Inserir GIF"
               >
                 <IconGif className="h-3 w-3" />
@@ -498,7 +518,7 @@ function VariantEditor({
                 size="sm"
                 variant="ghost"
                 className="h-6 px-1.5 text-[11px] gap-1"
-                onClick={insertVideo}
+                onClick={() => setMediaDialog("video")}
                 title="Inserir vídeo (thumbnail clicável)"
               >
                 <IconVideo className="h-3 w-3" />
@@ -517,13 +537,55 @@ function VariantEditor({
               </Button>
             </div>
           </div>
-          <Textarea
-            ref={bodyRef}
-            value={body}
-            onChange={(e) => onBodyChange(e.target.value)}
-            className="mt-0.5 text-xs min-h-[220px] font-mono resize-y"
-          />
+          <div
+            className={`relative rounded-md transition-all ${
+              dragOver
+                ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                : ""
+            }`}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("Files")) {
+                e.preventDefault();
+                setDragOver(true);
+              }
+            }}
+            onDragLeave={(e) => {
+              // Só sai se realmente deixou a zona (não se entrou em filho)
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setDragOver(false);
+            }}
+          >
+            <Textarea
+              ref={bodyRef}
+              value={body}
+              onChange={(e) => onBodyChange(e.target.value)}
+              onDrop={onTextareaDrop}
+              className="mt-0.5 text-xs min-h-[220px] font-mono resize-y"
+            />
+            {dragOver && (
+              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center pointer-events-none rounded-md border-2 border-dashed border-primary">
+                <div className="bg-background px-4 py-2 rounded-md shadow-sm text-xs font-medium">
+                  Solte aqui pra inserir no corpo do e-mail
+                </div>
+              </div>
+            )}
+            {uploadingInline && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center pointer-events-none rounded-md">
+                <div className="flex items-center gap-2 text-xs font-medium">
+                  <IconLoader2 className="h-4 w-4 animate-spin" />
+                  Enviando...
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        <InsertMediaDialog
+          open={mediaDialog !== null}
+          onClose={() => setMediaDialog(null)}
+          kind={mediaDialog ?? "image"}
+          onInsert={(markdown) => insertAtCursor(markdown)}
+        />
       </div>
     );
   }
@@ -533,7 +595,7 @@ function VariantEditor({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground mb-0.5">
-            Assunto · tom: {variant.tone}
+            Assunto
           </p>
           <p className="text-sm font-medium">{currentSubject}</p>
         </div>
