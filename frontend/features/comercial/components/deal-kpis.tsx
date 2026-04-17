@@ -15,8 +15,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { Variants } from "framer-motion";
 import { DEAL_STAGES, type DealStageKey } from "@/lib/constants";
-import { staggerContainer, fadeSlideUp } from "@/features/comercial/lib/motion";
+
+// Motion tokens inline — evita dependência de features/comercial/lib/motion
+// que é parte de refactor em andamento. Se motion.ts for mergeado oficialmente,
+// troque por: import { staggerContainer, fadeSlideUp } from "@/features/comercial/lib/motion";
+const staggerContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+};
+const fadeSlideUp: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+};
 
 interface DealKPIs {
   total: number;
