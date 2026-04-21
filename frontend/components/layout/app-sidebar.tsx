@@ -104,7 +104,6 @@ export function AppSidebar() {
     "/financeiro": ["Receita & Caixa"],
     "/comercial": ["Receita & Caixa"],
     "/contratos": ["Receita & Caixa"],
-    "/compras": ["Receita & Caixa"],
     "/clientes": ["Receita & Caixa"],
     "/rewards": ["TBO Rewards"],
     "/marketing": ["Estratégia"],

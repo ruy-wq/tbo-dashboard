@@ -395,7 +395,6 @@ export const NAV_ITEMS = [
   { href: "/portal-cliente", label: "Portal Cliente", icon: "globe", module: "portal-cliente" },
   { href: "/conteudo", label: "Conteúdo", icon: "pen-tool", module: "conteudo" },
   { href: "/revisoes", label: "Revisões", icon: "check-circle", module: "revisoes" },
-  { href: "/inteligencia", label: "Inteligência", icon: "lightbulb", module: "inteligencia" },
   { href: "/diretoria", label: "Diretoria", icon: "presentation", module: "diretoria" },
   { href: "/permissoes", label: "Permissões", icon: "lock", module: "permissoes" },
   { href: "/admin", label: "Admin", icon: "shield", module: "admin" },
@@ -637,7 +636,6 @@ export const FINANCEIRO_NAV_ITEMS: readonly SubNavItem[] = [
   { href: "/financeiro/fluxo-caixa", label: "Fluxo de Caixa", icon: "trending-up" },
   { href: "/financeiro/contas", label: "Contas", icon: "file-warning" },
   { href: "/financeiro/conciliacao", label: "Conciliação", icon: "git-compare" },
-  { href: "/financeiro/boletos", label: "Boletos", icon: "receipt" },
   { href: "/financeiro/fiscal", label: "Fiscal", icon: "file-check-2" },
   { href: "/financeiro/dre", label: "DRE", icon: "table-2" },
   { href: "/financeiro/transacoes", label: "Transações", icon: "list" },
@@ -732,14 +730,6 @@ export const CONTRATOS_NAV_ITEMS: readonly SubNavItem[] = [
   { href: "/contratos/renovacoes", label: "Renovações & Aditivos", icon: "refresh-cw" },
   { href: "/contratos/modelos", label: "Modelos", icon: "copy" },
   { href: "/contratos/alertas", label: "Alertas", icon: "bell" },
-] as const;
-
-// ─── Compras & Fornecedores ───────────────────────────────────────
-export const COMPRAS_NAV_ITEMS: readonly SubNavItem[] = [
-  { href: "/compras/fornecedores", label: "Fornecedores", icon: "truck" },
-  { href: "/compras/orcamentos", label: "Orçamentos", icon: "file-text" },
-  { href: "/compras/aprovacoes", label: "Aprovações", icon: "check-circle" },
-  { href: "/compras/historico", label: "Histórico", icon: "history" },
 ] as const;
 
 // ─── Ativos & Acervo ──────────────────────────────────────────────

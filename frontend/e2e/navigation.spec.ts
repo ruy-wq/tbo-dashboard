@@ -34,7 +34,6 @@ const protectedRoutes = [
   '/permissoes',
   '/conteudo',
   '/revisoes',
-  '/inteligencia',
   '/diretoria',
   '/system-health',
 ];

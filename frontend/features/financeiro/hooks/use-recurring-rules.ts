@@ -111,6 +111,20 @@ export function useUpdateRecurringRule() {
 
 // ── Delete ────────────────────────────────────────────────────────────────────
 
+function recomputeSummary(rules: RecurringRule[]): RecurringRuleSummary {
+  const active = rules.filter((r) => r.is_active);
+  return {
+    rules,
+    activeCount: active.length,
+    totalDespesaMensal: active
+      .filter((r) => r.type === "despesa")
+      .reduce((s, r) => s + Number(r.amount), 0),
+    totalReceitaMensal: active
+      .filter((r) => r.type === "receita")
+      .reduce((s, r) => s + Number(r.amount), 0),
+  };
+}
+
 export function useDeleteRecurringRule() {
   const tenantId = useAuthStore((s) => s.tenantId);
   const qc = useQueryClient();
@@ -127,13 +141,7 @@ export function useDeleteRecurringRule() {
       const prev = qc.getQueryData<RecurringRuleSummary>([QK, tenantId]);
       if (prev) {
         const rules = prev.rules.filter((r) => r.id !== id);
-        const active = rules.filter((r) => r.is_active);
-        qc.setQueryData([QK, tenantId], {
-          rules,
-          activeCount: active.length,
-          totalDespesaMensal: active.filter((r) => r.type === "despesa").reduce((s, r) => s + Number(r.amount), 0),
-          totalReceitaMensal: active.filter((r) => r.type === "receita").reduce((s, r) => s + Number(r.amount), 0),
-        });
+        qc.setQueryData([QK, tenantId], recomputeSummary(rules));
       }
       return { prev };
     },
@@ -153,13 +161,30 @@ export function useToggleRecurringRule() {
   const userId = useAuthStore((s) => s.user?.id);
   const qc = useQueryClient();
 
-  return useMutation<RecurringRule, Error, { id: string; isActive: boolean }>({
+  type ToggleVars = { id: string; isActive: boolean };
+  type ToggleCtx = { prev: RecurringRuleSummary | undefined };
+
+  return useMutation<RecurringRule, Error, ToggleVars, ToggleCtx>({
     mutationFn: async ({ id, isActive }) => {
       if (!userId) throw new Error("Auth não identificado.");
       const supabase = createClient();
       return toggleRecurringRule(supabase, id, userId, isActive);
     },
-    onSuccess: () => {
+    onMutate: async ({ id, isActive }) => {
+      await qc.cancelQueries({ queryKey: [QK, tenantId] });
+      const prev = qc.getQueryData<RecurringRuleSummary>([QK, tenantId]);
+      if (prev) {
+        const rules = prev.rules.map((r) =>
+          r.id === id ? { ...r, is_active: isActive } : r,
+        );
+        qc.setQueryData([QK, tenantId], recomputeSummary(rules));
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) qc.setQueryData([QK, tenantId], context.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: [QK, tenantId] });
     },
   });

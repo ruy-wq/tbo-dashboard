@@ -395,8 +395,9 @@ export function usePayrollBreakdown(dateFrom: string, dateTo: string) {
 
 export function useOverdueEntries(type: "ar" | "ap" | "all" = "all") {
   const tenantId = useAuthStore((s) => s.tenantId);
+  const qc = useQueryClient();
 
-  return useQuery<OverdueEntriesData>({
+  const query = useQuery<OverdueEntriesData>({
     queryKey: ["finance-overdue-entries", tenantId, type],
     queryFn: async () => {
       if (!tenantId)
@@ -408,15 +409,41 @@ export function useOverdueEntries(type: "ar" | "ap" | "all" = "all") {
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 60 * 5,
   });
+
+  useEffect(() => {
+    if (!tenantId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`finance-overdue-rt:${tenantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "finance_transactions",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["finance-overdue-entries", tenantId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, qc]);
+
+  return query;
 }
 
 // ── Bank Statements (Extrato Bancário) ──────────────────────────────────────
 
 export function useBankStatements(filters: BankStatementFilters = {}) {
   const tenantId = useAuthStore((s) => s.tenantId);
+  const qc = useQueryClient();
   const filterKey = JSON.stringify(filters);
 
-  return useQuery<{ data: BankStatement[]; count: number }>({
+  const query = useQuery<{ data: BankStatement[]; count: number }>({
     queryKey: ["finance-bank-statements", tenantId, filterKey],
     queryFn: async () => {
       if (!tenantId) return { data: [], count: 0 };
@@ -426,6 +453,33 @@ export function useBankStatements(filters: BankStatementFilters = {}) {
     enabled: !!tenantId,
     staleTime: 1000 * 60,
   });
+
+  useEffect(() => {
+    if (!tenantId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`finance-bank-stmt-rt:${tenantId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "finance_bank_statements",
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["finance-bank-statements", tenantId] });
+          qc.invalidateQueries({ queryKey: ["finance-bank-balance-latest", tenantId] });
+          qc.invalidateQueries({ queryKey: ["finance-bank-cashflow", tenantId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, qc]);
+
+  return query;
 }
 
 export function useLatestBankBalance() {

@@ -34,7 +34,6 @@ export const ROLE_MODULES: Record<RoleSlug, string[]> = {
     "mercado",
     "marketing",
     "relatorios",
-    "intelligence",
     "conhecimento",
     "ativos",
     "review",
@@ -83,12 +82,10 @@ const ALL_MODULES = [
   "permissoes",
   "conteudo",
   "revisoes",
-  "intelligence",
   "diretoria",
   "system-health",
   "audit-logs",
   "audit-log",
-  "compras",
   "ativos",
   "conhecimento",
   "review",
@@ -157,8 +154,6 @@ export type PermissionKey =
   | "okrs.checkin"
   | "projetos.create"
   | "projetos.view_all"
-  | "intelligence.full"
-  | "intelligence.partial"
   | "rbac.manage"
   | "audit_logs.view"
   | "one_on_one.conduct"
@@ -183,8 +178,6 @@ const PERMISSION_MATRIX: Record<PermissionKey, RoleSlug[]> = {
   "okrs.checkin": ["admin", "lider", "colaborador"],
   "projetos.create": ["admin", "lider"],
   "projetos.view_all": ["admin", "lider"],
-  "intelligence.full": ["admin"],
-  "intelligence.partial": ["admin", "lider"],
   "rbac.manage": ["admin"],
   "audit_logs.view": ["admin"],
   "one_on_one.conduct": ["admin", "lider"],

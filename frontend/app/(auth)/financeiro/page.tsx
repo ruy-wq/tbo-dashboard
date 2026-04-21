@@ -6,21 +6,21 @@ import { RBACGuard } from "@/components/rbac-guard";
 import { useFounderDashboard } from "@/features/founder-dashboard/hooks/use-founder-dashboard";
 import { usePersistedPeriod } from "@/hooks/use-persisted-period";
 import { OmieSyncButton } from "@/features/financeiro/components/omie-sync-button";
-import { fmt } from "@/features/financeiro/lib/formatters";
+import { fmt, fmtMonths, fmtPct } from "@/features/financeiro/lib/formatters";
 import {
   IconArrowRight,
+  IconAlertTriangle,
   IconCalendarStats,
   IconCash,
   IconChartBar,
   IconCurrencyDollar,
   IconFileCheck,
   IconGitCompare,
-  IconReceipt,
   IconReceiptRefund,
-  IconRefresh,
   IconReportMoney,
   IconTable,
 } from "@tabler/icons-react";
+import type { FounderDashboardSnapshot } from "@/features/founder-dashboard/services/founder-dashboard";
 
 const T = {
   text: "#0f0f0f",
@@ -42,13 +42,93 @@ const MODULES: ModuleDef[] = [
   { href: "/financeiro/fluxo-caixa", label: "Fluxo de Caixa", description: "Entradas, saídas e projeções", icon: IconCash, color: "#3b82f6" },
   { href: "/financeiro/transacoes", label: "Transações", description: "Contas a pagar e receber detalhadas", icon: IconCurrencyDollar, color: "#f59e0b" },
   { href: "/financeiro/contas", label: "Contas", description: "Gestão de contas bancárias", icon: IconTable, color: "#8b5cf6" },
-  { href: "/financeiro/boletos", label: "Boletos", description: "Emissão e rastreamento de boletos", icon: IconReceipt, color: "#ec4899" },
   { href: "/financeiro/conciliacao", label: "Conciliação", description: "Reconciliação bancária automatizada", icon: IconGitCompare, color: "#14b8a6" },
   { href: "/financeiro/recorrentes", label: "Recorrentes", description: "Receitas e despesas recorrentes", icon: IconReceiptRefund, color: "#6366f1" },
   { href: "/financeiro/fiscal", label: "Fiscal", description: "Notas fiscais e obrigações", icon: IconFileCheck, color: "#f97316" },
   { href: "/financeiro/operacional", label: "Operacional", description: "Headcount, folha e custo operacional", icon: IconCalendarStats, color: "#0ea5e9" },
   { href: "/financeiro/performance", label: "Performance", description: "Indicadores financeiros e benchmarks", icon: IconChartBar, color: "#10b981" },
 ];
+
+function KpiBlock({
+  label,
+  value,
+  accent,
+  isLoading,
+}: {
+  label: string;
+  value: string;
+  accent?: "positive" | "negative" | "neutral";
+  isLoading: boolean;
+}) {
+  const valueColor =
+    accent === "positive"
+      ? "text-emerald-300"
+      : accent === "negative"
+        ? "text-red-300"
+        : "text-white";
+  return (
+    <div className="text-right min-w-0">
+      {isLoading ? (
+        <Skeleton className="h-5 w-20 bg-white/10 rounded ml-auto" />
+      ) : (
+        <span className={`text-base md:text-lg font-bold tabular-nums ${valueColor}`}>
+          {value}
+        </span>
+      )}
+      <span className="block text-[10px] uppercase tracking-wider text-white/40">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function HeaderKpis({
+  d,
+  isLoading,
+}: {
+  d: FounderDashboardSnapshot | undefined;
+  isLoading: boolean;
+}) {
+  const margemAccent: "positive" | "negative" | "neutral" =
+    !d ? "neutral" : d.margemPct >= 15 ? "positive" : d.margemPct < 0 ? "negative" : "neutral";
+  const runwayAccent: "positive" | "negative" | "neutral" =
+    !d ? "neutral" : d.runway >= 6 ? "positive" : d.runway < 3 ? "negative" : "neutral";
+  const criticalAlerts = d?.alerts?.filter((a) => a.value < a.threshold).length ?? 0;
+
+  return (
+    <div className="flex items-center gap-4 md:gap-6 flex-wrap justify-end">
+      <KpiBlock
+        label="receita"
+        value={d ? fmt(d.receitaRealizada) : "—"}
+        isLoading={isLoading}
+      />
+      <KpiBlock
+        label="margem"
+        value={d ? `${fmtPct(d.margemPct)}` : "—"}
+        accent={margemAccent}
+        isLoading={isLoading}
+      />
+      <KpiBlock
+        label="runway"
+        value={d ? fmtMonths(d.runway) : "—"}
+        accent={runwayAccent}
+        isLoading={isLoading}
+      />
+      {!isLoading && criticalAlerts > 0 && (
+        <Link
+          href="/diretoria"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 border border-amber-400/30 hover:bg-amber-500/25 transition-colors"
+          aria-label={`${criticalAlerts} alertas críticos`}
+        >
+          <IconAlertTriangle className="size-3.5 text-amber-300" />
+          <span className="text-[11px] font-semibold text-amber-200 tabular-nums">
+            {criticalAlerts}
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function ModuleCard({ mod }: { mod: ModuleDef }) {
   const Icon = mod.icon;
@@ -78,32 +158,9 @@ function FinanceiroContent() {
         {/* Header Bar */}
         <div className="relative overflow-hidden p-4" style={{ background: "linear-gradient(135deg, #1a1410 0%, #2d1810 50%, #c45a1a 100%)", borderRadius: T.r, boxShadow: "0 8px 32px rgba(196,90,26,0.15)" }}>
           <div className="absolute inset-0 opacity-[0.04]"><div className="absolute -top-8 -right-8 size-32 border-[2px] border-white rounded-full" /><div className="absolute bottom-0 left-10 size-16 border-[2px] border-white rounded-full" /></div>
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex gap-2">
-              <Link href="/financeiro/dre" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white/80 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.10)" }}>
-                <IconReportMoney className="size-3.5" style={{ color: "#22c55e" }} />
-                DRE
-              </Link>
-              <Link href="/financeiro/fluxo-caixa" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white/80 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.08)" }}>
-                <IconCash className="size-3.5" style={{ color: "#3b82f6" }} />
-                Fluxo de Caixa
-              </Link>
-              <Link href="/financeiro/transacoes" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white/80 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.08)" }}>
-                <IconCurrencyDollar className="size-3.5" style={{ color: "#f59e0b" }} />
-                Transações
-              </Link>
-              <OmieSyncButton />
-            </div>
-            <div className="flex gap-4">
-              {isLoading ? <Skeleton className="h-6 w-24 bg-white/10 rounded" /> : d && (
-                <>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-white tabular-nums">{fmt(d.receitaRealizada)}</span>
-                    <span className="text-[10px] text-white/40 ml-1">receita</span>
-                  </div>
-                </>
-              )}
-            </div>
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <OmieSyncButton />
+            <HeaderKpis d={d} isLoading={isLoading} />
           </div>
         </div>
 

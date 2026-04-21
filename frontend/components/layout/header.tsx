@@ -23,8 +23,6 @@ import {
   IconHeartHandshake,
   IconSpeakerphone,
   IconChartBar,
-  IconTruck,
-  IconBrain,
   IconCalendar,
 } from "@tabler/icons-react";
 
@@ -39,12 +37,10 @@ const NAV_ITEMS = [
   { href: "/comercial", icon: IconCurrencyDollar, label: "Comercial" },
   { href: "/contratos", icon: IconFileText, label: "Contratos" },
   { href: "/financeiro", icon: IconChartBar, label: "Financeiro" },
-  { href: "/compras", icon: IconTruck, label: "Compras" },
   { href: "/pessoas", icon: IconUsers, label: "Pessoas" },
   { href: "/cultura", icon: IconHeartHandshake, label: "Cultura" },
   { href: "/marketing", icon: IconSpeakerphone, label: "Marketing" },
   { href: "/relatorios", icon: IconChartBar, label: "Relatórios" },
-  { href: "/inteligencia", icon: IconBrain, label: "Inteligência" },
 ] as const;
 
 function TopNav() {

@@ -44,7 +44,6 @@ export const SIDEBAR_NAV_GROUPS: readonly NavGroup[] = [
       { href: "/clientes", label: "Clientes", icon: "building-2", module: "clientes" },
       { href: "/contratos", label: "Contratos", icon: "file-text", module: "contratos" },
       { href: "/financeiro", label: "Financeiro", icon: "dollar-sign", module: "financeiro" },
-      { href: "/compras", label: "Compras & Fornecedores", icon: "truck", module: "compras" },
     ],
   },
   // ── Pessoas (time & gestão de pessoas) ───────────────────────────
@@ -81,7 +80,6 @@ export const SIDEBAR_NAV_GROUPS: readonly NavGroup[] = [
       { href: "/mercado/catalogo", label: "Catálogo Regional", icon: "map-pin", module: "mercado" },
       { href: "/mercado/orulo", label: "Órulo (API Live)", icon: "building-2", module: "mercado" },
       { href: "/mercado/indicadores", label: "Indicadores", icon: "trending-up", module: "mercado" },
-      { href: "/inteligencia", label: "AI Insights", icon: "lightbulb", module: "inteligencia" },
     ],
   },
   // ── Estratégia (marketing & relatórios) ─────────────────────────
