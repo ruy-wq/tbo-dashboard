@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 // ── Constants ────────────────────────────────────────────────────────────────
 
 export const OMIE_BASE_URL = "https://app.omie.com.br/api/v1";
-export const PAGE_SIZE = 500;
+// OMIE cap implícito: endpoints de Clientes/Fornecedores/ContasReceber retornam
+// no máximo 100 por página e mentem total_de_registros quando pedimos mais.
+// Manter em 100 garante paginação honesta em todos os endpoints.
+export const PAGE_SIZE = 100;
 export const BATCH_SIZE = 500;
 export const MAX_RETRIES = 5;
 export const INTER_PAGE_DELAY_MS = 2000;
