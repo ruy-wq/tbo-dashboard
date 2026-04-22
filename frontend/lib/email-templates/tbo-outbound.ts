@@ -107,6 +107,12 @@ export function parseBodyMarkdown(
       return renderDecorativeSeparator();
     }
 
+    // Divisor com label centralizada: `--- LABEL ---`
+    const labeledDividerMatch = /^---\s+(.+?)\s+---\s*$/.exec(trimmed);
+    if (labeledDividerMatch) {
+      return renderLabeledDivider(labeledDividerMatch[1].trim());
+    }
+
     // Divisor simples (---)
     if (/^[-—]{3,}$/.test(trimmed)) {
       return `<hr style="border:0;border-top:1px solid #eaeaea;margin:24px 0;" />`;
@@ -158,6 +164,18 @@ function renderDecorativeSeparator(): string {
   return `<div style="text-align:center;margin:32px 0;letter-spacing:0.8em;color:#e85102;font-size:14px;line-height:1;font-weight:700;">
   &bull;&nbsp;&bull;&nbsp;&bull;&nbsp;&bull;
 </div>`;
+}
+
+function renderLabeledDivider(label: string): string {
+  const safeLabel = escapeHtml(label.toUpperCase());
+  // Table-based pra compat com Outlook: linha | label | linha
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:40px 0;">
+  <tr>
+    <td style="border-top:1px solid #e5e5e5;width:40%;height:1px;line-height:1px;font-size:0;">&nbsp;</td>
+    <td style="padding:0 16px;white-space:nowrap;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:10px;letter-spacing:0.35em;color:#737373;font-weight:700;text-transform:uppercase;text-align:center;">${safeLabel}</td>
+    <td style="border-top:1px solid #e5e5e5;width:40%;height:1px;line-height:1px;font-size:0;">&nbsp;</td>
+  </tr>
+</table>`;
 }
 
 function renderBlockquote(innerText: string): string {

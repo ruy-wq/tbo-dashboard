@@ -18,6 +18,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { TboSectionDivider } from "../../lib/tiptap-extensions/tbo-section-divider";
 import { useEffect, useRef } from "react";
 import {
   IconBold,
@@ -28,6 +29,7 @@ import {
   IconReplace,
   IconTrash,
   IconTextCaption,
+  IconSeparatorHorizontal,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { uploadEmailAsset } from "@/features/comercial/hooks/use-upload-email-asset";
@@ -134,6 +136,7 @@ export function TboWysiwygEditor({
         placeholder: "Escreva sua newsletter aqui…",
         emptyEditorClass: "is-editor-empty",
       }),
+      TboSectionDivider,
     ],
     content: markdownToTiptapHtml(body),
     immediatelyRender: false,
@@ -216,6 +219,16 @@ export function TboWysiwygEditor({
   function handleDeleteImage() {
     if (!editor) return;
     editor.chain().focus().deleteSelection().run();
+  }
+
+  function handleInsertDivider() {
+    if (!editor) return;
+    const label = window.prompt(
+      "Texto do divisor (deixe vazio pra linha simples):",
+      "FICHA TÉCNICA",
+    );
+    if (label === null) return;
+    editor.chain().focus().insertSectionDivider(label.trim().toUpperCase()).run();
   }
 
   function handleSetLink() {
@@ -464,14 +477,25 @@ export function TboWysiwygEditor({
             if (fileInputRef.current) fileInputRef.current.value = "";
           }}
         />
-        <Button
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          className="gap-1.5 shadow-lg pointer-events-auto"
-        >
-          <IconPhoto className="size-3.5" />
-          Adicionar imagem
-        </Button>
+        <div className="flex gap-2 pointer-events-auto">
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="gap-1.5 shadow-lg"
+          >
+            <IconPhoto className="size-3.5" />
+            Imagem
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleInsertDivider}
+            className="gap-1.5 shadow-lg bg-white"
+          >
+            <IconSeparatorHorizontal className="size-3.5" />
+            Divisor
+          </Button>
+        </div>
       </div>
 
       {/* CSS global pra replicar template TBO */}
@@ -596,6 +620,33 @@ export function TboWysiwygEditor({
           content: attr(data-placeholder);
           opacity: 0.4;
           pointer-events: none;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-section-divider {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin: 40px 0;
+          user-select: none;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-section-divider-line {
+          flex: 1;
+          height: 1px;
+          background-color: #e5e5e5;
+          display: block;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-section-divider-label {
+          font-family: "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
+          font-size: 10px;
+          letter-spacing: 0.35em;
+          color: #737373;
+          font-weight: 700;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-section-divider.ProseMirror-selectednode {
+          outline: 2px solid #e85102;
+          outline-offset: 8px;
+          border-radius: 2px;
         }
       `}</style>
     </div>

@@ -16,9 +16,29 @@
 
 import { marked } from "marked";
 
+/**
+ * Pré-processa extensões TBO no markdown antes de passar pro `marked`.
+ *
+ * Converte:
+ *   `--- FICHA TÉCNICA ---`  →  `<div data-tbo-divider data-label="FICHA TÉCNICA"></div>`
+ *   (múltiplos espaços aceitos: `---   FICHA TÉCNICA   ---`)
+ */
+function preprocessTboMarkdown(md: string): string {
+  return md.replace(
+    /^---\s+(.+?)\s+---\s*$/gm,
+    (_m, label: string) =>
+      `<div data-tbo-divider data-label="${escapeAttr(label.trim())}"></div>`,
+  );
+}
+
+function escapeAttr(s: string): string {
+  return s.replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 export function markdownToTiptapHtml(md: string): string {
   if (!md) return "";
-  return marked.parse(md, { breaks: false, gfm: true, async: false }) as string;
+  const pre = preprocessTboMarkdown(md);
+  return marked.parse(pre, { breaks: false, gfm: true, async: false }) as string;
 }
 
 interface TiptapNode {
@@ -56,6 +76,10 @@ function nodeToMarkdown(node: TiptapNode): string {
         .join("\n");
     case "horizontalRule":
       return "---";
+    case "tboSectionDivider": {
+      const label = String(node.attrs?.label ?? "").trim();
+      return label ? `--- ${label} ---` : "---";
+    }
     case "image":
       return `![${String(node.attrs?.alt ?? "")}](${String(node.attrs?.src ?? "")})`;
     default:
