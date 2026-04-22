@@ -25,6 +25,9 @@ import {
   IconLink,
   IconPhoto,
   IconLinkOff,
+  IconReplace,
+  IconTrash,
+  IconTextCaption,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { uploadEmailAsset } from "@/features/comercial/hooks/use-upload-email-asset";
@@ -49,6 +52,7 @@ export function TboWysiwygEditor({
   eyebrow,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -109,6 +113,51 @@ export function TboWysiwygEditor({
         description: err instanceof Error ? err.message : "Tente novamente.",
       });
     }
+  }
+
+  async function handleImageReplace(file: File) {
+    if (!editor) return;
+    try {
+      const uploaded = await uploadEmailAsset(file);
+      const prevAlt = String(editor.getAttributes("image").alt ?? "");
+      editor.chain().focus().updateAttributes("image", {
+        src: uploaded.url,
+        alt: prevAlt || file.name.replace(/\.[^.]+$/, ""),
+      }).run();
+      toast.success("Imagem trocada");
+    } catch (err) {
+      toast.error("Falha no upload", {
+        description: err instanceof Error ? err.message : "Tente novamente.",
+      });
+    }
+  }
+
+  function handleEditAlt() {
+    if (!editor) return;
+    const current = String(editor.getAttributes("image").alt ?? "");
+    const next = window.prompt("Texto alternativo (alt):", current);
+    if (next === null) return;
+    editor.chain().focus().updateAttributes("image", { alt: next }).run();
+  }
+
+  function handleImageLink() {
+    if (!editor) return;
+    const current = String(editor.getAttributes("link").href ?? "");
+    const url = window.prompt(
+      "URL pra tornar a imagem clicável (vazio = remover link):",
+      current,
+    );
+    if (url === null) return;
+    if (url === "") {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    editor.chain().focus().setLink({ href: url }).run();
+  }
+
+  function handleDeleteImage() {
+    if (!editor) return;
+    editor.chain().focus().deleteSelection().run();
   }
 
   function handleSetLink() {
@@ -233,10 +282,14 @@ export function TboWysiwygEditor({
         </div>
       </div>
 
-      {/* Bubble menu — aparece ao selecionar texto */}
+      {/* Bubble menu de TEXTO — aparece ao selecionar texto (não imagem) */}
       {editor && (
         <BubbleMenu
           editor={editor}
+          pluginKey="textBubbleMenu"
+          shouldShow={({ editor, from, to }) =>
+            !editor.isActive("image") && from !== to
+          }
           className="flex items-center gap-0.5 rounded-md bg-black text-white shadow-lg px-1 py-1"
         >
           <button
@@ -276,6 +329,67 @@ export function TboWysiwygEditor({
           )}
         </BubbleMenu>
       )}
+
+      {/* Bubble menu de IMAGEM — aparece ao clicar numa imagem */}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          pluginKey="imageBubbleMenu"
+          shouldShow={({ editor }) => editor.isActive("image")}
+          className="flex items-center gap-0.5 rounded-lg bg-black text-white shadow-xl px-1.5 py-1"
+        >
+          <button
+            type="button"
+            onClick={() => replaceInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium hover:bg-white/10 text-white"
+            title="Substituir imagem (upload)"
+          >
+            <IconReplace className="size-3.5" />
+            Trocar
+          </button>
+          <button
+            type="button"
+            onClick={handleEditAlt}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium hover:bg-white/10 text-white"
+            title="Editar texto alternativo (alt)"
+          >
+            <IconTextCaption className="size-3.5" />
+            Alt
+          </button>
+          <button
+            type="button"
+            onClick={handleImageLink}
+            className={`flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium hover:bg-white/10 ${editor.isActive("link") ? "text-[#e85102]" : "text-white"}`}
+            title="Tornar clicável (link)"
+          >
+            <IconLink className="size-3.5" />
+            Link
+          </button>
+          <div className="w-px h-4 bg-white/20 mx-0.5" />
+          <button
+            type="button"
+            onClick={handleDeleteImage}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium hover:bg-red-500/20 text-red-300 hover:text-red-200"
+            title="Remover imagem"
+          >
+            <IconTrash className="size-3.5" />
+            Remover
+          </button>
+        </BubbleMenu>
+      )}
+
+      {/* Input hidden pra substituição (acionado pelo menu de imagem) */}
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImageReplace(file);
+          if (replaceInputRef.current) replaceInputRef.current.value = "";
+        }}
+      />
 
       {/* Toolbar fixa — adicionar imagem */}
       <div className="sticky bottom-4 flex justify-center pointer-events-none">
