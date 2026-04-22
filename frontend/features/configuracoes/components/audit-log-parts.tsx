@@ -23,6 +23,7 @@ import {
   ALL_ACTIONS,
   ALL_ENTITIES,
 } from "./audit-log-constants";
+import { parseAuditMetadata } from "@/features/configuracoes/types";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────
 
@@ -156,7 +157,10 @@ export function AuditLogItem({ log }: { log: AuditLogRecord }) {
   };
   const entityLabel =
     ENTITY_LABELS[log.entity_type ?? ""] ?? log.entity_type ?? "—";
-  const meta = log.metadata as Record<string, unknown> | null;
+  const meta = parseAuditMetadata(log.metadata);
+  const changedFieldKeys = meta?.changed_fields
+    ? Object.keys(meta.changed_fields)
+    : [];
   const date = new Date(log.created_at ?? "");
   const user = log.profiles;
   const initials = (user?.full_name ?? "?")
@@ -200,16 +204,11 @@ export function AuditLogItem({ log }: { log: AuditLogRecord }) {
                 </span>
               </span>
             )}
-            {meta &&
-              typeof meta === "object" &&
-              "changed_fields" in meta && (
-                <span className="text-xs text-muted-foreground">
-                  · campos:{" "}
-                  {Object.keys(
-                    meta.changed_fields as Record<string, unknown>,
-                  ).join(", ")}
-                </span>
-              )}
+            {changedFieldKeys.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                · campos: {changedFieldKeys.join(", ")}
+              </span>
+            )}
           </div>
         </div>
       </div>

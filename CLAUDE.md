@@ -10,8 +10,8 @@
 
 ## Arquitetura
 - 7 grupos modulares: Dashboard, Estrategia, Execucao, Receita & Caixa, Pessoas, Cultura & Governanca, Intelligence
-- 4 roles RBAC: founder > diretoria > lider > colaborador
-- Dashboard dinamico por role (4 views distintas)
+- 3 roles RBAC: admin > lider > colaborador (+ super-admins por email em lib/permissions.ts)
+- Dashboard dinamico por role (3 views distintas)
 - Drag & Drop universal em todo modulo/secao/child com regras de secao automaticas
 - Tabelas seguem modelo Notion (18 tipos de propriedade, filtros persistentes por view, D&D de colunas)
 - Referencia completa: @docs/architecture.md

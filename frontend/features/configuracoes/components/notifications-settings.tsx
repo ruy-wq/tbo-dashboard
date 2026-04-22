@@ -9,45 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { IconBell, IconLoader2, IconCheck } from "@tabler/icons-react";
 import { useProfile, useUpdateProfile } from "@/features/configuracoes/hooks/use-settings";
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface NotificationPrefs {
-  // Canais
-  email_enabled: boolean;
-  push_enabled: boolean;
-  // Módulos
-  projetos: boolean;
-  tarefas: boolean;
-  financeiro: boolean;
-  comercial: boolean;
-  reunioes: boolean;
-  okrs: boolean;
-  reconhecimentos: boolean;
-  // Tipos de evento
-  mention: boolean;
-  assignment: boolean;
-  deadline: boolean;
-  status_change: boolean;
-  comment: boolean;
-}
-
-const DEFAULT_PREFS: NotificationPrefs = {
-  email_enabled: true,
-  push_enabled: true,
-  projetos: true,
-  tarefas: true,
-  financeiro: false,
-  comercial: false,
-  reunioes: true,
-  okrs: false,
-  reconhecimentos: true,
-  mention: true,
-  assignment: true,
-  deadline: true,
-  status_change: false,
-  comment: true,
-};
+import {
+  parseNotificationPrefs,
+  parsePreferences,
+  DEFAULT_NOTIFICATION_PREFS,
+  type NotificationPrefs,
+} from "@/features/configuracoes/types";
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -112,21 +79,13 @@ export function NotificationsSettings() {
   const [dirty, setDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const storedPrefs = ((profile as Record<string, unknown>)?.preferences as Record<string, unknown> | null)?.notifications as
-    | Partial<NotificationPrefs>
-    | undefined;
+  const [prefs, setPrefs] = useState<NotificationPrefs>(() =>
+    parseNotificationPrefs(profile),
+  );
 
-  const [prefs, setPrefs] = useState<NotificationPrefs>(() => ({
-    ...DEFAULT_PREFS,
-    ...storedPrefs,
-  }));
-
-  // Reset when profile loads
   const [initialized, setInitialized] = useState(false);
   if (profile && !initialized) {
-    const stored = ((profile as Record<string, unknown>)?.preferences as Record<string, unknown> | null)
-      ?.notifications as Partial<NotificationPrefs> | undefined;
-    if (stored) setPrefs({ ...DEFAULT_PREFS, ...stored });
+    setPrefs(parseNotificationPrefs(profile));
     setInitialized(true);
   }
 
@@ -140,7 +99,9 @@ export function NotificationsSettings() {
   );
 
   const handleSave = () => {
-    const currentPrefs = ((profile as Record<string, unknown>)?.preferences as Record<string, unknown>) ?? {};
+    const currentPrefs = parsePreferences(
+      (profile as { preferences?: unknown } | undefined)?.preferences,
+    );
     updateProfile.mutate(
       { preferences: { ...currentPrefs, notifications: prefs } } as never,
       {
@@ -199,7 +160,7 @@ export function NotificationsSettings() {
           <Separator />
           <ToggleRow id="notif_okrs" label="OKRs" checked={prefs.okrs} onChange={toggle("okrs")} />
           <Separator />
-          <ToggleRow id="notif_financeiro" label="Financeiro" description="Apenas founder e diretoria" checked={prefs.financeiro} onChange={toggle("financeiro")} />
+          <ToggleRow id="notif_financeiro" label="Financeiro" description="Apenas admin" checked={prefs.financeiro} onChange={toggle("financeiro")} />
           <Separator />
           <ToggleRow id="notif_comercial" label="Comercial / CRM" checked={prefs.comercial} onChange={toggle("comercial")} />
           <Separator />
@@ -243,9 +204,7 @@ export function NotificationsSettings() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const stored = ((profile as Record<string, unknown>)?.preferences as Record<string, unknown> | null)
-                    ?.notifications as Partial<NotificationPrefs> | undefined;
-                  setPrefs({ ...DEFAULT_PREFS, ...(stored ?? {}) });
+                  setPrefs(parseNotificationPrefs(profile));
                   setDirty(false);
                 }}
               >
