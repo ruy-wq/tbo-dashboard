@@ -7,18 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { IconSun, IconMoon, IconDeviceDesktop, IconLayoutDashboard, IconAlignJustified, IconSpacingVertical } from "@tabler/icons-react";
 import { useProfile, useUpdateProfile } from "@/features/configuracoes/hooks/use-settings";
+import {
+  parseAppearancePrefs,
+  parsePreferences,
+  type AppearancePrefs,
+} from "@/features/configuracoes/types";
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-type ThemeMode = "light" | "dark" | "system";
-type UIDensity = "compact" | "default" | "comfortable";
-
-interface AppearancePreferences {
-  theme: ThemeMode;
-  density: UIDensity;
-}
-
-// ── Constants ──────────────────────────────────────────────────────────────
+type ThemeMode = AppearancePrefs["theme"];
+type UIDensity = AppearancePrefs["density"];
 
 const THEMES = [
   { id: "light" as const, label: "Claro", icon: IconSun },
@@ -27,24 +23,9 @@ const THEMES = [
 ];
 
 const DENSITIES = [
-  {
-    id: "compact" as const,
-    label: "Compacto",
-    description: "Mais itens visíveis",
-    icon: IconAlignJustified,
-  },
-  {
-    id: "default" as const,
-    label: "Padrão",
-    description: "Equilibrado",
-    icon: IconLayoutDashboard,
-  },
-  {
-    id: "comfortable" as const,
-    label: "Confortável",
-    description: "Mais espaço",
-    icon: IconSpacingVertical,
-  },
+  { id: "compact" as const, label: "Compacto", description: "Mais itens visíveis", icon: IconAlignJustified },
+  { id: "default" as const, label: "Padrão", description: "Equilibrado", icon: IconLayoutDashboard },
+  { id: "comfortable" as const, label: "Confortável", description: "Mais espaço", icon: IconSpacingVertical },
 ];
 
 const DENSITY_CLASS: Record<UIDensity, string> = {
@@ -53,7 +34,7 @@ const DENSITY_CLASS: Record<UIDensity, string> = {
   comfortable: "density-comfortable",
 };
 
-// ── DOM helpers ────────────────────────────────────────────────────────────
+const LOCAL_CACHE_KEY = "tbo-appearance";
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";
@@ -71,25 +52,14 @@ function applyDensity(density: UIDensity) {
   root.classList.add(DENSITY_CLASS[density]);
 }
 
-function getStoredPrefs(): Partial<AppearancePreferences> {
-  if (typeof window === "undefined") return {};
+// Write-only cache; read happens before hydration in a separate boot script if needed.
+function writeLocalCache(prefs: AppearancePrefs) {
   try {
-    const raw = localStorage.getItem("tbo-appearance");
-    return raw ? (JSON.parse(raw) as Partial<AppearancePreferences>) : {};
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(prefs));
   } catch {
-    return {};
+    // quota/denied — silent
   }
 }
-
-function storePrefsLocally(prefs: Partial<AppearancePreferences>) {
-  try {
-    localStorage.setItem("tbo-appearance", JSON.stringify(prefs));
-  } catch {
-    // silent
-  }
-}
-
-// ── Skeleton ───────────────────────────────────────────────────────────────
 
 function AppearanceSkeleton() {
   return (
@@ -125,30 +95,18 @@ function AppearanceSkeleton() {
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
-
 export function AppearanceSettings() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
 
-  // Extract preferences from profile, fallback to localStorage cache, then defaults
-  const prefs: AppearancePreferences = {
-    theme: "system",
-    density: "default",
-    ...getStoredPrefs(),
-    ...(((profile as Record<string, unknown>)?.preferences as Partial<AppearancePreferences>) ?? {}),
-  };
+  const { theme, density } = parseAppearancePrefs(profile);
 
-  const theme = prefs.theme;
-  const density = prefs.density;
-
-  // Apply on mount and whenever profile loads
   useEffect(() => {
     applyTheme(theme);
     applyDensity(density);
+    writeLocalCache({ theme, density });
   }, [theme, density]);
 
-  // System theme listener when mode === "system"
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -158,24 +116,25 @@ export function AppearanceSettings() {
   }, [theme]);
 
   const persist = useCallback(
-    (next: Partial<AppearancePreferences>) => {
-      const merged = { theme, density, ...next };
-      // Apply immediately for responsiveness
+    (next: Partial<AppearancePrefs>) => {
+      const merged: AppearancePrefs = { theme, density, ...next };
       if (next.theme !== undefined) applyTheme(next.theme);
       if (next.density !== undefined) applyDensity(next.density);
-      // Cache locally (secondary source, Supabase is primary)
-      storePrefsLocally(merged);
-      // Persist to Supabase (source of truth)
-      updateProfile.mutate({ preferences: merged } as never);
+      writeLocalCache(merged);
+      const currentPrefs = parsePreferences(
+        (profile as { preferences?: unknown } | undefined)?.preferences,
+      );
+      updateProfile.mutate(
+        { preferences: { ...currentPrefs, appearance: merged } } as never,
+      );
     },
-    [theme, density, updateProfile],
+    [theme, density, profile, updateProfile],
   );
 
   if (isLoading) return <AppearanceSkeleton />;
 
   return (
     <div className="space-y-6">
-      {/* Theme */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Tema</CardTitle>
@@ -209,7 +168,6 @@ export function AppearanceSettings() {
         </CardContent>
       </Card>
 
-      {/* Density */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Densidade da interface</CardTitle>

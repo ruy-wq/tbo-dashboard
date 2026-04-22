@@ -12,7 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { IconAlertCircle } from "@tabler/icons-react";
+import type { Database } from "@/lib/supabase/types";
 import { ProfileFormSkeleton, ProfileAvatarCard, ProfileSaveBar } from "./profile-form-parts";
+
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 const profileSchema = z.object({
   full_name: z.string().min(1, "Nome é obrigatório"),
@@ -25,27 +28,24 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 
 export function ProfileForm() {
   const { data: profile, isLoading } = useProfile();
+  if (isLoading || !profile) return <ProfileFormSkeleton />;
+  return <ProfileFormContent key={profile.id} profile={profile} />;
+}
+
+function ProfileFormContent({ profile }: { profile: ProfileRow }) {
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
   const role = useAuthStore((s) => s.role);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [department, setDepartment] = useState("");
-  const [bio, setBio] = useState("");
+  const initialBio = parsePreferences(profile.preferences).bio ?? "";
+  const [fullName, setFullName] = useState(profile.full_name ?? "");
+  const [phone, setPhone] = useState(profile.phone ?? "");
+  const [department, setDepartment] = useState(profile.department ?? "");
+  const [bio, setBio] = useState(initialBio);
   const [dirty, setDirty] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ProfileFormData, string>>>({});
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const populated = useRef(false);
-  if (profile && !populated.current) {
-    setFullName(profile.full_name ?? "");
-    setPhone(profile.phone ?? "");
-    setDepartment(profile.department ?? "");
-    setBio(parsePreferences(profile.preferences).bio ?? "");
-    populated.current = true;
-  }
 
   function handleSave() {
     const result = profileSchema.safeParse({ full_name: fullName, phone, department, bio });
@@ -59,7 +59,7 @@ export function ProfileForm() {
       return;
     }
     setErrors({});
-    const currentPrefs = parsePreferences(profile?.preferences);
+    const currentPrefs = parsePreferences(profile.preferences);
     updateProfile.mutate(
       { full_name: fullName, phone, department, preferences: { ...currentPrefs, bio } },
       {
@@ -87,24 +87,31 @@ export function ProfileForm() {
     setSaveSuccess(false);
   }
 
-  if (isLoading) return <ProfileFormSkeleton />;
+  function handleDiscard() {
+    setFullName(profile.full_name ?? "");
+    setPhone(profile.phone ?? "");
+    setDepartment(profile.department ?? "");
+    setBio(initialBio);
+    setDirty(false);
+    setErrors({});
+  }
 
-  const initials = (profile?.full_name ?? "U")
+  const initials = (profile.full_name ?? "U")
     .split(" ")
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
 
-  const currentRole = role ?? (profile?.role as string) ?? "colaborador";
+  const currentRole = role ?? (profile.role as string | null) ?? "colaborador";
 
   return (
     <div className="space-y-6">
       <ProfileAvatarCard
-        avatarUrl={profile?.avatar_url}
-        fullName={profile?.full_name}
-        email={profile?.email}
-        department={profile?.department}
+        avatarUrl={profile.avatar_url}
+        fullName={profile.full_name}
+        email={profile.email}
+        department={profile.department}
         currentRole={currentRole}
         initials={initials}
         isUploading={uploadAvatar.isPending}
@@ -137,7 +144,7 @@ export function ProfileForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" value={profile?.email ?? ""} disabled className="opacity-60" />
+              <Input id="email" value={profile.email ?? ""} disabled className="opacity-60" />
               <p className="text-xs text-muted-foreground">E-mail não pode ser alterado aqui.</p>
             </div>
             <div className="space-y-2">
@@ -179,7 +186,7 @@ export function ProfileForm() {
         dirty={dirty}
         saveSuccess={saveSuccess}
         isSaving={updateProfile.isPending}
-        onDiscard={() => { populated.current = false; setDirty(false); setErrors({}); }}
+        onDiscard={handleDiscard}
         onSave={handleSave}
       />
     </div>

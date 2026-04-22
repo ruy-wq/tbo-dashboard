@@ -84,10 +84,24 @@ export function useUpdateUserRole() {
   return useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       updateUserRole(supabase, userId, role),
-    onSuccess: () => {
+    onMutate: async ({ userId, role }) => {
+      const key = ["users", tenantId];
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<{ id: string; role: string | null }[]>(key);
+      qc.setQueryData<{ id: string; role: string | null }[] | undefined>(key, (old) =>
+        old?.map((u) => (u.id === userId ? { ...u, role } : u)),
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        qc.setQueryData(["users", tenantId], ctx.previous);
+      }
+      toast.error("Erro ao atualizar role. Tente novamente.");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["users", tenantId] });
     },
-    onError: () => toast.error("Erro ao atualizar role. Tente novamente."),
   });
 }
 

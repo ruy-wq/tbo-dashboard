@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer } from "react";
 import { useAuditLogs } from "@/features/configuracoes/hooks/use-settings";
 import {
   Card,
@@ -18,6 +18,40 @@ import {
   AuditPagination,
 } from "./audit-log-parts";
 
+interface FiltersState {
+  page: number;
+  action: string;
+  entityType: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+type FilterField = "action" | "entityType" | "dateFrom" | "dateTo";
+
+type Action =
+  | { type: "setField"; field: FilterField; value: string }
+  | { type: "setPage"; value: number }
+  | { type: "clear" };
+
+const INITIAL_STATE: FiltersState = {
+  page: 0,
+  action: "",
+  entityType: "",
+  dateFrom: "",
+  dateTo: "",
+};
+
+function filtersReducer(state: FiltersState, action: Action): FiltersState {
+  switch (action.type) {
+    case "setField":
+      return { ...state, [action.field]: action.value, page: 0 };
+    case "setPage":
+      return { ...state, page: action.value };
+    case "clear":
+      return INITIAL_STATE;
+  }
+}
+
 function AuditCardSkeleton() {
   return (
     <Card>
@@ -33,11 +67,8 @@ function AuditCardSkeleton() {
 }
 
 export function AuditLogTable() {
-  const [page, setPage] = useState(0);
-  const [action, setAction] = useState<string>("");
-  const [entityType, setEntityType] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [filters, dispatch] = useReducer(filtersReducer, INITIAL_STATE);
+  const { page, action, entityType, dateFrom, dateTo } = filters;
 
   const hasFilters = !!(action || entityType || dateFrom || dateTo);
 
@@ -53,18 +84,6 @@ export function AuditLogTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.ceil(totalCount / 25);
 
-  function resetPage() {
-    setPage(0);
-  }
-
-  function clearFilters() {
-    setAction("");
-    setEntityType("");
-    setDateFrom("");
-    setDateTo("");
-    setPage(0);
-  }
-
   if (isLoading) return <AuditCardSkeleton />;
 
   return (
@@ -73,9 +92,7 @@ export function AuditLogTable() {
         <CardTitle className="text-base flex items-center gap-2">
           <IconShieldCheck size={16} className="text-muted-foreground" />
           Logs de Auditoria
-          <span className="ml-1 text-muted-foreground font-normal">
-            ({totalCount})
-          </span>
+          <span className="ml-1 text-muted-foreground font-normal">({totalCount})</span>
         </CardTitle>
         <CardDescription>
           Registro de ações realizadas no sistema pelos membros da equipe
@@ -89,11 +106,11 @@ export function AuditLogTable() {
           dateFrom={dateFrom}
           dateTo={dateTo}
           hasFilters={hasFilters}
-          onActionChange={(v) => { setAction(v); resetPage(); }}
-          onEntityTypeChange={(v) => { setEntityType(v); resetPage(); }}
-          onDateFromChange={(v) => { setDateFrom(v); resetPage(); }}
-          onDateToChange={(v) => { setDateTo(v); resetPage(); }}
-          onClear={clearFilters}
+          onActionChange={(v) => dispatch({ type: "setField", field: "action", value: v })}
+          onEntityTypeChange={(v) => dispatch({ type: "setField", field: "entityType", value: v })}
+          onDateFromChange={(v) => dispatch({ type: "setField", field: "dateFrom", value: v })}
+          onDateToChange={(v) => dispatch({ type: "setField", field: "dateTo", value: v })}
+          onClear={() => dispatch({ type: "clear" })}
         />
 
         {logs.length === 0 ? (
@@ -114,8 +131,8 @@ export function AuditLogTable() {
           page={page}
           totalPages={totalPages}
           totalCount={totalCount}
-          onPrev={() => setPage((p) => p - 1)}
-          onNext={() => setPage((p) => p + 1)}
+          onPrev={() => dispatch({ type: "setPage", value: page - 1 })}
+          onNext={() => dispatch({ type: "setPage", value: page + 1 })}
         />
       </CardContent>
     </Card>

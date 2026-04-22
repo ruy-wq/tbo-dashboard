@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef } from "react";
 import { IconBuilding } from "@tabler/icons-react";
 import { RBACGuard } from "@/components/rbac-guard";
 import { useProfile, useUpdateProfile } from "@/features/configuracoes/hooks/use-settings";
@@ -18,7 +18,7 @@ import { WorkspaceIdentityCard } from "./workspace-identity-card";
 export function WorkspaceSettings() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [dirty, setDirty] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
