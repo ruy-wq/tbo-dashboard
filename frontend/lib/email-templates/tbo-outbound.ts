@@ -124,6 +124,12 @@ export function parseBodyMarkdown(
       return renderTrendingSection(trendingMatch);
     }
 
+    // Heading standalone H2/H3 — renderiza label SF Mono laranja uppercase
+    const headingMatch = /^#{2,3}\s+(.+?)\s*$/.exec(trimmed);
+    if (headingMatch && !trimmed.includes("\n")) {
+      return `<h3 style="margin:28px 0 12px 0;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#e85102;font-weight:700;text-transform:uppercase;">${escapeHtml(headingMatch[1])}</h3>`;
+    }
+
     // Blockquote: parágrafo cujas linhas começam com "> "
     if (/^>\s+/.test(trimmed) && trimmed.split("\n").every((l) => /^>\s+/.test(l) || l.trim() === "")) {
       const inner = trimmed
@@ -213,9 +219,8 @@ interface TrendingSection {
 function matchTrendingSection(text: string): TrendingSection | null {
   const lines = text.split("\n").map((l) => l.trimEnd());
   if (lines.length < 2) return null;
-  const headerMatch = /^#{2,3}\s+(trending\s*now|trending|giro|quick\s*takes|em\s*alta)\s*$/i.exec(
-    lines[0].trim(),
-  );
+  // Aceita QUALQUER heading H2/H3 seguido de bullets — não só "Em alta"/"Trending"
+  const headerMatch = /^#{2,3}\s+(.+?)\s*$/i.exec(lines[0].trim());
   if (!headerMatch) return null;
 
   const items: TrendingItem[] = [];
@@ -331,6 +336,15 @@ function processInline(text: string): string {
     const safeUrl = escapeUrl(String(url));
     tokens.push(
       `<a href="${safeUrl}" target="_blank" rel="noopener" style="color:#e85102;text-decoration:underline;">${safeText}</a>`,
+    );
+    return placeholder(tokens.length - 1);
+  });
+
+  // ==highlight== — bold laranja TBO (ênfase forte, money quote)
+  work = work.replace(/==([^=\n]{1,200}?)==/g, (_m, inner) => {
+    const safe = escapeInline(String(inner));
+    tokens.push(
+      `<strong style="font-weight:700;color:#e85102;">${safe}</strong>`,
     );
     return placeholder(tokens.length - 1);
   });
