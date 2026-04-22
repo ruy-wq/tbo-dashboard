@@ -37,19 +37,77 @@ import {
 } from "../../lib/tbo-tiptap-serializer";
 import { toast } from "sonner";
 
+// ──────────────────────────────────────────────────────────────────
+// Helper: texto contentEditable controlado sem quebrar cursor
+// ──────────────────────────────────────────────────────────────────
+
+interface ContentEditableTextProps {
+  tag: "div" | "h1" | "h2" | "h3" | "p";
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+function ContentEditableText({
+  tag: Tag,
+  value,
+  onChange,
+  placeholder,
+  className,
+  style,
+}: ContentEditableTextProps) {
+  const ref = useRef<HTMLElement | null>(null);
+
+  // Sincroniza externo → DOM só quando o valor divergiu (preserva cursor)
+  useEffect(() => {
+    if (ref.current && ref.current.innerText !== value) {
+      ref.current.innerText = value;
+    }
+  }, [value]);
+
+  return (
+    <Tag
+      ref={ref as never}
+      contentEditable
+      suppressContentEditableWarning
+      data-placeholder={placeholder}
+      data-empty={!value ? "true" : undefined}
+      spellCheck={false}
+      className={`tbo-ce ${className ?? ""}`}
+      style={style}
+      onBlur={(e: React.FocusEvent<HTMLElement>) => {
+        const next = e.currentTarget.innerText.trim();
+        if (next !== value) onChange(next);
+      }}
+      onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.key === "Enter" && Tag !== "p") {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).blur();
+        }
+      }}
+    />
+  );
+}
+
 interface Props {
   body: string;
   onBodyChange: (md: string) => void;
   subject: string;
+  onSubjectChange?: (s: string) => void;
   preheader?: string;
   eyebrow?: string;
+  onEyebrowChange?: (s: string) => void;
 }
 
 export function TboWysiwygEditor({
   body,
   onBodyChange,
   subject,
+  onSubjectChange,
   eyebrow,
+  onEyebrowChange,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
@@ -193,25 +251,31 @@ export function TboWysiwygEditor({
           </div>
           <div className="mx-10 h-px bg-[#eaeaea]" />
 
-          {/* Eyebrow + H1 (ligados aos inputs laterais, não editáveis no canvas) */}
+          {/* Eyebrow + H1 — editáveis inline no canvas */}
           <div className="px-10 pt-12 pb-5 bg-white">
-            {eyebrow && (
-              <div
-                style={{
-                  fontFamily:
-                    "'SF Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.2em",
-                  color: "#e85102",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  marginBottom: 12,
-                }}
-              >
-                {eyebrow}
-              </div>
-            )}
-            <h1
+            <ContentEditableText
+              tag="div"
+              value={eyebrow ?? ""}
+              onChange={(v) => onEyebrowChange?.(v)}
+              placeholder="EYEBROW OPCIONAL · ex: CASE · 04/2026"
+              style={{
+                fontFamily:
+                  "'SF Mono', Menlo, Monaco, Consolas, 'Courier New', monospace",
+                fontSize: 11,
+                letterSpacing: "0.2em",
+                color: "#e85102",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                marginBottom: 12,
+                outline: "none",
+                minHeight: 16,
+              }}
+            />
+            <ContentEditableText
+              tag="h1"
+              value={subject}
+              onChange={(v) => onSubjectChange?.(v)}
+              placeholder="Assunto do e-mail…"
               style={{
                 margin: 0,
                 fontSize: 32,
@@ -219,14 +283,10 @@ export function TboWysiwygEditor({
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
                 color: "#0a0a0a",
+                outline: "none",
+                minHeight: 36,
               }}
-            >
-              {subject || (
-                <span className="text-muted-foreground">
-                  Assunto do e-mail…
-                </span>
-              )}
-            </h1>
+            />
           </div>
 
           {/* Body editável */}
@@ -519,6 +579,23 @@ export function TboWysiwygEditor({
           color: #a3a3a3;
           pointer-events: none;
           height: 0;
+        }
+        .tbo-ce {
+          cursor: text;
+          transition: background-color 0.15s ease;
+          border-radius: 2px;
+        }
+        .tbo-ce:hover {
+          background-color: rgba(232, 81, 2, 0.04);
+        }
+        .tbo-ce:focus {
+          background-color: rgba(232, 81, 2, 0.06);
+          outline: none;
+        }
+        .tbo-ce[data-empty="true"]::before {
+          content: attr(data-placeholder);
+          opacity: 0.4;
+          pointer-events: none;
         }
       `}</style>
     </div>

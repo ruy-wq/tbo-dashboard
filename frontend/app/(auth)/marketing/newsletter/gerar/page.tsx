@@ -725,8 +725,10 @@ function DraftPreview({
             body={body}
             onBodyChange={setBody}
             subject={subject}
+            onSubjectChange={setSubject}
             preheader={preheader}
             eyebrow={eyebrow}
+            onEyebrowChange={setEyebrow}
           />
         ) : viewMode === "preview" ? (
           <div className="h-full bg-zinc-100 dark:bg-zinc-950 p-3">
