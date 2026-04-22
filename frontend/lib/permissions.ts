@@ -44,6 +44,7 @@ export const ROLE_MODULES: Record<RoleSlug, string[]> = {
     "projetos",
     "tarefas",
     "agenda",
+    "comercial",
     "okrs",
     "chat",
     "cultura",
