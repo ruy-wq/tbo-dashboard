@@ -104,7 +104,12 @@ export const TboVideoCard = Node.create({
     });
 
     const thumbEl = thumb
-      ? ["img", { src: thumb, class: "tbo-video-thumb", alt: label }]
+      ? [
+          "div",
+          { class: "tbo-video-thumb-wrap" },
+          ["img", { src: thumb, class: "tbo-video-thumb", alt: label }],
+          ["div", { class: "tbo-video-play-overlay" }, "▶"],
+        ]
       : [
           "div",
           { class: "tbo-video-placeholder" },
@@ -115,7 +120,15 @@ export const TboVideoCard = Node.create({
       "div",
       base,
       thumbEl as never,
-      ["div", { class: "tbo-video-caption" }, `▶  ${label.toUpperCase()}`],
+      [
+        "div",
+        { class: "tbo-video-caption" },
+        [
+          "span",
+          { class: "tbo-video-cta-btn" },
+          `▶   ${label.toUpperCase()}`,
+        ],
+      ],
     ];
   },
 

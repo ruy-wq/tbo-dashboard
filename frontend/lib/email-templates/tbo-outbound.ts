@@ -379,14 +379,14 @@ function renderMedia(alt: string, url: string): string {
   const safeAlt = escapeHtml(alt);
   const safeUrl = escapeUrl(url);
 
-  // Se URL parece vídeo (termina em .mp4, .mov, .webm ou é YouTube/Vimeo), renderiza como
-  // placeholder clicável (e-mail clients não suportam <video>)
+  // Se URL parece vídeo (termina em .mp4, .mov, .webm ou é YouTube/Vimeo), renderiza card
+  // clicável com thumb + botão CTA laranja (e-mail clients não suportam <video>)
   if (isVideoUrl(url)) {
-    return `<a href="${safeUrl}" target="_blank" rel="noopener" style="display:block;margin:16px 0;text-align:center;text-decoration:none;">
-  <div style="background:#0a0a0a;color:#ffffff;padding:64px 24px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;">
-    ▶ Assistir vídeo${safeAlt ? ` — ${safeAlt}` : ""}
-  </div>
-</a>`;
+    return renderVideoCard({
+      href: safeUrl,
+      rawUrl: url,
+      label: alt || "Assistir o vídeo",
+    });
   }
 
   // Imagem / GIF normal
@@ -401,8 +401,63 @@ function isVideoUrl(url: string): boolean {
     lower.endsWith(".webm") ||
     lower.includes("youtube.com/watch") ||
     lower.includes("youtu.be/") ||
+    lower.includes("youtube.com/embed") ||
+    lower.includes("youtube.com/shorts") ||
     lower.includes("vimeo.com/")
   );
+}
+
+const YOUTUBE_ID_RE =
+  /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/;
+
+function extractYouTubeId(url: string): string | null {
+  const m = YOUTUBE_ID_RE.exec(url);
+  return m ? m[1] : null;
+}
+
+/**
+ * Card de vídeo: thumbnail do YouTube (maxresdefault) + botão CTA pill laranja
+ * centralizado em barra preta. Table-based pra compat com Outlook 2007+.
+ * Toda a célula do card é clicável (link externo envolve tudo).
+ */
+function renderVideoCard(opts: {
+  href: string;
+  rawUrl: string;
+  label: string;
+}): string {
+  const safeLabel = escapeHtml(opts.label);
+  const safeLabelUpper = escapeHtml(opts.label.toUpperCase());
+  const ytId = extractYouTubeId(opts.rawUrl);
+  const thumbUrl = ytId
+    ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
+    : "";
+
+  const thumbRow = thumbUrl
+    ? `<tr>
+    <td style="padding:0;line-height:0;font-size:0;">
+      <img src="${thumbUrl}" alt="${safeLabel}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;" />
+    </td>
+  </tr>`
+    : `<tr>
+    <td style="padding:56px 24px;background:#111111;text-align:center;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#737373;">Thumbnail indisponível</td>
+  </tr>`;
+
+  return `<a href="${opts.href}" target="_blank" rel="noopener" style="display:block;margin:20px auto;text-decoration:none;max-width:520px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;max-width:520px;background:#0a0a0a;">
+    ${thumbRow}
+    <tr>
+      <td align="center" style="background:#0a0a0a;padding:24px 24px 28px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+          <tr>
+            <td style="background:#e85102;border-radius:9999px;padding:14px 32px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#ffffff;white-space:nowrap;">
+              ▶&nbsp;&nbsp;&nbsp;${safeLabelUpper}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</a>`;
 }
 
 function escapeUrl(url: string): string {

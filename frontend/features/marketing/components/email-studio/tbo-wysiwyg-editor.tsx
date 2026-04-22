@@ -781,14 +781,34 @@ export function TboWysiwygEditor({
           user-select: none;
           transition: outline 0.15s ease, opacity 0.15s ease;
         }
-        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card:hover {
-          opacity: 0.92;
-          outline: 2px solid #e85102;
-          outline-offset: 4px;
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card:hover .tbo-video-play-overlay {
+          background: #e85102;
+          transform: translate(-50%, -50%) scale(1.05);
+          box-shadow: 0 12px 40px rgba(232, 81, 2, 0.45);
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card:hover .tbo-video-cta-btn {
+          background: #ff6019;
+          box-shadow: 0 8px 20px rgba(232, 81, 2, 0.35);
         }
         .tbo-email-editor-wrapper .ProseMirror .tbo-video-card.ProseMirror-selectednode {
           outline: 2px solid #e85102;
           outline-offset: 4px;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-thumb-wrap {
+          position: relative;
+          display: block;
+          line-height: 0;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-thumb-wrap::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0) 50%,
+            rgba(0, 0, 0, 0.35) 100%
+          );
+          pointer-events: none;
         }
         .tbo-email-editor-wrapper .ProseMirror .tbo-video-thumb {
           display: block;
@@ -796,6 +816,27 @@ export function TboWysiwygEditor({
           height: auto;
           margin: 0;
           border: 0;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-play-overlay {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 76px;
+          height: 76px;
+          border-radius: 9999px;
+          background: rgba(232, 81, 2, 0.92);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 28px;
+          line-height: 1;
+          padding-left: 6px;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(4px);
+          transition: all 0.2s ease;
+          z-index: 1;
         }
         .tbo-email-editor-wrapper .ProseMirror .tbo-video-placeholder {
           padding: 64px 24px;
@@ -805,14 +846,23 @@ export function TboWysiwygEditor({
         }
         .tbo-email-editor-wrapper .ProseMirror .tbo-video-caption {
           background: #0a0a0a;
-          color: #ffffff;
-          padding: 18px 24px;
-          font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-          font-size: 13px;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          font-weight: 600;
+          padding: 24px 24px 28px 24px;
           text-align: center;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-cta-btn {
+          display: inline-block;
+          background: #e85102;
+          color: #ffffff;
+          padding: 14px 32px;
+          border-radius: 9999px;
+          font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+          font-size: 12px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-weight: 700;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(232, 81, 2, 0.25);
         }
       `}</style>
 
