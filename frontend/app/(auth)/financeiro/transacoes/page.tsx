@@ -30,6 +30,8 @@ import { TransactionsDataTable } from "@/features/financeiro/components/transact
 import type {
   FinanceTransaction,
   FinanceFilters,
+  FinanceSortColumn,
+  FinanceSortDir,
 } from "@/features/financeiro/services/finance-types";
 
 const fmtDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-BR") : "\u2014";
@@ -41,6 +43,8 @@ export default function TransacoesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [periodFilter, setPeriodFilter] = useState("year");
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<FinanceSortColumn>("date");
+  const [sortDir, setSortDir] = useState<FinanceSortDir>("desc");
   const [formOpen, setFormOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<FinanceTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -56,9 +60,25 @@ export default function TransacoesPage() {
       ...(period.to && { dateTo: period.to }),
       page,
       pageSize: PAGE_SIZE,
+      sortBy,
+      sortDir,
     }),
-    [typeFilter, statusFilter, search, period.from, period.to, page]
+    [typeFilter, statusFilter, search, period.from, period.to, page, sortBy, sortDir]
   );
+
+  const handleSortChange = useCallback((column: FinanceSortColumn) => {
+    setSortBy((current) => {
+      if (current === column) {
+        // Mesma coluna — alterna direção
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return current;
+      }
+      // Coluna nova — reset para desc (padrão mais útil em finance)
+      setSortDir("desc");
+      return column;
+    });
+    setPage(1);
+  }, []);
 
   const { data, isLoading, isError, error, refetch } = useFinanceTransactions(filters);
   const { data: categories = [] } = useFinanceCategories();
@@ -236,6 +256,9 @@ export default function TransacoesPage() {
           onEdit={handleEdit}
           onDelete={setDeleteId}
           onNew={handleNew}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
         />
 
         {/* Pagination */}

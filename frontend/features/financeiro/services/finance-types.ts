@@ -120,6 +120,16 @@ export interface FinanceSyncResult {
   errors?: string[];
 }
 
+export type FinanceSortColumn =
+  | "date"
+  | "due_date"
+  | "amount"
+  | "description"
+  | "status"
+  | "counterpart";
+
+export type FinanceSortDir = "asc" | "desc";
+
 export interface FinanceFilters {
   type?: "receita" | "despesa" | "transferencia";
   typeIn?: string[];
@@ -135,6 +145,8 @@ export interface FinanceFilters {
   search?: string;
   page?: number;
   pageSize?: number;
+  sortBy?: FinanceSortColumn;
+  sortDir?: FinanceSortDir;
 }
 
 // ── KPI types ────────────────────────────────────────────────────────────────

@@ -25,8 +25,15 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   ArrowLeftRight,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
 } from "lucide-react";
-import type { FinanceTransaction } from "@/features/financeiro/services/finance-types";
+import type {
+  FinanceTransaction,
+  FinanceSortColumn,
+  FinanceSortDir,
+} from "@/features/financeiro/services/finance-types";
 
 const STATUS_COLORS: Record<string, string> = {
   previsto: "bg-blue-100 text-blue-800",
@@ -65,6 +72,45 @@ interface TransactionsDataTableProps {
   onEdit: (tx: FinanceTransaction) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  sortBy: FinanceSortColumn;
+  sortDir: FinanceSortDir;
+  onSortChange: (column: FinanceSortColumn) => void;
+}
+
+function SortableHeader({
+  column,
+  label,
+  align = "left",
+  sortBy,
+  sortDir,
+  onSortChange,
+}: {
+  column: FinanceSortColumn;
+  label: string;
+  align?: "left" | "right";
+  sortBy: FinanceSortColumn;
+  sortDir: FinanceSortDir;
+  onSortChange: (column: FinanceSortColumn) => void;
+}) {
+  const active = sortBy === column;
+  const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ChevronsUpDown;
+  return (
+    <TableHead className={align === "right" ? "text-right" : undefined}>
+      <button
+        type="button"
+        onClick={() => onSortChange(column)}
+        className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${
+          align === "right" ? "flex-row-reverse" : ""
+        } ${active ? "text-foreground font-semibold" : ""}`}
+        aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      >
+        {label}
+        <Icon
+          className={`h-3 w-3 ${active ? "opacity-100" : "opacity-40"}`}
+        />
+      </button>
+    </TableHead>
+  );
 }
 
 const TransactionRow = memo(function TransactionRow({
@@ -174,7 +220,11 @@ export function TransactionsDataTable({
   onEdit,
   onDelete,
   onNew,
+  sortBy,
+  sortDir,
+  onSortChange,
 }: TransactionsDataTableProps) {
+  const sortProps = { sortBy, sortDir, onSortChange };
   return (
     <Card>
       <CardContent className="p-0">
@@ -182,14 +232,14 @@ export function TransactionsDataTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[40px]" />
-              <TableHead>Descricao</TableHead>
+              <SortableHeader column="description" label="Descricao" {...sortProps} />
               <TableHead>Categoria</TableHead>
               <TableHead>Centro de Custo</TableHead>
-              <TableHead>Contraparte</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHeader column="counterpart" label="Contraparte" {...sortProps} />
+              <SortableHeader column="amount" label="Valor" align="right" {...sortProps} />
+              <SortableHeader column="date" label="Data" {...sortProps} />
+              <SortableHeader column="due_date" label="Vencimento" {...sortProps} />
+              <SortableHeader column="status" label="Status" {...sortProps} />
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>

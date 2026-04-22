@@ -55,10 +55,15 @@ export async function getFinanceTransactions(
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
+  const sortBy = filters.sortBy ?? "date";
+  const sortAsc = filters.sortDir === "asc";
+
   let query = supabase
     .from(TABLE_TRANSACTIONS)
     .select("*", { count: "exact" })
-    .order("date", { ascending: false });
+    .order(sortBy, { ascending: sortAsc, nullsFirst: false })
+    // Tie-breaker estável — garante ordem determinística em ties
+    .order("id", { ascending: true });
 
   if (filters.type) query = query.eq("type", filters.type);
   if (filters.typeIn?.length) query = query.in("type", filters.typeIn);
