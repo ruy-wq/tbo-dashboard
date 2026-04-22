@@ -17,6 +17,11 @@ import {
   IconSearch,
   IconExternalLink,
   IconBolt,
+  IconUsers,
+  IconMail,
+  IconMailOff,
+  IconBuilding,
+  IconFilter,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +48,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { buildTboEmailHtml } from "@/lib/email-templates/tbo-outbound";
+import { TboWysiwygEditor } from "@/features/marketing/components/email-studio/tbo-wysiwyg-editor";
 import { RequireRole } from "@/features/auth/components/require-role";
 import {
   useGenerateNewsletterDraft,
@@ -51,8 +57,13 @@ import {
   useDiscardNewsletterDraft,
 } from "@/features/marketing/hooks/use-newsletter-drafts";
 import { useCurateNewsletterThemes } from "@/features/marketing/hooks/use-newsletter-curator";
+import {
+  useEmailSegments,
+  useSegmentLeads,
+} from "@/features/marketing/hooks/use-email-segments";
 import type { CuratedTheme } from "@/features/marketing/services/newsletter-curator";
 import type { NewsletterDraft } from "@/features/marketing/services/newsletter-drafts";
+import type { EmailSegment } from "@/features/marketing/types/marketing";
 
 /* ─── Page ────────────────────────────────────────────────────────── */
 
@@ -470,6 +481,7 @@ function DraftPreview({
   const [eyebrow, setEyebrow] = useState(draft.eyebrow ?? "");
   const [body, setBody] = useState(draft.body);
   const [title, setTitle] = useState(draft.title);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
 
   const update = useUpdateNewsletterDraft();
   const discard = useDiscardNewsletterDraft();
@@ -514,10 +526,15 @@ function DraftPreview({
   }
 
   function handleSend() {
-    toast.info("Envio pra base via Mailchimp — em breve", {
-      description:
-        "A integração de envio broadcast será implementada na próxima iteração. Por ora, copie o conteúdo e dispare pelo módulo de Campanhas.",
+    setSendDialogOpen(true);
+  }
+
+  async function handleTargetSegmentChange(segmentId: string | null) {
+    const updated = await update.mutateAsync({
+      id: draft.id,
+      updates: { target_segment_id: segmentId },
     });
+    onDraftChange(updated);
   }
 
   async function handleDiscard() {
@@ -552,6 +569,15 @@ function DraftPreview({
               <span className="text-[10px] font-mono text-muted-foreground">
                 {draft.model}
               </span>
+            )}
+            {draft.target_segment_id && (
+              <Badge
+                variant="outline"
+                className="text-[9px] h-3.5 px-1 text-emerald-600 border-emerald-300 gap-0.5"
+              >
+                <IconUsers className="size-2.5" />
+                base vinculada
+              </Badge>
             )}
           </div>
         </div>
@@ -598,8 +624,8 @@ function DraftPreview({
                 onClick={handleSend}
                 className="h-7 text-xs gap-1"
               >
-                <IconSend className="size-3" />
-                Enviar pra base
+                <IconUsers className="size-3" />
+                Selecionar base
               </Button>
               <Button
                 size="sm"
@@ -692,13 +718,15 @@ function DraftPreview({
         </div>
       )}
 
-      {/* Body — preview ou editor */}
+      {/* Body — WYSIWYG ao editar, preview read-only fora */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {editing ? (
-          <Textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            className="h-full min-h-[400px] text-xs font-mono resize-none border-0 rounded-none focus-visible:ring-0"
+          <TboWysiwygEditor
+            body={body}
+            onBodyChange={setBody}
+            subject={subject}
+            preheader={preheader}
+            eyebrow={eyebrow}
           />
         ) : viewMode === "preview" ? (
           <div className="h-full bg-zinc-100 dark:bg-zinc-950 p-3">
@@ -714,6 +742,374 @@ function DraftPreview({
           <pre className="h-full text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground bg-muted/20 p-4 overflow-auto">
             {body}
           </pre>
+        )}
+      </div>
+
+      <SendToBaseDialog
+        open={sendDialogOpen}
+        onClose={() => setSendDialogOpen(false)}
+        targetSegmentId={draft.target_segment_id}
+        onSelectSegment={handleTargetSegmentChange}
+        subject={subject}
+      />
+    </div>
+  );
+}
+
+/* ─── Send to base dialog ─────────────────────────────────────────── */
+
+interface SendToBaseDialogProps {
+  open: boolean;
+  onClose: () => void;
+  targetSegmentId: string | null;
+  onSelectSegment: (segmentId: string | null) => Promise<void>;
+  subject: string;
+}
+
+function SendToBaseDialog({
+  open,
+  onClose,
+  targetSegmentId,
+  onSelectSegment,
+  subject,
+}: SendToBaseDialogProps) {
+  const { data: segments = [], isLoading: loadingSegments } = useEmailSegments();
+  const [selectedId, setSelectedId] = useState<string | null>(targetSegmentId);
+  const [search, setSearch] = useState("");
+
+  const selectedSegment = useMemo(
+    () => segments.find((s) => s.id === selectedId) ?? null,
+    [segments, selectedId],
+  );
+
+  const { data: leads = [], isLoading: loadingLeads } = useSegmentLeads(
+    selectedSegment,
+    500,
+  );
+
+  const filteredLeads = useMemo(() => {
+    if (!search.trim()) return leads;
+    const q = search.toLowerCase();
+    return leads.filter(
+      (l) =>
+        l.name?.toLowerCase().includes(q) ||
+        l.company?.toLowerCase().includes(q) ||
+        l.contact?.toLowerCase().includes(q) ||
+        l.contact_email?.toLowerCase().includes(q),
+    );
+  }, [leads, search]);
+
+  const withEmail = useMemo(
+    () => leads.filter((l) => l.contact_email && l.contact_email.trim().length > 0),
+    [leads],
+  );
+
+  async function handleConfirmAndSend() {
+    if (!selectedSegment) {
+      toast.error("Selecione um segmento antes de enviar");
+      return;
+    }
+    await onSelectSegment(selectedSegment.id);
+    toast.info("Envio pra base via Mailchimp — em breve", {
+      description: `Segmento "${selectedSegment.name}" salvo no rascunho (${withEmail.length} destinatários com e-mail). A integração de broadcast será habilitada na próxima iteração.`,
+    });
+    onClose();
+  }
+
+  async function handleJustSave() {
+    await onSelectSegment(selectedSegment?.id ?? null);
+    toast.success(
+      selectedSegment
+        ? `Base "${selectedSegment.name}" vinculada ao rascunho`
+        : "Base removida do rascunho",
+    );
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <IconUsers className="size-5 text-orange-500" />
+            Selecionar base de envio
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Escolha o segmento de destino para{" "}
+            <span className="font-semibold text-foreground">{subject}</span>. A lista vem
+            direto do CRM (crm_deals) aplicando as regras do segmento.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-3 flex-1 min-h-0 overflow-hidden">
+          {/* LEFT: lista de segments */}
+          <div className="border rounded-lg bg-card flex flex-col min-h-0">
+            <div className="px-3 py-2 border-b bg-muted/30 flex items-center justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Segmentos
+              </p>
+              <Link
+                href="/marketing/newsletter/segmentos"
+                className="text-[10px] text-orange-600 hover:text-orange-700 hover:underline inline-flex items-center gap-0.5"
+              >
+                <IconPlus className="size-3" />
+                Novo
+              </Link>
+            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-1.5 space-y-1">
+                {loadingSegments && (
+                  <p className="text-xs text-muted-foreground text-center py-4">
+                    Carregando...
+                  </p>
+                )}
+                {!loadingSegments && segments.length === 0 && (
+                  <div className="text-center py-6 px-3">
+                    <IconFilter className="size-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Nenhum segmento criado ainda.
+                    </p>
+                    <Link
+                      href="/marketing/newsletter/segmentos"
+                      className="text-[11px] text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      Criar primeiro segmento →
+                    </Link>
+                  </div>
+                )}
+                {segments.map((s) => (
+                  <SegmentRow
+                    key={s.id}
+                    segment={s}
+                    selected={selectedId === s.id}
+                    linked={targetSegmentId === s.id}
+                    onClick={() => setSelectedId(s.id)}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* RIGHT: preview da lista de leads */}
+          <div className="border rounded-lg bg-card flex flex-col min-h-0">
+            {!selectedSegment ? (
+              <div className="flex-1 flex items-center justify-center p-8">
+                <div className="text-center max-w-sm">
+                  <IconUsers className="size-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-semibold mb-1">
+                    Selecione um segmento à esquerda
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Vai aparecer aqui a lista real de leads do CRM que recebem a
+                    newsletter.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="px-3 py-2 border-b bg-muted/30 flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold truncate">
+                      {selectedSegment.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-0.5">
+                        <IconUsers className="size-2.5" />
+                        {loadingLeads ? "..." : `${leads.length} leads`}
+                      </span>
+                      <span>·</span>
+                      <span className="flex items-center gap-0.5">
+                        <IconMail className="size-2.5" />
+                        {loadingLeads ? "..." : `${withEmail.length} c/ e-mail`}
+                      </span>
+                      <span>·</span>
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] h-3.5 px-1 capitalize"
+                      >
+                        {selectedSegment.segment_type}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar nome, empresa, e-mail..."
+                    className="h-7 text-xs w-56"
+                  />
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="p-1">
+                    {loadingLeads && (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        Carregando leads do CRM...
+                      </p>
+                    )}
+                    {!loadingLeads && filteredLeads.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        {leads.length === 0
+                          ? "Nenhum lead bate com as regras desse segmento."
+                          : "Nenhum lead bate com a busca."}
+                      </p>
+                    )}
+                    {filteredLeads.map((l) => (
+                      <LeadRow key={l.id} lead={l} />
+                    ))}
+                    {leads.length === 500 && (
+                      <p className="text-[10px] text-muted-foreground text-center py-2 italic">
+                        Exibindo os 500 mais recentes. Envio real usa a lista completa.
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-2 border-t">
+          <p className="text-[10px] text-muted-foreground">
+            {selectedSegment
+              ? `${withEmail.length} destinatários com e-mail · ${
+                  leads.length - withEmail.length
+                } sem e-mail (serão ignorados)`
+              : "Selecione um segmento para ver a base"}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 text-xs">
+              Cancelar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleJustSave}
+              disabled={!selectedSegment}
+              className="h-8 text-xs"
+            >
+              Apenas vincular base
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmAndSend}
+              disabled={!selectedSegment || withEmail.length === 0}
+              className="h-8 text-xs gap-1"
+            >
+              <IconSend className="size-3" />
+              Confirmar e enviar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SegmentRow({
+  segment,
+  selected,
+  linked,
+  onClick,
+}: {
+  segment: EmailSegment;
+  selected: boolean;
+  linked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-2.5 py-2 rounded-md transition-colors ${
+        selected ? "bg-accent" : "hover:bg-accent/50"
+      }`}
+    >
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs font-medium truncate flex-1">{segment.name}</p>
+        {linked && (
+          <Badge
+            variant="outline"
+            className="text-[9px] h-3.5 px-1 text-emerald-600 border-emerald-300"
+          >
+            atual
+          </Badge>
+        )}
+      </div>
+      {segment.description && (
+        <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+          {segment.description}
+        </p>
+      )}
+      <div className="flex items-center gap-1.5 mt-1">
+        <IconUsers className="size-2.5 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground">
+          {segment.estimated_count ?? 0} leads
+        </span>
+        <Badge variant="outline" className="text-[9px] h-3.5 px-1 capitalize ml-auto">
+          {segment.segment_type}
+        </Badge>
+      </div>
+    </button>
+  );
+}
+
+function LeadRow({
+  lead,
+}: {
+  lead: {
+    id: string;
+    name: string;
+    company: string | null;
+    contact: string | null;
+    contact_email: string | null;
+    stage: string;
+    source: string | null;
+    value: number | null;
+  };
+}) {
+  const hasEmail = !!lead.contact_email && lead.contact_email.trim().length > 0;
+  return (
+    <div
+      className={`grid grid-cols-[1fr_auto] gap-2 px-2.5 py-1.5 rounded-md hover:bg-accent/40 text-xs ${
+        !hasEmail ? "opacity-60" : ""
+      }`}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          {hasEmail ? (
+            <IconMail className="size-3 text-emerald-600 shrink-0" />
+          ) : (
+            <IconMailOff className="size-3 text-muted-foreground shrink-0" />
+          )}
+          <span className="font-medium truncate">{lead.contact || lead.name}</span>
+          {lead.company && (
+            <>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground inline-flex items-center gap-0.5 truncate">
+                <IconBuilding className="size-2.5 shrink-0" />
+                {lead.company}
+              </span>
+            </>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5 pl-[18px]">
+          {hasEmail ? (
+            <span className="text-[10px] text-muted-foreground font-mono truncate">
+              {lead.contact_email}
+            </span>
+          ) : (
+            <span className="text-[10px] text-muted-foreground italic">
+              sem e-mail no CRM
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <Badge variant="outline" className="text-[9px] h-4 px-1 capitalize">
+          {lead.stage}
+        </Badge>
+        {lead.source && (
+          <Badge variant="outline" className="text-[9px] h-4 px-1 text-muted-foreground">
+            {lead.source}
+          </Badge>
         )}
       </div>
     </div>
