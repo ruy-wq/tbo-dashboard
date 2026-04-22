@@ -19,6 +19,7 @@ import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TboSectionDivider } from "../../lib/tiptap-extensions/tbo-section-divider";
+import { TboVideoCard } from "../../lib/tiptap-extensions/tbo-video-card";
 import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
@@ -40,6 +41,7 @@ import {
   IconTrash,
   IconTextCaption,
   IconSeparatorHorizontal,
+  IconBrandYoutube,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { uploadEmailAsset } from "@/features/comercial/hooks/use-upload-email-asset";
@@ -182,6 +184,7 @@ export function TboWysiwygEditor({
         emptyEditorClass: "is-editor-empty",
       }),
       TboSectionDivider,
+      TboVideoCard,
     ],
     content: markdownToTiptapHtml(body),
     immediatelyRender: false,
@@ -282,6 +285,27 @@ export function TboWysiwygEditor({
   function handleDeleteImage() {
     if (!editor) return;
     editor.chain().focus().deleteSelection().run();
+  }
+
+  function handleInsertVideo() {
+    if (!editor) return;
+    openInput({
+      title: "Adicionar vídeo do YouTube",
+      description:
+        "Cola a URL do YouTube — a thumbnail é puxada automaticamente e o card vira clicável no e-mail.",
+      label: "URL do vídeo",
+      placeholder: "https://www.youtube.com/watch?v=… ou https://youtu.be/…",
+      defaultValue: "",
+      confirmLabel: "Inserir",
+      onConfirm: (url) => {
+        if (!url.trim()) return;
+        editor
+          .chain()
+          .focus()
+          .insertVideoCard({ url: url.trim(), label: "Assistir o vídeo" })
+          .run();
+      },
+    });
   }
 
   function handleInsertDivider() {
@@ -579,6 +603,15 @@ export function TboWysiwygEditor({
           <Button
             size="sm"
             variant="outline"
+            onClick={handleInsertVideo}
+            className="gap-1.5 shadow-lg bg-white"
+          >
+            <IconBrandYoutube className="size-3.5" />
+            Vídeo
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             onClick={handleInsertDivider}
             className="gap-1.5 shadow-lg bg-white"
           >
@@ -737,6 +770,49 @@ export function TboWysiwygEditor({
           outline: 2px solid #e85102;
           outline-offset: 8px;
           border-radius: 2px;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card {
+          display: block;
+          margin: 16px auto;
+          max-width: 520px;
+          background: #0a0a0a;
+          overflow: hidden;
+          cursor: pointer;
+          user-select: none;
+          transition: outline 0.15s ease, opacity 0.15s ease;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card:hover {
+          opacity: 0.92;
+          outline: 2px solid #e85102;
+          outline-offset: 4px;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-card.ProseMirror-selectednode {
+          outline: 2px solid #e85102;
+          outline-offset: 4px;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-thumb {
+          display: block;
+          width: 100%;
+          height: auto;
+          margin: 0;
+          border: 0;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-placeholder {
+          padding: 64px 24px;
+          text-align: center;
+          color: #737373;
+          font-size: 12px;
+        }
+        .tbo-email-editor-wrapper .ProseMirror .tbo-video-caption {
+          background: #0a0a0a;
+          color: #ffffff;
+          padding: 18px 24px;
+          font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+          font-size: 13px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          font-weight: 600;
+          text-align: center;
         }
       `}</style>
 

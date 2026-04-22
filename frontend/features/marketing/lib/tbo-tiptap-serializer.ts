@@ -15,20 +15,32 @@
  */
 
 import { marked } from "marked";
+import { isVideoUrl, resolveVideoThumb } from "./tiptap-extensions/tbo-video-card";
 
 /**
  * Pré-processa extensões TBO no markdown antes de passar pro `marked`.
  *
  * Converte:
- *   `--- FICHA TÉCNICA ---`  →  `<div data-tbo-divider data-label="FICHA TÉCNICA"></div>`
- *   (múltiplos espaços aceitos: `---   FICHA TÉCNICA   ---`)
+ *   `--- FICHA TÉCNICA ---`               → `<div data-tbo-divider data-label="FICHA TÉCNICA"></div>`
+ *   `![alt](https://youtu.be/...)`        → `<div data-tbo-video data-url="..." data-label="alt" data-thumb-url="..."></div>`
+ *   `![alt](https://vimeo.com/...)`       → idem (thumbUrl vazia, card renderiza placeholder)
  */
 function preprocessTboMarkdown(md: string): string {
-  return md.replace(
-    /^---\s+(.+?)\s+---\s*$/gm,
-    (_m, label: string) =>
-      `<div data-tbo-divider data-label="${escapeAttr(label.trim())}"></div>`,
-  );
+  return md
+    .replace(
+      /^---\s+(.+?)\s+---\s*$/gm,
+      (_m, label: string) =>
+        `<div data-tbo-divider data-label="${escapeAttr(label.trim())}"></div>`,
+    )
+    .replace(
+      /^!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\s*$/gm,
+      (m, alt: string, url: string) => {
+        if (!isVideoUrl(url)) return m;
+        const thumb = resolveVideoThumb(url);
+        const label = alt.trim() || "Assistir o vídeo";
+        return `<div data-tbo-video data-url="${escapeAttr(url)}" data-label="${escapeAttr(label)}" data-thumb-url="${escapeAttr(thumb)}"></div>`;
+      },
+    );
 }
 
 function escapeAttr(s: string): string {
@@ -79,6 +91,11 @@ function nodeToMarkdown(node: TiptapNode): string {
     case "tboSectionDivider": {
       const label = String(node.attrs?.label ?? "").trim();
       return label ? `--- ${label} ---` : "---";
+    }
+    case "tboVideoCard": {
+      const url = String(node.attrs?.url ?? "");
+      const label = String(node.attrs?.label ?? "Assistir o vídeo");
+      return `![${label}](${url})`;
     }
     case "image":
       return `![${String(node.attrs?.alt ?? "")}](${String(node.attrs?.src ?? "")})`;
