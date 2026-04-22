@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { IconCalendar, IconChevronRight } from "@tabler/icons-react";
-import { useCalendarEvents } from "@/features/calendar/hooks/use-calendar";
-import type { CalendarEvent } from "@/features/calendar/services/calendar";
+import { useHrCalendarEvents } from "@/features/cultura/hooks/use-hr-calendar";
+import type { HrCalendarItem } from "@/features/cultura/services/hr-calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionCard } from "./section-card";
 
@@ -16,6 +16,15 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+function pad2(n: number) {
+  return n.toString().padStart(2, "0");
+}
+
+function toYmd(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Build a full month grid (6 weeks × 7 days = 42 cells) starting Monday. */
 function buildCalendarGrid(year: number, month: number) {
   const firstDay = new Date(year, month, 1);
   let startDow = firstDay.getDay() - 1;
@@ -30,42 +39,26 @@ function buildCalendarGrid(year: number, month: number) {
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push({ day: d, inMonth: true });
   }
-  while (cells.length % 7 !== 0) {
-    cells.push({ day: cells.length - daysInMonth - startDow + 1, inMonth: false });
+  let trailing = 1;
+  while (cells.length < 42) {
+    cells.push({ day: trailing++, inMonth: false });
   }
+
   const today = new Date();
-  const todayDay = today.getFullYear() === year && today.getMonth() === month ? today.getDate() : -1;
-  const todayIdx = cells.findIndex((c) => c.inMonth && c.day === todayDay);
-  const rowOfToday = todayIdx >= 0 ? Math.floor(todayIdx / 7) : 0;
-  const startRow = Math.max(0, rowOfToday);
-  const sliced = cells.slice(startRow * 7, (startRow + 2) * 7);
-  return { cells: sliced, todayDay };
+  const todayDay =
+    today.getFullYear() === year && today.getMonth() === month
+      ? today.getDate()
+      : -1;
+
+  return { cells, todayDay };
 }
 
-function getDayRange(date: Date): { start: string; end: string } {
-  const s = new Date(date);
-  s.setHours(0, 0, 0, 0);
-  const e = new Date(date);
-  e.setHours(23, 59, 59, 999);
-  return { start: s.toISOString(), end: e.toISOString() };
-}
-
-function getMonthRangeLocal(year: number, month: number) {
-  const s = new Date(year, month, 1);
-  const e = new Date(year, month + 1, 0, 23, 59, 59);
-  return { start: s.toISOString(), end: e.toISOString() };
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
-
-function isEventNow(event: CalendarEvent): boolean {
-  const now = Date.now();
-  const start = new Date(event.startAt).getTime();
-  const end = event.endAt ? new Date(event.endAt).getTime() : start + 3600000;
-  return now >= start && now <= end;
+function getMonthGridRange(year: number, month: number) {
+  // Grid spans up to 6 prior days (previous month overflow) and up to 13 trailing.
+  // Use month +/- 1 as safety margin so the RH query covers the visible grid.
+  const s = new Date(year, month - 1, 1);
+  const e = new Date(year, month + 2, 0);
+  return { start: toYmd(s), end: toYmd(e) };
 }
 
 /* ─── Component ───────────────────────────────────────────────── */
@@ -76,28 +69,36 @@ export function CalendarWidget() {
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const { cells, todayDay } = useMemo(() => buildCalendarGrid(year, month), [year, month]);
-
-  const monthRange = useMemo(() => getMonthRangeLocal(year, month), [year, month]);
-  const { data: monthEvents = [], isLoading: monthLoading } = useCalendarEvents(
-    monthRange.start,
-    monthRange.end,
+  const { cells, todayDay } = useMemo(
+    () => buildCalendarGrid(year, month),
+    [year, month],
   );
 
-  const todayRange = useMemo(() => getDayRange(now), [now]);
-  const { data: todayEvents = [], isLoading: todayLoading } = useCalendarEvents(
-    todayRange.start,
-    todayRange.end,
+  const range = useMemo(() => getMonthGridRange(year, month), [year, month]);
+  const { data: allEvents = [], isLoading } = useHrCalendarEvents(
+    range.start,
+    range.end,
   );
 
-  const daysWithEvents = useMemo(() => {
-    const s = new Set<number>();
-    for (const ev of monthEvents) {
-      const d = new Date(ev.startAt);
-      if (d.getMonth() === month) s.add(d.getDate());
+  const todayYmd = useMemo(() => toYmd(now), [now]);
+
+  const eventsByDay = useMemo(() => {
+    const map = new Map<number, HrCalendarItem[]>();
+    for (const ev of allEvents) {
+      const d = new Date(ev.startDate + "T12:00:00");
+      if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+      const day = d.getDate();
+      const list = map.get(day) ?? [];
+      list.push(ev);
+      map.set(day, list);
     }
-    return s;
-  }, [monthEvents, month]);
+    return map;
+  }, [allEvents, year, month]);
+
+  const todayEvents = useMemo(
+    () => allEvents.filter((ev) => ev.startDate === todayYmd),
+    [allEvents, todayYmd],
+  );
 
   const visibleEvents = todayEvents.slice(0, 4);
 
@@ -137,10 +138,10 @@ export function CalendarWidget() {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      {monthLoading ? (
+      {/* Calendar grid — full month (6 weeks) */}
+      {isLoading ? (
         <div className="grid grid-cols-7 gap-0 mb-3">
-          {Array.from({ length: 14 }).map((_, i) => (
+          {Array.from({ length: 42 }).map((_, i) => (
             <div key={i} className="flex flex-col items-center py-1.5">
               <Skeleton className="size-7 rounded-full" />
             </div>
@@ -150,7 +151,9 @@ export function CalendarWidget() {
         <div className="grid grid-cols-7 gap-0 mb-3" role="grid">
           {cells.map((cell, i) => {
             const isToday = cell.inMonth && cell.day === todayDay;
-            const hasEvent = cell.inMonth && daysWithEvents.has(cell.day);
+            const dayEvents = cell.inMonth ? eventsByDay.get(cell.day) ?? [] : [];
+            const hasEvent = dayEvents.length > 0;
+            const dotColor = dayEvents[0]?.color?.text;
             return (
               <div key={i} className="flex flex-col items-center py-1" role="gridcell">
                 <span
@@ -166,7 +169,10 @@ export function CalendarWidget() {
                   {cell.day}
                 </span>
                 {hasEvent && !isToday && (
-                  <span className="size-1 rounded-full mt-0.5 bg-hub-orange" />
+                  <span
+                    className="size-1 rounded-full mt-0.5"
+                    style={{ background: dotColor ?? "#c45a1a" }}
+                  />
                 )}
                 {isToday && hasEvent && (
                   <span className="size-1 rounded-full mt-0.5 bg-white" />
@@ -189,7 +195,7 @@ export function CalendarWidget() {
           </span>
         </div>
 
-        {todayLoading ? (
+        {isLoading ? (
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-2">
@@ -202,50 +208,34 @@ export function CalendarWidget() {
           <div className="text-center py-3">
             <IconCalendar className="size-5 mx-auto mb-1 text-muted-foreground opacity-40" />
             <p className="text-[11px] text-muted-foreground">Nenhum evento hoje</p>
-            <Link href="/agenda" className="text-[11px] font-medium mt-1 inline-block text-hub-orange">
-              Criar evento
+            <Link
+              href="/cultura"
+              className="text-[11px] font-medium mt-1 inline-block text-hub-orange"
+            >
+              Ver calendário RH
             </Link>
           </div>
         ) : (
-          visibleEvents.map((ev) => {
-            const happening = isEventNow(ev);
-            return (
-              <div
-                key={ev.id}
-                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
-                  happening ? "bg-hub-orange-glow" : ""
-                }`}
+          visibleEvents.map((ev) => (
+            <div
+              key={ev.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+            >
+              <span
+                className="w-0.5 h-4 rounded-full shrink-0"
+                style={{ background: ev.color.text }}
+              />
+              <span className="text-xs flex-1 truncate text-foreground">
+                {ev.title}
+              </span>
+              <span
+                className="text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider"
+                style={{ background: ev.color.bg, color: ev.color.text }}
               >
-                <span
-                  className={`text-[11px] font-mono font-medium shrink-0 w-10 text-right ${
-                    happening ? "text-hub-orange" : "text-muted-foreground"
-                  }`}
-                >
-                  {ev.isAllDay ? "dia" : formatTime(ev.startAt)}
-                </span>
-                <span
-                  className={`w-0.5 h-4 rounded-full shrink-0 ${
-                    happening ? "bg-hub-orange" : "bg-hub-border-solid"
-                  }`}
-                />
-                <span
-                  className={`text-xs flex-1 truncate text-foreground ${
-                    happening ? "font-semibold" : ""
-                  }`}
-                >
-                  {ev.title}
-                </span>
-                {ev.googleEventId && (
-                  <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-hub-bg-alt text-muted-foreground">
-                    G
-                  </span>
-                )}
-                {happening && (
-                  <span className="size-2 rounded-full animate-pulse shrink-0 bg-hub-orange" />
-                )}
-              </div>
-            );
-          })
+                {ev.category.replace("_", " ")}
+              </span>
+            </div>
+          ))
         )}
 
         {todayEvents.length > 4 && (
@@ -256,10 +246,10 @@ export function CalendarWidget() {
       </div>
 
       <Link
-        href="/agenda"
+        href="/cultura"
         className="w-full mt-3 text-center text-[11px] font-medium py-2 rounded-lg block text-hub-orange bg-hub-orange-glow"
       >
-        Ver agenda completa
+        Ver calendário completo
       </Link>
     </SectionCard>
   );
