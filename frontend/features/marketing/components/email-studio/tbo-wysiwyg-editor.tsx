@@ -19,7 +19,17 @@ import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TboSectionDivider } from "../../lib/tiptap-extensions/tbo-section-divider";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   IconBold,
   IconItalic,
@@ -114,6 +124,41 @@ export function TboWysiwygEditor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
+  // Dialog genérico de input (substitui window.prompt, que navegadores bloqueiam)
+  const [inputDialog, setInputDialog] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    label?: string;
+    placeholder?: string;
+    defaultValue: string;
+    confirmLabel?: string;
+    allowEmpty?: boolean;
+    emptyHint?: string;
+    onConfirm: (value: string) => void;
+  } | null>(null);
+  const [inputDialogValue, setInputDialogValue] = useState("");
+
+  function openInput(
+    opts: Omit<NonNullable<typeof inputDialog>, "open"> & {
+      defaultValue?: string;
+    },
+  ) {
+    setInputDialogValue(opts.defaultValue ?? "");
+    setInputDialog({ ...opts, open: true, defaultValue: opts.defaultValue ?? "" });
+  }
+
+  function closeInputDialog() {
+    setInputDialog(null);
+    setInputDialogValue("");
+  }
+
+  function confirmInputDialog() {
+    if (!inputDialog) return;
+    inputDialog.onConfirm(inputDialogValue);
+    closeInputDialog();
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -196,24 +241,42 @@ export function TboWysiwygEditor({
   function handleEditAlt() {
     if (!editor) return;
     const current = String(editor.getAttributes("image").alt ?? "");
-    const next = window.prompt("Texto alternativo (alt):", current);
-    if (next === null) return;
-    editor.chain().focus().updateAttributes("image", { alt: next }).run();
+    openInput({
+      title: "Texto alternativo (alt)",
+      description:
+        "Descrição curta da imagem — lida por leitores de tela e exibida quando a imagem não carrega.",
+      label: "Alt",
+      placeholder: "Ex: Fachada do empreendimento",
+      defaultValue: current,
+      allowEmpty: true,
+      confirmLabel: "Salvar",
+      onConfirm: (next) => {
+        editor.chain().focus().updateAttributes("image", { alt: next }).run();
+      },
+    });
   }
 
   function handleImageLink() {
     if (!editor) return;
     const current = String(editor.getAttributes("link").href ?? "");
-    const url = window.prompt(
-      "URL pra tornar a imagem clicável (vazio = remover link):",
-      current,
-    );
-    if (url === null) return;
-    if (url === "") {
-      editor.chain().focus().unsetLink().run();
-      return;
-    }
-    editor.chain().focus().setLink({ href: url }).run();
+    openInput({
+      title: "Link da imagem",
+      description:
+        "A imagem vira clicável e leva pra essa URL. Útil pra thumb de vídeo, CTA, etc.",
+      label: "URL",
+      placeholder: "https://…",
+      defaultValue: current,
+      allowEmpty: true,
+      emptyHint: "Deixe vazio pra remover o link",
+      confirmLabel: "Aplicar",
+      onConfirm: (url) => {
+        if (url.trim() === "") {
+          editor.chain().focus().unsetLink().run();
+        } else {
+          editor.chain().focus().setLink({ href: url.trim() }).run();
+        }
+      },
+    });
   }
 
   function handleDeleteImage() {
@@ -223,24 +286,51 @@ export function TboWysiwygEditor({
 
   function handleInsertDivider() {
     if (!editor) return;
-    const label = window.prompt(
-      "Texto do divisor (deixe vazio pra linha simples):",
-      "FICHA TÉCNICA",
-    );
-    if (label === null) return;
-    editor.chain().focus().insertSectionDivider(label.trim().toUpperCase()).run();
+    openInput({
+      title: "Divisor de seção",
+      description:
+        "Texto opcional centralizado entre duas linhas finas. Deixe vazio pra uma linha simples.",
+      label: "Texto",
+      placeholder: "Ex: FICHA TÉCNICA",
+      defaultValue: "FICHA TÉCNICA",
+      allowEmpty: true,
+      emptyHint: "Vazio = linha simples sem texto",
+      confirmLabel: "Inserir",
+      onConfirm: (label) => {
+        editor
+          .chain()
+          .focus()
+          .insertSectionDivider(label.trim().toUpperCase())
+          .run();
+      },
+    });
   }
 
   function handleSetLink() {
     if (!editor) return;
-    const prev = editor.getAttributes("link").href ?? "";
-    const url = window.prompt("URL do link:", String(prev));
-    if (url === null) return;
-    if (url === "") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    const prev = String(editor.getAttributes("link").href ?? "");
+    openInput({
+      title: "Link",
+      description: "URL que o texto selecionado vai abrir.",
+      label: "URL",
+      placeholder: "https://…",
+      defaultValue: prev,
+      allowEmpty: true,
+      emptyHint: "Deixe vazio pra remover o link",
+      confirmLabel: "Aplicar",
+      onConfirm: (url) => {
+        if (url.trim() === "") {
+          editor.chain().focus().extendMarkRange("link").unsetLink().run();
+        } else {
+          editor
+            .chain()
+            .focus()
+            .extendMarkRange("link")
+            .setLink({ href: url.trim() })
+            .run();
+        }
+      },
+    });
   }
 
   return (
@@ -649,6 +739,56 @@ export function TboWysiwygEditor({
           border-radius: 2px;
         }
       `}</style>
+
+      {/* Dialog reutilizável — substitui window.prompt (bloqueado pelo browser) */}
+      <Dialog
+        open={inputDialog?.open ?? false}
+        onOpenChange={(open) => {
+          if (!open) closeInputDialog();
+        }}
+      >
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>{inputDialog?.title}</DialogTitle>
+            {inputDialog?.description && (
+              <DialogDescription>{inputDialog.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {inputDialog?.label && (
+              <Label htmlFor="tbo-input-dialog" className="text-xs font-medium">
+                {inputDialog.label}
+              </Label>
+            )}
+            <Input
+              id="tbo-input-dialog"
+              autoFocus
+              value={inputDialogValue}
+              placeholder={inputDialog?.placeholder}
+              onChange={(e) => setInputDialogValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmInputDialog();
+                }
+              }}
+            />
+            {inputDialog?.emptyHint && (
+              <p className="text-xs text-muted-foreground">
+                {inputDialog.emptyHint}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeInputDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmInputDialog}>
+              {inputDialog?.confirmLabel ?? "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
