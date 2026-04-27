@@ -31,6 +31,7 @@ import {
   EMPTY_FILTERS,
   type LeadFiltersState,
 } from "@/features/comercial/components/leads-filters-panel";
+import { SavedFiltersDropdown } from "@/features/comercial/components/saved-filters-dropdown";
 import { EmptyState, ErrorState } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,17 @@ const DEFAULT_PAGE_SIZE = 50;
 
 type SortKey = "score" | "value" | "created_at" | "company";
 type SortDir = "asc" | "desc";
+
+function describeLeadFilters(f: LeadFiltersState): string {
+  const parts: string[] = [];
+  if (f.ufs.length > 0) parts.push(`UF: ${f.ufs.join(", ")}`);
+  if (f.bus.length > 0) parts.push(`BU: ${f.bus.length === 1 ? f.bus[0] : `${f.bus.length}`}`);
+  if (f.portes.length > 0) parts.push(`Porte: ${f.portes.join(", ")}`);
+  if (f.origens.length > 0) parts.push(`Origem: ${f.origens.join(", ")}`);
+  if (f.scoreMin != null) parts.push(`Score ≥ ${f.scoreMin}`);
+  if (f.onlyRadarHot) parts.push("🔥 Radar Hot");
+  return parts.join(" · ");
+}
 
 function KPICard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -467,12 +479,24 @@ export default function ComercialLeads() {
           </div>
         </div>
 
-        <LeadsFiltersPanel
-          filters={filters}
-          onChange={handleFiltersChange}
-          options={filterOptions}
-          totalActive={totalFilters}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <LeadsFiltersPanel
+            filters={filters}
+            onChange={handleFiltersChange}
+            options={filterOptions}
+            totalActive={totalFilters}
+          />
+          <SavedFiltersDropdown
+            module="leads"
+            currentFilters={filters}
+            hasActiveFilters={totalFilters > 0}
+            onApply={(applied) => {
+              setFilters(applied);
+              setPage(1);
+            }}
+            describeFilters={(f) => describeLeadFilters(f)}
+          />
+        </div>
       </div>
 
       <LeadsBulkActionBar
