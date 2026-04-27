@@ -11,6 +11,10 @@ import {
   createDeal,
   updateDeal,
   updateDealStage,
+  bulkUpdateDealStage,
+  bulkUpdateDealOwner,
+  bulkUpdateDealPriority,
+  bulkDeleteDeals,
   getDealPipelines,
   getRdPipelines,
   getDealOwners,
@@ -197,6 +201,104 @@ export function useUpdateDealStage() {
     },
   });
   return mutation;
+}
+
+// ── Bulk operations ──────────────────────────────────────────────────────────
+
+export function useBulkUpdateDealStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, stage }: { ids: string[]; stage: string }) => {
+      const supabase = createClient();
+      return bulkUpdateDealStage(supabase, ids, stage);
+    },
+    onSuccess: (count, variables) => {
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      logAuditTrail({
+        userId: useAuthStore.getState().user?.id ?? "unknown",
+        action: "status_change",
+        table: "crm_deals",
+        recordId: `bulk:${variables.ids.length}`,
+        after: { stage: variables.stage, count },
+        metadata: { field: "stage", bulk: true, count: variables.ids.length },
+      });
+    },
+    onError: (err) => {
+      toast.error(`Erro ao mover leads: ${err.message}`);
+    },
+  });
+}
+
+export function useBulkUpdateDealOwner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, ownerName }: { ids: string[]; ownerName: string | null }) => {
+      const supabase = createClient();
+      return bulkUpdateDealOwner(supabase, ids, ownerName);
+    },
+    onSuccess: (count, variables) => {
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      logAuditTrail({
+        userId: useAuthStore.getState().user?.id ?? "unknown",
+        action: "update",
+        table: "crm_deals",
+        recordId: `bulk:${variables.ids.length}`,
+        after: { owner_name: variables.ownerName, count },
+        metadata: { field: "owner_name", bulk: true, count: variables.ids.length },
+      });
+    },
+    onError: (err) => {
+      toast.error(`Erro ao atribuir owner: ${err.message}`);
+    },
+  });
+}
+
+export function useBulkUpdateDealPriority() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, priority }: { ids: string[]; priority: string }) => {
+      const supabase = createClient();
+      return bulkUpdateDealPriority(supabase, ids, priority);
+    },
+    onSuccess: (count, variables) => {
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      logAuditTrail({
+        userId: useAuthStore.getState().user?.id ?? "unknown",
+        action: "update",
+        table: "crm_deals",
+        recordId: `bulk:${variables.ids.length}`,
+        after: { priority: variables.priority, count },
+        metadata: { field: "priority", bulk: true, count: variables.ids.length },
+      });
+    },
+    onError: (err) => {
+      toast.error(`Erro ao atualizar prioridade: ${err.message}`);
+    },
+  });
+}
+
+export function useBulkDeleteDeals() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const supabase = createClient();
+      return bulkDeleteDeals(supabase, ids);
+    },
+    onSuccess: (count, ids) => {
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      logAuditTrail({
+        userId: useAuthStore.getState().user?.id ?? "unknown",
+        action: "delete",
+        table: "crm_deals",
+        recordId: `bulk:${ids.length}`,
+        before: { count },
+        metadata: { bulk: true },
+      });
+    },
+    onError: (err) => {
+      toast.error(`Erro ao deletar leads: ${err.message}`);
+    },
+  });
 }
 
 // ── CRM Stages (dynamic) ────────────────────────────────────────────────────

@@ -3446,6 +3446,8 @@ export type Database = {
       crm_deals: {
         Row: {
           activities: Json | null
+          bu: string | null
+          cargo: string | null
           company: string | null
           contact: string | null
           contact_email: string | null
@@ -3454,6 +3456,7 @@ export type Database = {
           created_at: string | null
           expected_close: string | null
           id: string
+          is_radar: boolean
           legacy_id: string | null
           loss_reason: string | null
           margin: number | null
@@ -3463,8 +3466,11 @@ export type Database = {
           notes: string | null
           owner_id: string | null
           owner_name: string | null
+          padrao: string | null
+          porte: string | null
           priority: string | null
           probability: number | null
+          radar_score: number | null
           rd_deal_id: string | null
           rd_pipeline_id: string | null
           rd_pipeline_name: string | null
@@ -3474,13 +3480,18 @@ export type Database = {
           source: string | null
           stage: string
           stakeholders: Json | null
+          status_funil: string | null
           tags: string[] | null
+          temperatura: string | null
           tenant_id: string | null
+          uf: string | null
           updated_at: string | null
           value: number | null
         }
         Insert: {
           activities?: Json | null
+          bu?: string | null
+          cargo?: string | null
           company?: string | null
           contact?: string | null
           contact_email?: string | null
@@ -3489,6 +3500,7 @@ export type Database = {
           created_at?: string | null
           expected_close?: string | null
           id?: string
+          is_radar?: boolean
           legacy_id?: string | null
           loss_reason?: string | null
           margin?: number | null
@@ -3498,8 +3510,11 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           owner_name?: string | null
+          padrao?: string | null
+          porte?: string | null
           priority?: string | null
           probability?: number | null
+          radar_score?: number | null
           rd_deal_id?: string | null
           rd_pipeline_id?: string | null
           rd_pipeline_name?: string | null
@@ -3509,13 +3524,18 @@ export type Database = {
           source?: string | null
           stage?: string
           stakeholders?: Json | null
+          status_funil?: string | null
           tags?: string[] | null
+          temperatura?: string | null
           tenant_id?: string | null
+          uf?: string | null
           updated_at?: string | null
           value?: number | null
         }
         Update: {
           activities?: Json | null
+          bu?: string | null
+          cargo?: string | null
           company?: string | null
           contact?: string | null
           contact_email?: string | null
@@ -3524,6 +3544,7 @@ export type Database = {
           created_at?: string | null
           expected_close?: string | null
           id?: string
+          is_radar?: boolean
           legacy_id?: string | null
           loss_reason?: string | null
           margin?: number | null
@@ -3533,8 +3554,11 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           owner_name?: string | null
+          padrao?: string | null
+          porte?: string | null
           priority?: string | null
           probability?: number | null
+          radar_score?: number | null
           rd_deal_id?: string | null
           rd_pipeline_id?: string | null
           rd_pipeline_name?: string | null
@@ -3544,8 +3568,11 @@ export type Database = {
           source?: string | null
           stage?: string
           stakeholders?: Json | null
+          status_funil?: string | null
           tags?: string[] | null
+          temperatura?: string | null
           tenant_id?: string | null
+          uf?: string | null
           updated_at?: string | null
           value?: number | null
         }

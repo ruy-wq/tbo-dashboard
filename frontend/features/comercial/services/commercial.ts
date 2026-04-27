@@ -32,47 +32,49 @@ interface DealFilters {
   rd_stage_id?: string;
 }
 
+/**
+ * Busca TODOS os deals que batem com o filtro, contornando o max-rows do PostgREST (1000).
+ * Pagina internamente em batches de 1000 até esgotar.
+ */
 export async function getDeals(
   supabase: SupabaseClient<Database>,
   filters?: DealFilters,
-) {
-  let query = supabase
-    .from("crm_deals")
-    .select("*")
-    .order("updated_at", { ascending: false, nullsFirst: false });
+): Promise<DealRow[]> {
+  const PAGE = 1000;
+  const all: DealRow[] = [];
+  let from = 0;
+  const MAX = 50_000;
+  while (from < MAX) {
+    let query = supabase
+      .from("crm_deals")
+      .select("*")
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .range(from, from + PAGE - 1);
 
-  if (filters?.stage) {
-    query = query.eq("stage", filters.stage);
-  }
-  if (filters?.owner_id) {
-    query = query.eq("owner_id", filters.owner_id);
-  }
-  if (filters?.pipeline) {
-    query = query.eq("rd_pipeline_id" as never, filters.pipeline);
-  }
-  if (filters?.owner_name) {
-    query = query.eq("owner_name", filters.owner_name);
-  }
-  if (filters?.rd_stage_id) {
-    query = query.eq("rd_stage_id" as never, filters.rd_stage_id);
-  }
-  if (filters?.search) {
-    // Sanitize: escape PostgREST special chars to prevent filter injection
-    const safe = filters.search
-      .replace(/\\/g, "\\\\")
-      .replace(/%/g, "\\%")
-      .replace(/,/g, "\\,")
-      .replace(/\(/g, "\\(")
-      .replace(/\)/g, "\\)")
-      .replace(/\./g, "\\.");
-    query = query.or(
-      `name.ilike.%${safe}%,company.ilike.%${safe}%,contact.ilike.%${safe}%`,
-    );
-  }
+    if (filters?.stage) query = query.eq("stage", filters.stage);
+    if (filters?.owner_id) query = query.eq("owner_id", filters.owner_id);
+    if (filters?.pipeline) query = query.eq("rd_pipeline_id" as never, filters.pipeline);
+    if (filters?.owner_name) query = query.eq("owner_name", filters.owner_name);
+    if (filters?.rd_stage_id) query = query.eq("rd_stage_id" as never, filters.rd_stage_id);
+    if (filters?.search) {
+      const safe = filters.search
+        .replace(/\\/g, "\\\\")
+        .replace(/%/g, "\\%")
+        .replace(/,/g, "\\,")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)")
+        .replace(/\./g, "\\.");
+      query = query.or(`name.ilike.%${safe}%,company.ilike.%${safe}%,contact.ilike.%${safe}%`);
+    }
 
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as DealRow[];
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all.push(...(data as DealRow[]));
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
 }
 
 export async function getDealById(
@@ -122,6 +124,63 @@ export async function updateDealStage(
   stage: string,
 ) {
   return updateDeal(supabase, id, { stage });
+}
+
+// ── Bulk operations ────────────────────────────────────────────────────────
+
+export async function bulkUpdateDealStage(
+  supabase: SupabaseClient<Database>,
+  ids: string[],
+  stage: string,
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error, count } = await supabase
+    .from("crm_deals")
+    .update({ stage } as never, { count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? ids.length;
+}
+
+export async function bulkUpdateDealOwner(
+  supabase: SupabaseClient<Database>,
+  ids: string[],
+  ownerName: string | null,
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error, count } = await supabase
+    .from("crm_deals")
+    .update({ owner_name: ownerName } as never, { count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? ids.length;
+}
+
+export async function bulkUpdateDealPriority(
+  supabase: SupabaseClient<Database>,
+  ids: string[],
+  priority: string,
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error, count } = await supabase
+    .from("crm_deals")
+    .update({ priority } as never, { count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? ids.length;
+}
+
+export async function bulkDeleteDeals(
+  supabase: SupabaseClient<Database>,
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const { error, count } = await supabase
+    .from("crm_deals")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? ids.length;
 }
 
 export interface PipelineOption {
