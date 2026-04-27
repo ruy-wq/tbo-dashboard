@@ -65,7 +65,13 @@ export function useUpdateNewsletterDraft() {
       updates: Partial<
         Pick<
           NewsletterDraft,
-          "subject" | "preheader" | "eyebrow" | "body" | "title" | "status"
+          | "subject"
+          | "preheader"
+          | "eyebrow"
+          | "body"
+          | "title"
+          | "status"
+          | "target_segment_id"
         >
       >;
     }) => updateNewsletterDraft(supabase, id, updates),

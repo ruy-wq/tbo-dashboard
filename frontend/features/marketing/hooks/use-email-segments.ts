@@ -10,8 +10,9 @@ import {
   deleteEmailSegment,
   estimateSegmentCount,
   refreshSegmentCount,
+  listSegmentLeads,
 } from "../services/email-segments";
-import type { EmailSegmentInput, SegmentRuleSet } from "../types/marketing";
+import type { EmailSegment, EmailSegmentInput, SegmentRuleSet } from "../types/marketing";
 import { toast } from "sonner";
 
 export function useEmailSegments() {
@@ -74,6 +75,18 @@ export function useEstimateSegmentCount(rules: SegmentRuleSet | null) {
     queryFn: () => estimateSegmentCount(createClient(), rules!),
     enabled: !!rules && rules.rules.length > 0,
     staleTime: 1000 * 30,
+  });
+}
+
+export function useSegmentLeads(
+  segment: Pick<EmailSegment, "id" | "segment_type" | "rules" | "static_deal_ids"> | null,
+  limit = 500,
+) {
+  return useQuery({
+    queryKey: ["email-studio", "segments", "leads", segment?.id, limit],
+    queryFn: () => listSegmentLeads(createClient(), segment!, limit),
+    enabled: !!segment?.id,
+    staleTime: 1000 * 60 * 2,
   });
 }
 

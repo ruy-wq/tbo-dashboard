@@ -130,6 +130,18 @@ export function parseBodyMarkdown(
       return `<h3 style="margin:28px 0 12px 0;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#e85102;font-weight:700;text-transform:uppercase;">${escapeHtml(headingMatch[1])}</h3>`;
     }
 
+    // Sub-bloco: "### Heading" na 1ª linha + descrição (texto corrido) nas seguintes.
+    // Renderiza heading laranja uppercase + parágrafo padrão na sequência.
+    const subBlockMatch = /^(#{2,3})\s+([^\n]+)\n([\s\S]+)$/.exec(trimmed);
+    if (subBlockMatch) {
+      const subHeadingText = escapeHtml(subBlockMatch[2].trim());
+      const descriptionRaw = subBlockMatch[3];
+      const descriptionInline = processInline(descriptionRaw);
+      const descriptionWithBreaks = descriptionInline.replace(/\n/g, "<br />");
+      return `<h3 style="margin:28px 0 8px 0;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#e85102;font-weight:700;text-transform:uppercase;">${subHeadingText}</h3>
+<p style="margin:0 0 16px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.65;font-weight:400;color:#171717;">${descriptionWithBreaks}</p>`;
+    }
+
     // Blockquote: parágrafo cujas linhas começam com "> "
     if (/^>\s+/.test(trimmed) && trimmed.split("\n").every((l) => /^>\s+/.test(l) || l.trim() === "")) {
       const inner = trimmed
@@ -430,9 +442,10 @@ function extractYouTubeId(url: string): string | null {
 }
 
 /**
- * Card de vídeo: thumbnail do YouTube (maxresdefault) + botão CTA pill laranja
- * centralizado em barra preta. Table-based pra compat com Outlook 2007+.
- * Toda a célula do card é clicável (link externo envolve tudo).
+ * Card de vídeo: thumbnail do YouTube (maxresdefault) + pill CTA laranja
+ * compacto centralizado abaixo, sem wrapper preto. Table-based pra compat
+ * com Outlook 2007+. Toda a célula do card é clicável (link externo envolve
+ * tudo).
  */
 function renderVideoCard(opts: {
   href: string;
@@ -449,22 +462,22 @@ function renderVideoCard(opts: {
   const thumbRow = thumbUrl
     ? `<tr>
     <td style="padding:0;line-height:0;font-size:0;">
-      <img src="${thumbUrl}" alt="${safeLabel}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;" />
+      <img src="${thumbUrl}" alt="${safeLabel}" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;border-radius:6px;" />
     </td>
   </tr>`
     : `<tr>
-    <td style="padding:56px 24px;background:#111111;text-align:center;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#737373;">Thumbnail indisponível</td>
+    <td style="padding:48px 24px;background:#fafafa;border:1px solid #eaeaea;border-radius:6px;text-align:center;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;color:#a3a3a3;">Thumbnail indisponível</td>
   </tr>`;
 
   return `<a href="${opts.href}" target="_blank" rel="noopener" style="display:block;margin:20px auto;text-decoration:none;max-width:520px;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;max-width:520px;background:#0a0a0a;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;max-width:520px;">
     ${thumbRow}
     <tr>
-      <td align="center" style="background:#0a0a0a;padding:24px 24px 28px 24px;">
+      <td align="center" style="padding:14px 0 0 0;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
           <tr>
-            <td style="background:#e85102;border-radius:9999px;padding:14px 32px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#ffffff;white-space:nowrap;">
-              ▶&nbsp;&nbsp;&nbsp;${safeLabelUpper}
+            <td style="background:#e85102;border-radius:9999px;padding:9px 22px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;color:#ffffff;white-space:nowrap;">
+              ▶&nbsp;&nbsp;${safeLabelUpper}
             </td>
           </tr>
         </table>
@@ -572,9 +585,12 @@ function buildFooter(unsubUrl: string, prefsUrl: string): string {
       <div style="margin-bottom:32px;">
         <img src="https://os.wearetbo.com.br/logo-tbo.png" alt="TBO" width="72" height="28" style="display:block;width:72px;height:28px;border:0;outline:none;text-decoration:none;" />
       </div>
-      <p style="margin:0 0 32px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#525252;">
-        Ecossistema de soluções para lançamentos imobiliários.<br />
-        Direção criativa, Digital 3D, Branding, Marketing, Audiovisual e Plataforma Interativa.
+      <div style="font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.15em;color:#e85102;font-weight:700;text-transform:uppercase;margin-bottom:12px;">Quem somos</div>
+      <p style="margin:0 0 16px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#262626;">
+        A <strong style="color:#0a0a0a;">TBO</strong> é o ecossistema de soluções para lançamentos imobiliários. Atuamos em cinco frentes integradas: <strong style="color:#0a0a0a;">Digital 3D</strong>, <strong style="color:#0a0a0a;">Branding</strong>, <strong style="color:#0a0a0a;">Marketing</strong>, <strong style="color:#0a0a0a;">Audiovisual</strong> e <strong style="color:#0a0a0a;">Plataforma Interativa</strong>.
+      </p>
+      <p style="margin:0 0 32px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#525252;">
+        Trabalhamos com incorporadoras que precisam transformar empreendimento em narrativa e narrativa em venda.
       </p>
       <div style="margin-bottom:24px;font-family:'SF Mono',Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">
         <a href="https://instagram.com/weare.tbo" target="_blank" style="color:#0a0a0a;text-decoration:none;padding-right:16px;">Instagram</a>

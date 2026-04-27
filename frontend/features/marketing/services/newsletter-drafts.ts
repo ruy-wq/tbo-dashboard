@@ -83,7 +83,16 @@ export async function updateNewsletterDraft(
   supabase: SupabaseClient,
   id: string,
   updates: Partial<
-    Pick<NewsletterDraft, "subject" | "preheader" | "eyebrow" | "body" | "title" | "status">
+    Pick<
+      NewsletterDraft,
+      | "subject"
+      | "preheader"
+      | "eyebrow"
+      | "body"
+      | "title"
+      | "status"
+      | "target_segment_id"
+    >
   >,
 ): Promise<NewsletterDraft> {
   const { data, error } = await (supabase as SupabaseClient)

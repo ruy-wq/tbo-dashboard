@@ -1,5 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { EmailSegment, EmailSegmentInput } from "../types/marketing";
+import type { EmailSegment, EmailSegmentInput, SegmentRuleSet } from "../types/marketing";
+
+export interface SegmentLead {
+  id: string;
+  name: string;
+  company: string | null;
+  contact: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  stage: string;
+  source: string | null;
+  value: number | null;
+  tags: string[] | null;
+  updated_at: string | null;
+}
 
 // ── Segments CRUD ─────────────────────────────────────────────────────
 
@@ -60,15 +74,9 @@ export async function deleteEmailSegment(supabase: SupabaseClient, id: string): 
 
 // ── Contagem estimada de deals por segmento ───────────────────────────
 
-export async function estimateSegmentCount(
-  supabase: SupabaseClient,
-  rules: EmailSegment["rules"],
-): Promise<number> {
-  // Constrói query dinâmica contra crm_deals
-  let query = (supabase as SupabaseClient)
-    .from("crm_deals")
-    .select("id", { count: "exact", head: true });
+type CrmDealQuery = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
 
+function applySegmentRules(query: CrmDealQuery, rules: SegmentRuleSet): CrmDealQuery {
   for (const rule of rules.rules) {
     switch (rule.field) {
       case "funnel_stage":
@@ -131,10 +139,51 @@ export async function estimateSegmentCount(
         break;
     }
   }
+  return query;
+}
 
+export async function estimateSegmentCount(
+  supabase: SupabaseClient,
+  rules: SegmentRuleSet,
+): Promise<number> {
+  const baseQuery = (supabase as SupabaseClient)
+    .from("crm_deals")
+    .select("id", { count: "exact", head: true });
+  const query = applySegmentRules(baseQuery as CrmDealQuery, rules);
   const { count, error } = await query;
   if (error) throw error;
   return count ?? 0;
+}
+
+const LEAD_SELECT =
+  "id, name, company, contact, contact_email, contact_phone, stage, source, value, tags, updated_at";
+
+export async function listSegmentLeads(
+  supabase: SupabaseClient,
+  segment: Pick<EmailSegment, "segment_type" | "rules" | "static_deal_ids">,
+  limit = 500,
+): Promise<SegmentLead[]> {
+  if (segment.segment_type === "static") {
+    if (!segment.static_deal_ids?.length) return [];
+    const { data, error } = await (supabase as SupabaseClient)
+      .from("crm_deals")
+      .select(LEAD_SELECT)
+      .in("id", segment.static_deal_ids)
+      .order("updated_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []) as unknown as SegmentLead[];
+  }
+
+  const baseQuery = (supabase as SupabaseClient)
+    .from("crm_deals")
+    .select(LEAD_SELECT)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  const query = applySegmentRules(baseQuery as CrmDealQuery, segment.rules);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as SegmentLead[];
 }
 
 export async function refreshSegmentCount(
