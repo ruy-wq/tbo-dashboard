@@ -8,25 +8,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { IconFilter, IconX, IconChevronDown } from "@tabler/icons-react";
 
 export interface LeadFiltersState {
   ufs: string[];
   portes: string[];
   bus: string[];
-  origens: string[];
-  scoreMin: number | null;
-  onlyRadarHot: boolean;
 }
 
 export const EMPTY_FILTERS: LeadFiltersState = {
   ufs: [],
   portes: [],
   bus: [],
-  origens: [],
-  scoreMin: null,
-  onlyRadarHot: false,
 };
 
 interface MultiSelectProps {
@@ -97,7 +90,6 @@ interface LeadsFiltersPanelProps {
     ufs: { value: string; count: number }[];
     portes: { value: string; count: number }[];
     bus: { value: string; count: number }[];
-    origens: { value: string; count: number }[];
   };
   totalActive: number;
 }
@@ -127,38 +119,6 @@ export function LeadsFiltersPanel({ filters, onChange, options, totalActive }: L
         selected={filters.bus}
         onChange={(bus) => onChange({ ...filters, bus })}
       />
-      <MultiSelect
-        label="Origem"
-        options={options.origens}
-        selected={filters.origens}
-        onChange={(origens) => onChange({ ...filters, origens })}
-      />
-      <div className="flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs">
-        <Label htmlFor="score-min" className="cursor-pointer text-xs text-muted-foreground">
-          Score Radar ≥
-        </Label>
-        <input
-          id="score-min"
-          type="number"
-          min="0"
-          max="40"
-          step="1"
-          value={filters.scoreMin ?? ""}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange({ ...filters, scoreMin: v === "" ? null : Number(v) });
-          }}
-          className="h-6 w-12 rounded border-0 bg-transparent text-xs focus:outline-none focus:ring-0"
-          placeholder="—"
-        />
-      </div>
-      <label className="flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted">
-        <Checkbox
-          checked={filters.onlyRadarHot}
-          onCheckedChange={(checked) => onChange({ ...filters, onlyRadarHot: !!checked })}
-        />
-        🔥 Radar Hot (≥8)
-      </label>
       {hasActive && (
         <Button
           variant="ghost"

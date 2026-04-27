@@ -18,13 +18,7 @@ import { DealDetailDialog } from "@/features/comercial/components/deal-detail-di
 import { DealFormDialog } from "@/features/comercial/components/deal-form-dialog";
 import { LeadsBulkActionBar } from "@/features/comercial/components/leads-bulk-action-bar";
 import { formatCurrency } from "@/features/comercial/lib/format-currency";
-import {
-  scoreDeals,
-  TEMPERATURE_CONFIG,
-  type DealTemperature,
-} from "@/features/comercial/lib/lead-scoring";
 import { parseLeadNotes, inferUf } from "@/features/comercial/lib/parse-lead-notes";
-// parseLeadNotes/inferUf agora são fallback para leads sem colunas backfilladas
 import { exportLeadsToCsv } from "@/features/comercial/lib/export-leads-csv";
 import {
   LeadsFiltersPanel,
@@ -45,7 +39,6 @@ import {
   IconUsers,
   IconArrowRight,
   IconDownload,
-  IconFlame,
   IconArrowUp,
   IconArrowDown,
   IconArrowsSort,
@@ -64,7 +57,7 @@ const LEAD_STAGES: DealStageKey[] = ["lead", "qualificacao"];
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 250] as const;
 const DEFAULT_PAGE_SIZE = 50;
 
-type SortKey = "score" | "value" | "created_at" | "company";
+type SortKey = "value" | "created_at" | "company";
 type SortDir = "asc" | "desc";
 
 function describeLeadFilters(f: LeadFiltersState): string {
@@ -72,10 +65,16 @@ function describeLeadFilters(f: LeadFiltersState): string {
   if (f.ufs.length > 0) parts.push(`UF: ${f.ufs.join(", ")}`);
   if (f.bus.length > 0) parts.push(`BU: ${f.bus.length === 1 ? f.bus[0] : `${f.bus.length}`}`);
   if (f.portes.length > 0) parts.push(`Porte: ${f.portes.join(", ")}`);
-  if (f.origens.length > 0) parts.push(`Origem: ${f.origens.join(", ")}`);
-  if (f.scoreMin != null) parts.push(`Score ≥ ${f.scoreMin}`);
-  if (f.onlyRadarHot) parts.push("🔥 Radar Hot");
   return parts.join(" · ");
+}
+
+function sanitizeFilters(f: unknown): LeadFiltersState {
+  const obj = (f ?? {}) as Partial<LeadFiltersState>;
+  return {
+    ufs: Array.isArray(obj.ufs) ? obj.ufs : [],
+    portes: Array.isArray(obj.portes) ? obj.portes : [],
+    bus: Array.isArray(obj.bus) ? obj.bus : [],
+  };
 }
 
 function KPICard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -85,20 +84,6 @@ function KPICard({ label, value, sub }: { label: string; value: string; sub?: st
       <p className="text-2xl font-bold">{value}</p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
     </div>
-  );
-}
-
-function TempBadge({ temperature, score }: { temperature: DealTemperature; score: number }) {
-  const cfg = TEMPERATURE_CONFIG[temperature];
-  return (
-    <Badge
-      variant="secondary"
-      className="gap-1 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums"
-      style={{ backgroundColor: cfg.bg, color: cfg.color }}
-    >
-      {temperature === "hot" && <IconFlame className="h-3 w-3" />}
-      {score}
-    </Badge>
   );
 }
 
@@ -142,8 +127,8 @@ export default function ComercialLeads() {
   const [stageTab, setStageTab] = useState<DealStageKey | "all">("all");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<LeadFiltersState>(EMPTY_FILTERS);
-  const [sortKey, setSortKey] = useState<SortKey>("score");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [sortKey, setSortKey] = useState<SortKey>("company");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
   const [page, setPage] = useState<number>(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -166,24 +151,15 @@ export default function ComercialLeads() {
 
   const enriched = useMemo(() => {
     const baseLeads = allLeads.filter((d) => LEAD_STAGES.includes(d.stage as DealStageKey));
-    const scored = scoreDeals(baseLeads);
-    const scoreMap = new Map(scored.map((s) => [s.deal.id, s]));
     return baseLeads.map((deal) => {
       // Prefere colunas DB (backfill 2026-04). Fallback para parser apenas se vazio.
       const fallback = deal.bu || deal.porte || deal.uf ? null : parseLeadNotes(deal.notes);
-      const s = scoreMap.get(deal.id);
       return {
         deal,
         bu: deal.bu ?? fallback?.bu ?? null,
         porte: deal.porte ?? fallback?.porte ?? null,
-        padrao: deal.padrao ?? fallback?.padrao ?? null,
         cargo: deal.cargo ?? fallback?.cargo ?? null,
-        statusFunil: deal.status_funil ?? fallback?.status_funil ?? null,
-        radarScore: deal.radar_score ?? fallback?.score_radar ?? null,
-        isRadar: deal.is_radar || (fallback?.is_radar ?? false),
         uf: deal.uf ?? inferUf({ contact_phone: deal.contact_phone, notes: deal.notes }),
-        score: s?.score ?? 0,
-        temperature: s?.temperature ?? ("cold" as DealTemperature),
       };
     });
   }, [allLeads]);
@@ -192,13 +168,10 @@ export default function ComercialLeads() {
     const ufCounts = new Map<string, number>();
     const porteCounts = new Map<string, number>();
     const buCounts = new Map<string, number>();
-    const origemCounts = new Map<string, number>();
     for (const e of enriched) {
       if (e.uf) ufCounts.set(e.uf, (ufCounts.get(e.uf) ?? 0) + 1);
       if (e.porte) porteCounts.set(e.porte, (porteCounts.get(e.porte) ?? 0) + 1);
       if (e.bu) buCounts.set(e.bu, (buCounts.get(e.bu) ?? 0) + 1);
-      const src = e.deal.source ?? "—";
-      origemCounts.set(src, (origemCounts.get(src) ?? 0) + 1);
     }
     const toSorted = (m: Map<string, number>) =>
       [...m.entries()]
@@ -208,7 +181,6 @@ export default function ComercialLeads() {
       ufs: toSorted(ufCounts),
       portes: toSorted(porteCounts),
       bus: toSorted(buCounts),
-      origens: toSorted(origemCounts),
     };
   }, [enriched]);
 
@@ -226,9 +198,6 @@ export default function ComercialLeads() {
     if (filters.ufs.length > 0) list = list.filter((e) => e.uf && filters.ufs.includes(e.uf));
     if (filters.portes.length > 0) list = list.filter((e) => e.porte && filters.portes.includes(e.porte));
     if (filters.bus.length > 0) list = list.filter((e) => e.bu && filters.bus.includes(e.bu));
-    if (filters.origens.length > 0) list = list.filter((e) => filters.origens.includes(e.deal.source ?? "—"));
-    if (filters.scoreMin != null) list = list.filter((e) => (e.radarScore ?? 0) >= filters.scoreMin!);
-    if (filters.onlyRadarHot) list = list.filter((e) => e.isRadar && (e.radarScore ?? 0) >= 8);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -249,10 +218,6 @@ export default function ComercialLeads() {
       let av: number | string;
       let bv: number | string;
       switch (sortKey) {
-        case "score":
-          av = a.score;
-          bv = b.score;
-          break;
         case "value":
           av = a.deal.value ?? 0;
           bv = b.deal.value ?? 0;
@@ -279,20 +244,13 @@ export default function ComercialLeads() {
   const startIdx = (safePage - 1) * pageSize;
   const visibleLeads = sorted.slice(startIdx, startIdx + pageSize);
 
-  const totalFilters =
-    filters.ufs.length +
-    filters.portes.length +
-    filters.bus.length +
-    filters.origens.length +
-    (filters.scoreMin != null ? 1 : 0) +
-    (filters.onlyRadarHot ? 1 : 0);
+  const totalFilters = filters.ufs.length + filters.portes.length + filters.bus.length;
 
   const kpis = useMemo(() => {
     const total = enriched.length;
     const totalValue = enriched.reduce((s, e) => s + (e.deal.value ?? 0), 0);
     const avgValue = total > 0 ? totalValue / total : 0;
-    const radarHot = enriched.filter((e) => e.isRadar && (e.radarScore ?? 0) >= 8).length;
-    return { total, totalValue, avgValue, radarHot };
+    return { total, totalValue, avgValue };
   }, [enriched]);
 
   // Selection helpers
@@ -448,11 +406,10 @@ export default function ComercialLeads() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KPICard label="Total de leads" value={String(kpis.total)} />
         <KPICard label="Valor em pipeline" value={formatCurrency(kpis.totalValue)} />
         <KPICard label="Ticket médio" value={formatCurrency(kpis.avgValue)} />
-        <KPICard label="🔥 Radar Hot (≥8)" value={String(kpis.radarHot)} sub="Score Radar prioritário" />
       </div>
 
       <div className="space-y-3">
@@ -491,10 +448,10 @@ export default function ComercialLeads() {
             currentFilters={filters}
             hasActiveFilters={totalFilters > 0}
             onApply={(applied) => {
-              setFilters(applied);
+              setFilters(sanitizeFilters(applied));
               setPage(1);
             }}
-            describeFilters={(f) => describeLeadFilters(f)}
+            describeFilters={(f) => describeLeadFilters(sanitizeFilters(f))}
           />
         </div>
       </div>
@@ -536,141 +493,148 @@ export default function ComercialLeads() {
         />
       ) : (
         <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40">
-              <tr>
-                <th className="w-10 px-3 py-3">
-                  <Checkbox
-                    checked={visibleAllSelected ? true : visibleSomeSelected ? "indeterminate" : false}
-                    onCheckedChange={toggleVisibleAll}
-                    aria-label="Selecionar todos da página"
-                  />
-                </th>
-                <th className="px-3 py-3 text-left">
-                  <SortHeader label="Score" sortKey="score" current={sortKey} dir={sortDir} onClick={handleSort} />
-                </th>
-                <th className="px-4 py-3 text-left">
-                  <SortHeader label="Lead" sortKey="company" current={sortKey} dir={sortDir} onClick={handleSort} />
-                </th>
-                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
-                  Localização
-                </th>
-                <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
-                  BU / Porte
-                </th>
-                <th className="px-4 py-3 text-left">
-                  <SortHeader label="Valor" sortKey="value" current={sortKey} dir={sortDir} onClick={handleSort} />
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Etapa</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {visibleLeads.map((e) => {
-                const stage = DEAL_STAGES[e.deal.stage as DealStageKey];
-                const canAdvance = e.deal.stage !== "qualificacao";
-                const isRadarHot = e.isRadar && (e.radarScore ?? 0) >= 8;
-                const isSelected = selectedIds.has(e.deal.id);
-                return (
-                  <tr
-                    key={e.deal.id}
-                    data-selected={isSelected}
-                    className="cursor-pointer transition-colors hover:bg-muted/30 data-[selected=true]:bg-primary/5"
-                    style={isRadarHot && !isSelected ? { background: "rgba(239,68,68,0.04)" } : undefined}
-                    onClick={() => handleSelect(e.deal)}
-                  >
-                    <td className="px-3 py-3" onClick={(ev) => ev.stopPropagation()}>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOne(e.deal.id)}
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <TempBadge temperature={e.temperature} score={e.score} />
-                        {e.radarScore != null && (
-                          <Badge
-                            variant="outline"
-                            className="px-1.5 py-0 text-[10px] tabular-nums"
-                            title={`Score Radar v2: ${e.radarScore}`}
-                          >
-                            ⭐{e.radarScore}
-                          </Badge>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <th className="w-10 px-3 py-3">
+                    <Checkbox
+                      checked={visibleAllSelected ? true : visibleSomeSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleVisibleAll}
+                      aria-label="Selecionar todos da página"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <SortHeader label="Construtora" sortKey="company" current={sortKey} dir={sortDir} onClick={handleSort} />
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Lead</th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
+                    Localização
+                  </th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
+                    Telefone
+                  </th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
+                    E-mail
+                  </th>
+                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
+                    BU
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <SortHeader label="Valor" sortKey="value" current={sortKey} dir={sortDir} onClick={handleSort} />
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Etapa</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {visibleLeads.map((e) => {
+                  const stage = DEAL_STAGES[e.deal.stage as DealStageKey];
+                  const canAdvance = e.deal.stage !== "qualificacao";
+                  const isSelected = selectedIds.has(e.deal.id);
+                  return (
+                    <tr
+                      key={e.deal.id}
+                      data-selected={isSelected}
+                      className="cursor-pointer transition-colors hover:bg-muted/30 data-[selected=true]:bg-primary/5"
+                      onClick={() => handleSelect(e.deal)}
+                    >
+                      <td className="px-3 py-3" onClick={(ev) => ev.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleOne(e.deal.id)}
+                        />
+                      </td>
+                      {/* Construtora */}
+                      <td className="px-4 py-3">
+                        <span className="font-medium">{e.deal.company || "—"}</span>
+                      </td>
+                      {/* Lead */}
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{e.deal.contact || e.deal.name || "—"}</div>
+                        {e.cargo && (
+                          <div className="text-xs text-muted-foreground">{e.cargo}</div>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-medium">{e.deal.company || e.deal.name}</span>
-                        {isRadarHot && (
-                          <span title="Radar Hot — score ≥ 8">
-                            <IconFlame className="h-3.5 w-3.5 text-red-500" />
-                          </span>
-                        )}
-                      </div>
-                      {e.deal.contact && (
-                        <div className="text-xs text-muted-foreground">
-                          {e.deal.contact}
-                          {e.cargo && <span className="opacity-60"> · {e.cargo}</span>}
-                        </div>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        {e.uf && (
+                      </td>
+                      {/* Localização */}
+                      <td className="hidden px-4 py-3 md:table-cell">
+                        {e.uf ? (
                           <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
                             {e.uf}
                           </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
-                        {e.deal.contact_phone && <span className="truncate">{e.deal.contact_phone}</span>}
-                      </div>
-                    </td>
-                    <td className="hidden px-4 py-3 lg:table-cell">
-                      <div className="flex flex-wrap gap-1">
-                        {e.bu && (
+                      </td>
+                      {/* Telefone */}
+                      <td className="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">
+                        {e.deal.contact_phone || "—"}
+                      </td>
+                      {/* E-mail */}
+                      <td className="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">
+                        {e.deal.contact_email ? (
+                          <a
+                            href={`mailto:${e.deal.contact_email}`}
+                            className="block max-w-[220px] truncate hover:text-foreground hover:underline"
+                            onClick={(ev) => ev.stopPropagation()}
+                            title={e.deal.contact_email}
+                          >
+                            {e.deal.contact_email}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      {/* BU */}
+                      <td className="hidden px-4 py-3 md:table-cell">
+                        {e.bu ? (
                           <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal">
                             {e.bu}
                           </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
                         )}
-                        {e.porte && (
-                          <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
-                            {e.porte}
+                      </td>
+                      {/* Valor */}
+                      <td className="px-4 py-3 font-medium tabular-nums">
+                        {e.deal.value != null ? (
+                          formatCurrency(e.deal.value)
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Etapa */}
+                      <td className="px-4 py-3">
+                        {stage ? (
+                          <Badge
+                            variant="secondary"
+                            style={{ backgroundColor: stage.bg, color: stage.color }}
+                          >
+                            {stage.label}
                           </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">{e.deal.stage}</span>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-medium tabular-nums">
-                      {e.deal.value != null ? formatCurrency(e.deal.value) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {stage ? (
-                        <Badge
-                          variant="secondary"
-                          style={{ backgroundColor: stage.bg, color: stage.color }}
+                      </td>
+                      {/* Ação */}
+                      <td className="px-4 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1 text-xs"
+                          onClick={(ev) => handleAdvanceStage(e.deal, ev)}
+                          disabled={updateStage.isPending}
                         >
-                          {stage.label}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">{e.deal.stage}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right" onClick={(ev) => ev.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                        onClick={(ev) => handleAdvanceStage(e.deal, ev)}
-                        disabled={updateStage.isPending}
-                      >
-                        {canAdvance ? "Qualificar" : "Proposta"}
-                        <IconArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {canAdvance ? "Qualificar" : "Proposta"}
+                          <IconArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* Paginator */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
