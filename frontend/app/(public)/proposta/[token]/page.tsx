@@ -45,6 +45,7 @@ import { ProposalNav } from "./components/proposal-nav";
 import { ProposalD3DFlow } from "./components/proposal-d3d-flow";
 import { ProposalWhyTBO } from "./components/proposal-why-tbo";
 import { ProposalTimeline } from "./components/proposal-timeline";
+import { ProposalAddons, type AddonsData } from "./components/proposal-addons";
 import { ProposalPaymentOptions } from "./components/proposal-payment-options";
 import type { PaymentConditionOption } from "@/features/comercial/services/proposals";
 import Image from "next/image";
@@ -402,6 +403,23 @@ function SectionNotes({ notes }: { notes: string }) {
 
 // ─── Main Proposal View ─────────────────────────────────────────────────────
 
+// ─── Helper: Build approval feedback with selected addons ──────────────────
+function buildApprovalFeedback(
+  userFeedback: string,
+  addons: AddonsData | null,
+  selectedIds: string[]
+): string {
+  if (!addons || selectedIds.length === 0) return userFeedback;
+  const selectedLabels = addons.options
+    .filter((o) => selectedIds.includes(o.id))
+    .map((o) => o.label + " (" + o.to_price + ")")
+    .join(" · ");
+  const header =
+    "[COMPRA ESTENDIDA APROVADA] " + addons.section_title + "\n" +
+    "→ " + selectedLabels + "\n\n";
+  return header + (userFeedback || "");
+}
+
 function ProposalView({
   proposal,
   token,
@@ -418,6 +436,13 @@ function ProposalView({
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const proposalAddons = (proposal as unknown as Record<string, unknown>).addons as AddonsData | null;
+  const toggleAddon = (id: string) => {
+    setSelectedAddonIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
   const pdfUrl = useMemo(() => {
     const params = new URLSearchParams({ token });
@@ -444,6 +469,9 @@ function ProposalView({
       items.push({ id: "section-d3d", label: "Processo D3D" });
     }
     items.push({ id: "section-scope", label: "Escopo" });
+    if ((proposal as unknown as Record<string, unknown>).addons) {
+      items.push({ id: "section-addons", label: "Compra Estendida" });
+    }
     items.push({ id: "section-investment", label: "Investimento" });
     if (paymentOptions.length > 0) {
       items.push({ id: "section-payment", label: "Pagamento" });
@@ -642,6 +670,7 @@ function ProposalView({
 
         {/* ── Scope ── */}
         <SectionScope items={proposal.items} />
+        <ProposalAddons addons={proposalAddons} selectedIds={selectedAddonIds} onToggle={toggleAddon} />
 
         {/* ── Totals ── */}
         <SectionTotals proposal={proposal} />
@@ -658,7 +687,7 @@ function ProposalView({
         {showD3D && <ProposalWhyTBO />}
 
         {/* ── Timeline ── */}
-        {showD3D && <ProposalTimeline />}
+        {showD3D && <ProposalTimeline stages={(proposal as unknown as Record<string, unknown>).timeline_stages as Array<{ week: string; label: string; description: string; color: string }> | null} />}
 
         {/* ── Notes ── */}
         {proposal.notes && <SectionNotes notes={proposal.notes} />}
@@ -835,7 +864,7 @@ function ProposalView({
             <AlertDialogAction
               className="bg-emerald-600 hover:bg-emerald-700"
               onClick={() => {
-                onDecide("approved", feedback);
+                onDecide("approved", buildApprovalFeedback(feedback, proposalAddons, selectedAddonIds));
                 setApproveOpen(false);
               }}
             >

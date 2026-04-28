@@ -215,7 +215,6 @@ export async function upsertProposalItems(
     proposal_id: proposalId,
     tenant_id: tenantId,
     sort_order: item.sort_order ?? i,
-    subtotal: (item.quantity ?? 1) * (item.unit_price ?? 0) * (1 - (item.discount_pct ?? 0) / 100),
   }));
 
   const { data, error } = await supabase

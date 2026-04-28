@@ -41,7 +41,15 @@ const TIMELINE_STAGES = [
   },
 ];
 
-export function ProposalTimeline() {
+interface TimelineStage {
+  week: string;
+  label: string;
+  description: string;
+  color: string;
+}
+
+export function ProposalTimeline({ stages }: { stages?: TimelineStage[] | null }) {
+  const STAGES = stages && stages.length > 0 ? stages : TIMELINE_STAGES;
   return (
     <section id="section-timeline" className="scroll-mt-20">
       <motion.div
@@ -60,7 +68,7 @@ export function ProposalTimeline() {
         {/* Progress bar visual */}
         <div className="mb-5 sm:mb-8 bg-white rounded-xl border shadow-sm p-3 sm:p-5">
           <div className="flex rounded-lg overflow-hidden h-3 mb-3">
-            {TIMELINE_STAGES.map((stage, idx) => (
+            {STAGES.map((stage, idx) => (
               <motion.div
                 key={idx}
                 initial={{ scaleX: 0 }}
@@ -70,17 +78,17 @@ export function ProposalTimeline() {
                 className="origin-left"
                 style={{
                   backgroundColor: stage.color,
-                  flex: [2, 3, 3, 1, 1, 2][idx] ?? 1,
+                  flex: 1,
                 }}
               />
             ))}
           </div>
           <div className="flex text-[10px] text-zinc-400 font-medium">
-            {TIMELINE_STAGES.map((stage, idx) => (
+            {STAGES.map((stage, idx) => (
               <div
                 key={idx}
                 className="text-center"
-                style={{ flex: [2, 3, 3, 1, 1, 2][idx] ?? 1 }}
+                style={{ flex: 1 }}
               >
                 {stage.week}
               </div>
@@ -94,7 +102,7 @@ export function ProposalTimeline() {
           <div className="absolute left-5 top-0 bottom-0 w-px bg-zinc-200 hidden sm:block" />
 
           <div className="space-y-2.5 sm:space-y-4">
-            {TIMELINE_STAGES.map((stage, idx) => (
+            {STAGES.map((stage, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, x: -12 }}
