@@ -43,6 +43,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 
 import { ProposalNav } from "./components/proposal-nav";
 import { ProposalD3DFlow } from "./components/proposal-d3d-flow";
+import { ProposalBrandingFlow } from "./components/proposal-branding-flow";
 import { ProposalWhyTBO } from "./components/proposal-why-tbo";
 import { ProposalTimeline } from "./components/proposal-timeline";
 import { ProposalAddons, type AddonsData } from "./components/proposal-addons";
@@ -452,6 +453,7 @@ function ProposalView({
 
   const isDecided = isDecidedStatus(proposal.status);
   const showD3D = proposal.show_d3d_flow ?? false;
+  const showBrandingFlow = ((proposal as unknown as Record<string, unknown>).show_branding_flow as boolean) ?? false;
   const paymentOptions: PaymentConditionOption[] = Array.isArray(
     proposal.payment_conditions,
   )
@@ -467,6 +469,9 @@ function ProposalView({
     }
     if (showD3D) {
       items.push({ id: "section-d3d", label: "Processo D3D" });
+    }
+    if (showBrandingFlow) {
+      items.push({ id: "section-branding-flow", label: "Fluxo Branding" });
     }
     items.push({ id: "section-scope", label: "Escopo" });
     if ((proposal as unknown as Record<string, unknown>).addons) {
@@ -667,6 +672,7 @@ function ProposalView({
 
         {/* ── D3D Flow ── */}
         {showD3D && <ProposalD3DFlow />}
+        {showBrandingFlow && <ProposalBrandingFlow />}
 
         {/* ── Scope ── */}
         <SectionScope items={proposal.items} />
