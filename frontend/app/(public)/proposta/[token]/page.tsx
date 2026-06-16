@@ -45,6 +45,7 @@ import { ProposalNav } from "./components/proposal-nav";
 import { ProposalD3DFlow } from "./components/proposal-d3d-flow";
 import { ProposalBrandingFlow } from "./components/proposal-branding-flow";
 import { ProposalMarketingFlow } from "./components/proposal-marketing-flow";
+import { ProposalAudiovisualFlow } from "./components/proposal-audiovisual-flow";
 import { ProposalWhyTBO } from "./components/proposal-why-tbo";
 import { ProposalTimeline } from "./components/proposal-timeline";
 import { ProposalAddons, type AddonsData } from "./components/proposal-addons";
@@ -456,6 +457,7 @@ function ProposalView({
   const showD3D = proposal.show_d3d_flow ?? false;
   const showBrandingFlow = ((proposal as unknown as Record<string, unknown>).show_branding_flow as boolean) ?? false;
   const showMarketingFlow = ((proposal as unknown as Record<string, unknown>).show_marketing_flow as boolean) ?? false;
+  const showAudiovisualFlow = ((proposal as unknown as Record<string, unknown>).show_audiovisual_flow as boolean) ?? false;
   const paymentOptions: PaymentConditionOption[] = Array.isArray(
     proposal.payment_conditions,
   )
@@ -477,6 +479,9 @@ function ProposalView({
     }
     if (showMarketingFlow) {
       items.push({ id: "section-marketing-flow", label: "Fluxo Marketing" });
+    }
+    if (showAudiovisualFlow) {
+      items.push({ id: "section-audiovisual-flow", label: "Fluxo Audiovisual" });
     }
     items.push({ id: "section-scope", label: "Escopo" });
     if ((proposal as unknown as Record<string, unknown>).addons) {
@@ -679,6 +684,7 @@ function ProposalView({
         {showD3D && <ProposalD3DFlow />}
         {showBrandingFlow && <ProposalBrandingFlow />}
         {showMarketingFlow && <ProposalMarketingFlow />}
+        {showAudiovisualFlow && <ProposalAudiovisualFlow />}
 
         {/* ── Scope ── */}
         <SectionScope items={proposal.items} />
