@@ -279,70 +279,35 @@ export function ProposalBrandingFlow() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: idx * 0.05 }}
-                    className={`${cardBg} border rounded-2xl shadow-sm hover:shadow-md transition-all w-[240px] sm:w-[260px] flex-shrink-0 flex flex-col overflow-hidden`}
+                    className={`${cardBg} border rounded-2xl shadow-sm hover:shadow-md transition-all w-[170px] sm:w-[185px] flex-shrink-0 flex flex-col overflow-hidden`}
                   >
-                    <div className="px-4 pt-4 sm:px-5 sm:pt-5 flex items-start gap-3">
-                      <div className={`${stepBg} w-7 h-7 rounded border flex items-center justify-center text-xs font-bold flex-shrink-0`}>
+                    <div className="px-3.5 pt-3.5 sm:px-4 sm:pt-4 flex items-start gap-2.5">
+                      <div className={`${stepBg} w-6 h-6 rounded border flex items-center justify-center text-[11px] font-bold flex-shrink-0`}>
                         {phase.step}
                       </div>
                       <div className="flex-1">
-                        <div className={`${titleColor} text-sm font-bold leading-tight`}>{phase.title}</div>
-                        <div className={`${subtitleColor} text-[11px] mt-0.5`}>{phase.subtitle}</div>
+                        <div className={`${titleColor} text-[13px] font-bold leading-tight`}>{phase.title}</div>
+                        <div className={`${subtitleColor} text-[10px] mt-0.5`}>{phase.subtitle}</div>
                       </div>
                     </div>
 
-                    <div className="px-4 pt-3 pb-2 sm:px-5">
-                      <p className={`${descColor} text-[12px] leading-relaxed`}>{phase.description}</p>
-                    </div>
-
-                    <div className="px-4 pb-3 sm:px-5 flex flex-col gap-1.5">
-                      {phase.deliverables.map((d, di) => (
+                    <div className="px-3.5 pt-2.5 pb-3 sm:px-4 flex flex-col gap-1">
+                      {phase.deliverables.slice(0, 3).map((d, di) => (
                         <div
                           key={di}
-                          className={`${delivBg} flex items-start gap-2 px-2.5 py-1.5 rounded-md border text-[11px]`}
+                          className={`${delivBg} flex items-center gap-2 px-2 py-1 rounded text-[10.5px]`}
                         >
-                          <div
-                            className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 text-[9px] mt-0.5 ${
-                              isStart || isEnd
-                                ? "bg-white/15 text-white"
-                                : d.iconColor
-                                ? ICON_BG[d.iconColor]
-                                : "bg-emerald-500/15 text-emerald-600"
-                            }`}
-                          >
-                            ◆
-                          </div>
-                          <div className="flex-1">
-                            <div>{d.text}</div>
-                            {d.tags && (
-                              <div className="flex gap-1 flex-wrap mt-1">
-                                {d.tags.format && (
-                                  <span className={`${SPEC_TAG.format} text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide`}>
-                                    {d.tags.format}
-                                  </span>
-                                )}
-                                {d.tags.res && (
-                                  <span className={`${SPEC_TAG.res} text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide`}>
-                                    {d.tags.res}
-                                  </span>
-                                )}
-                                {d.tags.channel && (
-                                  <span className={`${SPEC_TAG.channel} text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide`}>
-                                    {d.tags.channel}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isStart || isEnd ? "bg-white/60" : "bg-[#E85102]"}`} />
+                          <div className="flex-1 leading-tight">{d.text}</div>
                         </div>
                       ))}
                     </div>
 
-                    <div className={`mt-auto px-4 py-3 sm:px-5 border-t ${footerBorder} flex items-center justify-between`}>
-                      <span className={`${tagClass} text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide`}>
+                    <div className={`mt-auto px-3.5 py-2.5 sm:px-4 border-t ${footerBorder} flex items-center justify-between`}>
+                      <span className={`${tagClass} text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wide`}>
                         {phase.tag}
                       </span>
-                      <span className={`text-[11px] ${isStart ? "text-white/50" : isEnd ? "text-white/40" : "text-zinc-400"}`}>
+                      <span className={`text-[10px] ${isStart ? "text-white/50" : isEnd ? "text-white/40" : "text-zinc-400"}`}>
                         {phase.owner}
                       </span>
                     </div>

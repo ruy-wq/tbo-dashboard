@@ -21,73 +21,22 @@ type Item = Phase | Gate;
 
 const isGate = (i: Item): i is Gate => (i as Gate).type === "gate";
 
-// Fase 1 — Setup do Cliente
+// Fase 1 — Setup do Cliente (condensada)
 const FASE_1: Item[] = [
-  { title: "Contrato Assinado", description: "Contrato assinado → cliente operando dentro de casa · valor cobrado ao cliente.", variant: "accent" },
-  { title: "1. Passagem de bastão", subtitle: "Ruy / Gustavo → Equipe", description: "Briefing comercial, público-alvo e expectativas do cliente." },
-  { title: "2. Cronograma geral", subtitle: "Carol · Marco · Rafa", description: "Datas, dependências e o que o cliente precisa entregar + briefings internos por núcleo." },
-  { title: "3. Reunião interna de equipe", subtitle: "Carol · Marco · Rafa → BUs", description: "Apresentação do cronograma geral + solicitação de briefing por BU." },
-  { title: "4. Unificação dos briefings", subtitle: "Carol", description: "Carol consolida todos os briefings dos BUs em documento único." },
-  {
-    title: "5. Onboarding: Dream Team",
-    subtitle: "Carol lidera · toda equipe + cliente",
-    variant: "warm",
-    width: "wide",
-    deliverables: [
-      "Apresentação da equipe e papéis",
-      "Ponto de contato por BU",
-      "Cronograma + briefing ao cliente",
-      "Todos com câmera aberta",
-    ],
-  },
-  { title: "6. Execução interna", description: "Cada BU executa com briefing em mãos." },
-  { title: "Setup Completo", description: "Cliente configurado, equipe alinhada, briefings distribuídos. Pronto para iniciar a estratégia.", variant: "accent" },
+  { title: "Contrato Assinado", subtitle: "Kickoff", variant: "accent" },
+  { title: "Passagem de Bastão", subtitle: "Comercial → Equipe" },
+  { title: "Cronograma + Briefings", subtitle: "Datas e dependências" },
+  { title: "Onboarding Dream Team", subtitle: "Equipe + cliente alinhados", variant: "accent" },
 ];
 
-// Fase 2 — Estratégia & Desenvolvimento
+// Fase 2 — Estratégia & Desenvolvimento (condensada)
 const FASE_2: Item[] = [
-  { title: "Fechamento do Contrato", description: "Assinatura do contrato de prestação de serviços de marketing.", variant: "accent" },
-  { title: "Briefing", description: "Reunião de imersão com o cliente para levantamento de informações, objetivos, público-alvo e contexto do empreendimento." },
-  { title: "Pesquisas", description: "Pesquisa de mercado, concorrência, cenário macroeconômico, público e comportamento. Base: Brain, Mundo Datastore e dados do cliente." },
-  {
-    title: "Entrega Diagnóstico",
-    subtitle: "Entregável ao cliente",
-    variant: "elevated",
-    width: "wide",
-    deliverables: [
-      "Análise de público",
-      "Análise de concorrentes",
-      "Cenário macroeconômico",
-      "Potenciais personas",
-      "Pesquisa de mercado (Brain, Mundo Datastore)",
-      "Diagnóstico completo do que o cliente tem",
-    ],
-  },
-  { type: "gate", label: "Validação Diagnóstico" },
-  {
-    title: "Desenvolvimento da Campanha",
-    subtitle: "Criação estratégica + visual",
-    variant: "warm",
-    width: "wide",
-    deliverables: [
-      "Estratégia (premissas e diferenciais)",
-      "Conceito criativo",
-      "Manifesto de marca",
-      "Tagline",
-      "Arquitetura de mensagens",
-      "Referência estética",
-      "Guia de tom de voz",
-      "Identidade visual (paleta, tipografia, grid)",
-      "Key Visual (KV) principal",
-      "KV por fase (Breve → Lançamento → Sustentação)",
-      "Sistema de ícones / texturas",
-      "Mockups de aplicação",
-      "Roteiro",
-      "Filme Monstro",
-    ],
-  },
+  { title: "Briefing + Pesquisas", subtitle: "Imersão e mercado" },
+  { title: "Entrega Diagnóstico", subtitle: "Público · concorrência · personas", variant: "elevated" },
+  { type: "gate", label: "Validação" },
+  { title: "Desenvolvimento da Campanha", subtitle: "Estratégia, conceito, identidade e KV", variant: "warm" },
   { type: "gate", label: "Aprovado", approved: true },
-  { title: "Plano de Mídias", description: "Definição dos canais ON + OFF, mix de mídia, cronograma de veiculação e budget por fase da campanha.", variant: "elevated" },
+  { title: "Plano de Mídias", subtitle: "Canais ON + OFF e budget", variant: "elevated" },
 ];
 
 // Fase 3 — Aprovações de Mídia (vertical)
